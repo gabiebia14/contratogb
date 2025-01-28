@@ -22,81 +22,94 @@ export const useOCR = () => {
     toast.info('Iniciando processamento do documento...');
     
     try {
-      // Simulate OCR processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const file = selectedFiles[0];
+      const reader = new FileReader();
       
-      // Simulate extracted data with different confidence levels
-      const mockData: ExtractedField[] = [
-        {
-          field: "Nome completo",
-          value: "João Silva Santos",
-          confidence: 0.98
-        },
-        {
-          field: "CPF",
-          value: "123.456.789-00",
-          confidence: 0.95
-        },
-        {
-          field: "RG",
-          value: "12.345.678-9",
-          confidence: 0.93
-        },
-        {
-          field: "Data de nascimento",
-          value: "15/03/1985",
-          confidence: 0.89
-        },
-        {
-          field: "Nacionalidade",
-          value: "Brasileira",
-          confidence: 0.87
-        },
-        {
-          field: "Profissão",
-          value: "Engenheiro",
-          confidence: 0.85
-        },
-        {
-          field: "Endereço",
-          value: "Rua das Flores, 123",
-          confidence: 0.82
-        },
-        {
-          field: "Bairro",
-          value: "Centro",
-          confidence: 0.84
-        },
-        {
-          field: "CEP",
-          value: "12345-678",
-          confidence: 0.91
-        },
-        {
-          field: "Cidade",
-          value: "São Paulo",
-          confidence: 0.88
-        },
-        {
-          field: "Estado",
-          value: "SP",
-          confidence: 0.92
-        },
-        {
-          field: "Telefone",
-          value: "(11) 98765-4321",
-          confidence: 0.86
+      reader.onload = async () => {
+        // Aqui você pode implementar a lógica real de OCR
+        // Por enquanto, vamos apenas simular a extração de texto do documento
+        const extractedFields: ExtractedField[] = [];
+        
+        // Exemplo de extração de texto básica
+        // Em um caso real, você usaria uma API de OCR como Tesseract.js ou um serviço em nuvem
+        const text = await simulateTextExtraction(file);
+        
+        // Procura por padrões nos textos extraídos
+        if (text.match(/[A-Z][a-z]+ [A-Z][a-z]+/)) {
+          extractedFields.push({
+            field: "Nome completo",
+            value: text.match(/[A-Z][a-z]+ [A-Z][a-z]+/)?.[0] || "",
+            confidence: 0.85
+          });
         }
-      ];
-      
-      setExtractedData(mockData);
-      toast.success('Documento processado com sucesso!');
+
+        // CPF (formato: 000.000.000-00)
+        const cpfMatch = text.match(/\d{3}\.\d{3}\.\d{3}-\d{2}/);
+        if (cpfMatch) {
+          extractedFields.push({
+            field: "CPF",
+            value: cpfMatch[0],
+            confidence: 0.95
+          });
+        }
+
+        // RG (formato básico: 00.000.000-0)
+        const rgMatch = text.match(/\d{2}\.\d{3}\.\d{3}-[\dX]/);
+        if (rgMatch) {
+          extractedFields.push({
+            field: "RG",
+            value: rgMatch[0],
+            confidence: 0.90
+          });
+        }
+
+        // CEP (formato: 00000-000)
+        const cepMatch = text.match(/\d{5}-\d{3}/);
+        if (cepMatch) {
+          extractedFields.push({
+            field: "CEP",
+            value: cepMatch[0],
+            confidence: 0.92
+          });
+        }
+
+        // Telefone (formato: (00) 00000-0000)
+        const phoneMatch = text.match(/\(\d{2}\) \d{5}-\d{4}/);
+        if (phoneMatch) {
+          extractedFields.push({
+            field: "Telefone",
+            value: phoneMatch[0],
+            confidence: 0.88
+          });
+        }
+
+        setExtractedData(extractedFields);
+        toast.success('Documento processado com sucesso!');
+      };
+
+      reader.onerror = () => {
+        toast.error('Erro ao ler o arquivo');
+      };
+
+      reader.readAsText(file);
     } catch (error) {
       toast.error('Erro ao processar o documento');
       console.error('OCR processing error:', error);
     } finally {
       setProcessing(false);
     }
+  };
+
+  // Função auxiliar para simular extração de texto
+  const simulateTextExtraction = async (file: File): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const text = e.target?.result as string;
+        resolve(text || '');
+      };
+      reader.readAsText(file);
+    });
   };
 
   return {
