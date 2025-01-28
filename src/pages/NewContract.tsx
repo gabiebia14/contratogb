@@ -20,8 +20,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
-import { ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
 
 const formSchema = z.object({
   title: z.string().min(2, {
@@ -67,19 +65,11 @@ export default function NewContract() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="h-full p-8 bg-background">
       <div className="max-w-2xl mx-auto">
-        <Link 
-          to="/" 
-          className="inline-flex items-center text-indigo-600 hover:text-indigo-700 mb-6"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Voltar ao Dashboard
-        </Link>
+        <h1 className="text-2xl font-bold text-foreground mb-6">Novo Contrato</h1>
         
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Novo Contrato</h1>
-        
-        <div className="bg-white p-6 rounded-lg shadow">
+        <div className="bg-card p-6 rounded-lg shadow-sm border">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
@@ -184,9 +174,6 @@ export default function NewContract() {
               </div>
 
               <div className="flex justify-end space-x-4">
-                <Button variant="outline" type="button" asChild>
-                  <Link to="/">Cancelar</Link>
-                </Button>
                 <Button type="submit">Criar Contrato</Button>
               </div>
             </form>
