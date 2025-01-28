@@ -1,81 +1,91 @@
 import React, { useState } from 'react';
 import { Upload, ScanLine } from 'lucide-react';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import FileUploadArea from './ocr/FileUploadArea';
+import ExtractedDataDisplay from './ocr/ExtractedDataDisplay';
+
+interface ExtractedData {
+  text: string;
+  confidence: number;
+}
 
 const OCRPage = () => {
-  const [isDragging, setIsDragging] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [processing, setProcessing] = useState(false);
+  const [extractedData, setExtractedData] = useState<ExtractedData[]>([]);
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
+  const handleFilesSelected = (files: File[]) => {
+    setSelectedFiles(files);
+    setExtractedData([]);
   };
 
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
-  const handleDrop = async (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length > 0) {
-      await processFiles(files);
+  const processFiles = async () => {
+    if (!selectedFiles.length) {
+      toast.error('Selecione pelo menos um arquivo para processar');
+      return;
     }
-  };
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length > 0) {
-      await processFiles(files);
-    }
-  };
-
-  const processFiles = async (files: File[]) => {
     setProcessing(true);
     toast.info('Iniciando processamento do documento...');
     
-    // Simulate processing delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setProcessing(false);
-    toast.success('Documento processado com sucesso!');
+    try {
+      // Simulate OCR processing
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Simulate extracted data
+      const mockData: ExtractedData[] = [
+        {
+          text: "Lorem ipsum dolor sit amet",
+          confidence: 0.95
+        },
+        {
+          text: "Consectetur adipiscing elit",
+          confidence: 0.88
+        }
+      ];
+      
+      setExtractedData(mockData);
+      toast.success('Documento processado com sucesso!');
+    } catch (error) {
+      toast.error('Erro ao processar o documento');
+    } finally {
+      setProcessing(false);
+    }
   };
 
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-lg p-8">
-        <div
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors ${
-            isDragging ? 'border-indigo-500 bg-indigo-50' : 'border-gray-300'
-          }`}
-        >
-          <input
-            type="file"
-            onChange={handleFileSelect}
-            className="hidden"
-            id="ocrFileInput"
-            multiple
-            accept=".pdf,.png,.jpg,.jpeg"
-          />
-          <label
-            htmlFor="ocrFileInput"
-            className="cursor-pointer block"
-          >
-            <ScanLine className="mx-auto h-16 w-16 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium mb-2">
-              Arraste documentos ou clique para fazer upload
-            </h3>
-            <p className="text-sm text-gray-500">
-              Suporte para PDF, PNG, JPG (max. 10MB)
+        <FileUploadArea onFilesSelected={handleFilesSelected} />
+        
+        {selectedFiles.length > 0 && (
+          <div className="mt-4 flex items-center justify-between">
+            <p className="text-sm text-gray-600">
+              {selectedFiles.length} arquivo(s) selecionado(s)
             </p>
-          </label>
-        </div>
+            <Button
+              onClick={processFiles}
+              disabled={processing}
+            >
+              {processing ? (
+                <>Processando...</>
+              ) : (
+                <>
+                  <ScanLine className="mr-2" />
+                  Processar Documento
+                </>
+              )}
+            </Button>
+          </div>
+        )}
       </div>
+
+      {extractedData.length > 0 && (
+        <div className="bg-white rounded-lg p-6">
+          <ExtractedDataDisplay data={extractedData} />
+        </div>
+      )}
 
       <div className="bg-white rounded-lg p-6">
         <h3 className="text-lg font-medium mb-4">Instruções de Uso</h3>
