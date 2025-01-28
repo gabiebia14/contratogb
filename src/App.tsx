@@ -7,7 +7,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import Index from "./pages/Index";
 import NewContract from "./pages/NewContract";
 import NotFound from "./pages/NotFound";
-import { ResizablePanelGroup, ResizablePanel } from "./components/ui/resizable";
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "./components/ui/resizable";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +23,7 @@ const App = () => (
               <ResizablePanel defaultSize={50} minSize={30}>
                 <Index />
               </ResizablePanel>
+              <ResizableHandle withHandle />
               <ResizablePanel defaultSize={50} minSize={30}>
                 <Routes>
                   <Route path="/" element={null} />
