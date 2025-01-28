@@ -7,6 +7,7 @@ import DashboardLayout from "./layouts/DashboardLayout";
 import Index from "./pages/Index";
 import NewContract from "./pages/NewContract";
 import NotFound from "./pages/NotFound";
+import OCRPage from "./components/OCRPage";
 
 const queryClient = new QueryClient();
 
@@ -20,6 +21,7 @@ const App = () => (
           <Route element={<DashboardLayout />}>
             <Route path="/" element={<Index />} />
             <Route path="/novo-contrato" element={<NewContract />} />
+            <Route path="/ocr-documentos" element={<OCRPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
