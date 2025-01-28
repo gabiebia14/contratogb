@@ -1,4 +1,4 @@
-import { FileText, Upload, Settings, HelpCircle, Bell } from 'lucide-react';
+import { FileText, Upload, Settings, HelpCircle, Bell, Clock, AlertCircle } from 'lucide-react';
 import { StatsCards } from '@/components/dashboard/StatsCards';
 import { ContractsChart } from '@/components/dashboard/ContractsChart';
 import { RecentContracts } from '@/components/dashboard/RecentContracts';
