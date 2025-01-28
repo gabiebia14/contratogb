@@ -2,6 +2,8 @@ import { FileText, Upload, Settings, HelpCircle, Bell, Clock, AlertCircle } from
 import { StatsCards } from '@/components/dashboard/StatsCards';
 import { ContractsChart } from '@/components/dashboard/ContractsChart';
 import { RecentContracts } from '@/components/dashboard/RecentContracts';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 function Dashboard() {
   return (
@@ -23,12 +25,15 @@ function Dashboard() {
               <FileText size={20} />
               <span>Contratos</span>
             </button>
-            <button 
+            <Button 
               className="flex items-center gap-3 w-full hover:bg-indigo-600 p-2 rounded"
+              asChild
             >
-              <Upload size={20} />
-              <span>Novo Contrato</span>
-            </button>
+              <Link to="/novo-contrato">
+                <Upload size={20} />
+                <span>Novo Contrato</span>
+              </Link>
+            </Button>
             <button 
               className="flex items-center gap-3 w-full hover:bg-indigo-600 p-2 rounded"
             >
