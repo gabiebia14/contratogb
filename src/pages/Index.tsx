@@ -1,25 +1,9 @@
-import React, { useState } from 'react';
-import { FileText, Upload, Settings, HelpCircle, Bell, Search, Download, Clock, CheckCircle, AlertCircle } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
-
-const mockData = {
-  processedContracts: [
-    { date: '1 Mar', novos: 15, renovados: 10, encerrados: 5 },
-    { date: '2 Mar', novos: 12, renovados: 8, encerrados: 6 },
-    { date: '3 Mar', novos: 18, renovados: 12, encerrados: 8 },
-    { date: '4 Mar', novos: 14, renovados: 9, encerrados: 4 },
-    { date: '5 Mar', novos: 16, renovados: 11, encerrados: 7 },
-  ],
-  recentContracts: [
-    { id: 1, name: 'Contrato de Prestação de Serviços', client: 'Empresa ABC Ltda', status: 'Ativo', date: '10 min atrás' },
-    { id: 2, name: 'Termo de Confidencialidade', client: 'XYZ Corporação', status: 'Pendente', date: '15 min atrás' },
-    { id: 3, name: 'Contrato de Parceria', client: 'Tech Solutions SA', status: 'Finalizado', date: '30 min atrás' },
-  ]
-};
+import { FileText, Upload, Settings, HelpCircle, Bell } from 'lucide-react';
+import { StatsCards } from '@/components/dashboard/StatsCards';
+import { ContractsChart } from '@/components/dashboard/ContractsChart';
+import { RecentContracts } from '@/components/dashboard/RecentContracts';
 
 function Dashboard() {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar */}
@@ -87,99 +71,9 @@ function Dashboard() {
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-3 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-500 text-sm">Contratos Ativos</p>
-                <p className="text-2xl font-bold">234</p>
-              </div>
-              <div className="bg-green-100 p-3 rounded-lg">
-                <FileText className="text-green-600" />
-              </div>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-500 text-sm">Contratos Pendentes</p>
-                <p className="text-2xl font-bold">56</p>
-              </div>
-              <div className="bg-blue-100 p-3 rounded-lg">
-                <Clock className="text-blue-600" />
-              </div>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-500 text-sm">Taxa de Renovação</p>
-                <p className="text-2xl font-bold">85%</p>
-              </div>
-              <div className="bg-purple-100 p-3 rounded-lg">
-                <CheckCircle className="text-purple-600" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Chart */}
-        <div className="mb-8">
-          <h3 className="font-medium mb-4">Contratos por Período</h3>
-          <div className="bg-white rounded-lg p-4 h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={mockData.processedContracts}>
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Bar dataKey="novos" fill="#06B6D4" />
-                <Bar dataKey="renovados" fill="#6366F1" />
-                <Bar dataKey="encerrados" fill="#8B5CF6" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Recent Contracts */}
-        <div>
-          <h3 className="font-medium mb-4">Contratos Recentes</h3>
-          <div className="bg-white rounded-lg">
-            <table className="w-full">
-              <thead className="text-left text-gray-500 text-sm">
-                <tr>
-                  <th className="p-4">Nome</th>
-                  <th className="p-4">Cliente</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4">Data</th>
-                  <th className="p-4">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {mockData.recentContracts.map((contract) => (
-                  <tr key={contract.id} className="border-t">
-                    <td className="p-4">{contract.name}</td>
-                    <td className="p-4">{contract.client}</td>
-                    <td className="p-4">
-                      <span className={`px-2 py-1 rounded-full text-sm ${
-                        contract.status === 'Ativo' ? 'bg-green-100 text-green-600' :
-                        contract.status === 'Pendente' ? 'bg-yellow-100 text-yellow-600' :
-                        'bg-gray-100 text-gray-600'
-                      }`}>
-                        {contract.status}
-                      </span>
-                    </td>
-                    <td className="p-4 text-gray-500">{contract.date}</td>
-                    <td className="p-4">
-                      <button className="text-indigo-600 hover:text-indigo-800">
-                        Ver detalhes
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <StatsCards />
+        <ContractsChart />
+        <RecentContracts />
       </div>
 
       {/* Right Sidebar */}
