@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ExtractedField } from '../OCRPage';
+import { ExtractedField } from '@/types/ocr';
 
 interface ExtractedDataDisplayProps {
   data: ExtractedField[];
@@ -12,6 +12,12 @@ const ExtractedDataDisplay = ({ data }: ExtractedDataDisplayProps) => {
 
   // Ordenar dados por confiança (do maior para o menor)
   const sortedData = [...data].sort((a, b) => b.confidence - a.confidence);
+
+  const getConfidenceColor = (confidence: number) => {
+    if (confidence > 0.9) return 'bg-green-100 text-green-800';
+    if (confidence > 0.8) return 'bg-yellow-100 text-yellow-800';
+    return 'bg-red-100 text-red-800';
+  };
 
   return (
     <Card>
@@ -34,13 +40,7 @@ const ExtractedDataDisplay = ({ data }: ExtractedDataDisplayProps) => {
                 <TableCell>{item.value}</TableCell>
                 <TableCell>
                   <span 
-                    className={`px-2 py-1 rounded-full text-xs ${
-                      item.confidence > 0.9 
-                        ? 'bg-green-100 text-green-800'
-                        : item.confidence > 0.8
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}
+                    className={`px-2 py-1 rounded-full text-xs ${getConfidenceColor(item.confidence)}`}
                   >
                     {(item.confidence * 100).toFixed(1)}%
                   </span>
