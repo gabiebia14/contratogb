@@ -1,33 +1,54 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
-interface ExtractedData {
-  text: string;
-  confidence: number;
-}
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ExtractedField } from '../OCRPage';
 
 interface ExtractedDataDisplayProps {
-  data: ExtractedData[];
+  data: ExtractedField[];
 }
 
 const ExtractedDataDisplay = ({ data }: ExtractedDataDisplayProps) => {
   if (!data.length) return null;
 
+  // Ordenar dados por confiança (do maior para o menor)
+  const sortedData = [...data].sort((a, b) => b.confidence - a.confidence);
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Dados Extraídos</CardTitle>
+        <CardTitle>Dados Extraídos do Documento</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {data.map((item, index) => (
-          <div key={index} className="border-b pb-2 last:border-0">
-            <p className="text-sm text-gray-600">Texto extraído:</p>
-            <p className="font-medium">{item.text}</p>
-            <p className="text-xs text-gray-500 mt-1">
-              Confiança: {(item.confidence * 100).toFixed(1)}%
-            </p>
-          </div>
-        ))}
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Campo</TableHead>
+              <TableHead>Valor</TableHead>
+              <TableHead>Confiança</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sortedData.map((item, index) => (
+              <TableRow key={index}>
+                <TableCell className="font-medium">{item.field}</TableCell>
+                <TableCell>{item.value}</TableCell>
+                <TableCell>
+                  <span 
+                    className={`px-2 py-1 rounded-full text-xs ${
+                      item.confidence > 0.9 
+                        ? 'bg-green-100 text-green-800'
+                        : item.confidence > 0.8
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-red-100 text-red-800'
+                    }`}
+                  >
+                    {(item.confidence * 100).toFixed(1)}%
+                  </span>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </CardContent>
     </Card>
   );
