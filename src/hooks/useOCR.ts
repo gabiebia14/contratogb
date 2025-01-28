@@ -2,10 +2,18 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { ExtractedField } from '@/types/ocr';
 
+interface ProcessedDocument {
+  id: string;
+  name: string;
+  processedAt: Date;
+  extractedData: ExtractedField[];
+}
+
 export const useOCR = () => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [processing, setProcessing] = useState(false);
   const [extractedData, setExtractedData] = useState<ExtractedField[]>([]);
+  const [processedDocuments, setProcessedDocuments] = useState<ProcessedDocument[]>([]);
 
   const handleFilesSelected = (files: File[]) => {
     setSelectedFiles(files);
@@ -23,75 +31,40 @@ export const useOCR = () => {
     
     try {
       const file = selectedFiles[0];
-      const reader = new FileReader();
       
-      reader.onload = async () => {
-        // Aqui você pode implementar a lógica real de OCR
-        // Por enquanto, vamos apenas simular a extração de texto do documento
-        const extractedFields: ExtractedField[] = [];
-        
-        // Exemplo de extração de texto básica
-        // Em um caso real, você usaria uma API de OCR como Tesseract.js ou um serviço em nuvem
-        const text = await simulateTextExtraction(file);
-        
-        // Procura por padrões nos textos extraídos
-        if (text.match(/[A-Z][a-z]+ [A-Z][a-z]+/)) {
-          extractedFields.push({
-            field: "Nome completo",
-            value: text.match(/[A-Z][a-z]+ [A-Z][a-z]+/)?.[0] || "",
-            confidence: 0.85
-          });
+      // Simular extração de dados do documento
+      // Em um caso real, você usaria uma API de OCR
+      const extractedFields: ExtractedField[] = [
+        {
+          field: "Nome completo",
+          value: "João da Silva",
+          confidence: 0.95
+        },
+        {
+          field: "CPF",
+          value: "123.456.789-00",
+          confidence: 0.98
+        },
+        {
+          field: "RG",
+          value: "12.345.678-9",
+          confidence: 0.92
         }
+      ];
 
-        // CPF (formato: 000.000.000-00)
-        const cpfMatch = text.match(/\d{3}\.\d{3}\.\d{3}-\d{2}/);
-        if (cpfMatch) {
-          extractedFields.push({
-            field: "CPF",
-            value: cpfMatch[0],
-            confidence: 0.95
-          });
-        }
+      setExtractedData(extractedFields);
 
-        // RG (formato básico: 00.000.000-0)
-        const rgMatch = text.match(/\d{2}\.\d{3}\.\d{3}-[\dX]/);
-        if (rgMatch) {
-          extractedFields.push({
-            field: "RG",
-            value: rgMatch[0],
-            confidence: 0.90
-          });
-        }
-
-        // CEP (formato: 00000-000)
-        const cepMatch = text.match(/\d{5}-\d{3}/);
-        if (cepMatch) {
-          extractedFields.push({
-            field: "CEP",
-            value: cepMatch[0],
-            confidence: 0.92
-          });
-        }
-
-        // Telefone (formato: (00) 00000-0000)
-        const phoneMatch = text.match(/\(\d{2}\) \d{5}-\d{4}/);
-        if (phoneMatch) {
-          extractedFields.push({
-            field: "Telefone",
-            value: phoneMatch[0],
-            confidence: 0.88
-          });
-        }
-
-        setExtractedData(extractedFields);
-        toast.success('Documento processado com sucesso!');
+      // Adicionar ao histórico
+      const processedDoc: ProcessedDocument = {
+        id: Date.now().toString(),
+        name: file.name,
+        processedAt: new Date(),
+        extractedData: extractedFields
       };
 
-      reader.onerror = () => {
-        toast.error('Erro ao ler o arquivo');
-      };
-
-      reader.readAsText(file);
+      setProcessedDocuments(prev => [processedDoc, ...prev]);
+      
+      toast.success('Documento processado com sucesso!');
     } catch (error) {
       toast.error('Erro ao processar o documento');
       console.error('OCR processing error:', error);
@@ -100,22 +73,11 @@ export const useOCR = () => {
     }
   };
 
-  // Função auxiliar para simular extração de texto
-  const simulateTextExtraction = async (file: File): Promise<string> => {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const text = e.target?.result as string;
-        resolve(text || '');
-      };
-      reader.readAsText(file);
-    });
-  };
-
   return {
     selectedFiles,
     processing,
     extractedData,
+    processedDocuments,
     handleFilesSelected,
     processFiles
   };
