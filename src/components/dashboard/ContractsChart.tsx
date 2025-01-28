@@ -1,4 +1,4 @@
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 
 const mockData = {
   processedContracts: [
@@ -13,15 +13,17 @@ const mockData = {
 export const ContractsChart = () => {
   return (
     <div className="mb-8">
-      <h3 className="font-medium mb-4">Contratos por Período</h3>
-      <div className="bg-white rounded-lg p-4 h-64">
+      <h3 className="font-medium mb-4 text-gray-900">Contratos por Período</h3>
+      <div className="bg-white rounded-lg p-4 h-64 shadow-sm">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={mockData.processedContracts}>
             <XAxis dataKey="date" />
             <YAxis />
-            <Bar dataKey="novos" fill="#06B6D4" />
-            <Bar dataKey="renovados" fill="#6366F1" />
-            <Bar dataKey="encerrados" fill="#8B5CF6" />
+            <Tooltip />
+            <Legend />
+            <Bar name="Novos" dataKey="novos" fill="#4F46E5" />
+            <Bar name="Renovados" dataKey="renovados" fill="#0EA5E9" />
+            <Bar name="Encerrados" dataKey="encerrados" fill="#DC2626" />
           </BarChart>
         </ResponsiveContainer>
       </div>
