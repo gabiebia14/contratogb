@@ -5,45 +5,52 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import ContractTemplateEditor from '@/components/contract/ContractTemplateEditor';
 
-const mockTemplates = [
-  {
-    id: 1,
-    name: 'Contrato de Prestação de Serviços',
-    category: 'Serviços',
-    lastModified: '15/03/2024',
-    downloads: 128,
-    content: 'template-servicos.pdf'
-  },
-  {
-    id: 2,
-    name: 'Termo de Confidencialidade',
-    category: 'Legal',
-    lastModified: '14/03/2024',
-    downloads: 85,
-    content: 'template-nda.pdf'
-  },
-  {
-    id: 3,
-    name: 'Contrato de Parceria Comercial',
-    category: 'Comercial',
-    lastModified: '13/03/2024',
-    downloads: 234,
-    content: 'template-parceria.pdf'
-  },
-  {
-    id: 4,
-    name: 'Contrato de Trabalho CLT',
-    category: 'RH',
-    lastModified: '12/03/2024',
-    downloads: 456,
-    content: 'template-clt.pdf'
-  }
-];
+interface Template {
+  id: number;
+  name: string;
+  category: string;
+  lastModified: string;
+  downloads: number;
+  content: string;
+}
 
 const ContractTemplates = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('todos');
-  const [templates, setTemplates] = useState(mockTemplates);
+  const [templates, setTemplates] = useState<Template[]>([
+    {
+      id: 1,
+      name: 'Contrato de Prestação de Serviços',
+      category: 'Serviços',
+      lastModified: '15/03/2024',
+      downloads: 128,
+      content: 'template-servicos.pdf'
+    },
+    {
+      id: 2,
+      name: 'Termo de Confidencialidade',
+      category: 'Legal',
+      lastModified: '14/03/2024',
+      downloads: 85,
+      content: 'template-nda.pdf'
+    },
+    {
+      id: 3,
+      name: 'Contrato de Parceria Comercial',
+      category: 'Comercial',
+      lastModified: '13/03/2024',
+      downloads: 234,
+      content: 'template-parceria.pdf'
+    },
+    {
+      id: 4,
+      name: 'Contrato de Trabalho CLT',
+      category: 'RH',
+      lastModified: '12/03/2024',
+      downloads: 456,
+      content: 'template-clt.pdf'
+    }
+  ]);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
 
   const filteredTemplates = templates.filter(template => {
@@ -60,7 +67,7 @@ const ContractTemplates = () => {
     setSelectedCategory(e.target.value);
   };
 
-  const handleDownload = (template: typeof mockTemplates[0]) => {
+  const handleDownload = (template: Template) => {
     toast.success(`Download iniciado: ${template.name}`);
     
     setTemplates(prev => 
@@ -74,6 +81,21 @@ const ContractTemplates = () => {
 
   const handleNewTemplate = () => {
     setIsEditorOpen(true);
+  };
+
+  const handleSaveTemplate = (name: string, content: string) => {
+    const newTemplate: Template = {
+      id: templates.length + 1,
+      name: name || 'Novo Modelo de Contrato',
+      category: 'Geral',
+      lastModified: new Date().toLocaleDateString(),
+      downloads: 0,
+      content: content
+    };
+
+    setTemplates(prev => [...prev, newTemplate]);
+    setIsEditorOpen(false);
+    toast.success('Modelo salvo com sucesso!');
   };
 
   return (
@@ -160,7 +182,10 @@ const ContractTemplates = () => {
       </div>
 
       {isEditorOpen && (
-        <ContractTemplateEditor onClose={() => setIsEditorOpen(false)} />
+        <ContractTemplateEditor 
+          onClose={() => setIsEditorOpen(false)}
+          onSave={handleSaveTemplate}
+        />
       )}
     </>
   );

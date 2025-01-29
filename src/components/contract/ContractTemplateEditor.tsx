@@ -3,15 +3,18 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import mammoth from 'mammoth';
 
 interface ContractTemplateEditorProps {
   onClose: () => void;
+  onSave: (name: string, content: string) => void;
 }
 
-const ContractTemplateEditor = ({ onClose }: ContractTemplateEditorProps) => {
+const ContractTemplateEditor = ({ onClose, onSave }: ContractTemplateEditorProps) => {
   const [fileName, setFileName] = useState<string>('');
+  const [templateName, setTemplateName] = useState<string>('');
 
   const editor = useEditor({
     extensions: [StarterKit],
@@ -28,10 +31,10 @@ const ContractTemplateEditor = ({ onClose }: ContractTemplateEditorProps) => {
     if (!file) return;
 
     setFileName(file.name);
+    setTemplateName(file.name.replace(/\.[^/.]+$/, '')); // Remove extensão do arquivo
     
     try {
       if (file.type === 'application/pdf') {
-        // Para PDFs, você precisaria de uma biblioteca específica para conversão
         toast.error('Suporte a PDF em desenvolvimento');
         return;
       }
@@ -53,11 +56,13 @@ const ContractTemplateEditor = ({ onClose }: ContractTemplateEditorProps) => {
   };
 
   const handleSave = () => {
-    const content = editor?.getHTML();
-    // Aqui você implementaria a lógica para salvar o template
-    console.log('Conteúdo do template:', content);
-    toast.success('Modelo salvo com sucesso!');
-    onClose();
+    if (!templateName.trim()) {
+      toast.error('Por favor, insira um nome para o modelo');
+      return;
+    }
+
+    const content = editor?.getHTML() || '';
+    onSave(templateName, content);
   };
 
   return (
@@ -68,20 +73,28 @@ const ContractTemplateEditor = ({ onClose }: ContractTemplateEditorProps) => {
       </div>
 
       <div className="flex gap-4 mb-4">
-        <div>
-          <input
-            type="file"
-            onChange={handleFileUpload}
-            accept=".docx,.pdf"
-            className="hidden"
-            id="template-file"
+        <div className="flex-1">
+          <Input
+            placeholder="Nome do modelo"
+            value={templateName}
+            onChange={(e) => setTemplateName(e.target.value)}
+            className="mb-2"
           />
-          <label htmlFor="template-file">
-            <Button variant="outline" className="cursor-pointer" asChild>
-              <span>Importar Documento</span>
-            </Button>
-          </label>
-          {fileName && <p className="mt-2 text-sm text-gray-500">{fileName}</p>}
+          <div className="flex gap-2">
+            <input
+              type="file"
+              onChange={handleFileUpload}
+              accept=".docx,.pdf"
+              className="hidden"
+              id="template-file"
+            />
+            <label htmlFor="template-file">
+              <Button variant="outline" className="cursor-pointer" asChild>
+                <span>Importar Documento</span>
+              </Button>
+            </label>
+            {fileName && <p className="mt-2 text-sm text-gray-500">{fileName}</p>}
+          </div>
         </div>
 
         <div className="flex gap-2">
