@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import NewContract from "./pages/NewContract";
 import NotFound from "./pages/NotFound";
 import OCRPage from "./components/OCRPage";
+import ContractTemplates from "./pages/ContractTemplates";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +23,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/novo-contrato" element={<NewContract />} />
             <Route path="/ocr-documentos" element={<OCRPage />} />
+            <Route path="/modelos-contratos" element={<ContractTemplates />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
