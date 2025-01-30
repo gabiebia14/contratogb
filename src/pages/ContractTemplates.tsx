@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileText, Download, Plus, Search } from 'lucide-react';
+import { FileText, Download, Plus, Search, Pencil, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -52,6 +52,7 @@ const ContractTemplates = () => {
     }
   ]);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
 
   const filteredTemplates = templates.filter(template => {
     const matchesSearch = template.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -80,22 +81,51 @@ const ContractTemplates = () => {
   };
 
   const handleNewTemplate = () => {
+    setEditingTemplate(null);
     setIsEditorOpen(true);
   };
 
-  const handleSaveTemplate = (name: string, content: string) => {
-    const newTemplate: Template = {
-      id: templates.length + 1,
-      name: name || 'Novo Modelo de Contrato',
-      category: 'Geral',
-      lastModified: new Date().toLocaleDateString(),
-      downloads: 0,
-      content: content
-    };
+  const handleEditTemplate = (template: Template) => {
+    setEditingTemplate(template);
+    setIsEditorOpen(true);
+  };
 
-    setTemplates(prev => [...prev, newTemplate]);
+  const handleDeleteTemplate = (templateId: number) => {
+    if (window.confirm('Tem certeza que deseja excluir este modelo?')) {
+      setTemplates(prev => prev.filter(t => t.id !== templateId));
+      toast.success('Modelo excluído com sucesso!');
+    }
+  };
+
+  const handleSaveTemplate = (name: string, content: string) => {
+    if (editingTemplate) {
+      // Editando template existente
+      setTemplates(prev => prev.map(t => 
+        t.id === editingTemplate.id
+          ? { 
+              ...t, 
+              name, 
+              content,
+              lastModified: new Date().toLocaleDateString() 
+            }
+          : t
+      ));
+      toast.success('Modelo atualizado com sucesso!');
+    } else {
+      // Novo template
+      const newTemplate: Template = {
+        id: templates.length + 1,
+        name,
+        category: 'Geral',
+        lastModified: new Date().toLocaleDateString(),
+        downloads: 0,
+        content
+      };
+      setTemplates(prev => [...prev, newTemplate]);
+      toast.success('Modelo salvo com sucesso!');
+    }
     setIsEditorOpen(false);
-    toast.success('Modelo salvo com sucesso!');
+    setEditingTemplate(null);
   };
 
   return (
@@ -164,7 +194,24 @@ const ContractTemplates = () => {
                     <span>{template.downloads} downloads</span>
                   </div>
                   
-                  <div className="mt-4 flex justify-end">
+                  <div className="mt-4 flex justify-end gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleEditTemplate(template)}
+                    >
+                      <Pencil className="w-4 h-4 mr-2" />
+                      Editar
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleDeleteTemplate(template.id)}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Excluir
+                    </Button>
                     <Button 
                       variant="outline" 
                       size="sm"
@@ -183,8 +230,13 @@ const ContractTemplates = () => {
 
       {isEditorOpen && (
         <ContractTemplateEditor 
-          onClose={() => setIsEditorOpen(false)}
+          onClose={() => {
+            setIsEditorOpen(false);
+            setEditingTemplate(null);
+          }}
           onSave={handleSaveTemplate}
+          initialContent={editingTemplate?.content}
+          initialName={editingTemplate?.name}
         />
       )}
     </>

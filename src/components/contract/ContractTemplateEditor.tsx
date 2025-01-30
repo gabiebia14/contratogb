@@ -10,15 +10,22 @@ import mammoth from 'mammoth';
 interface ContractTemplateEditorProps {
   onClose: () => void;
   onSave: (name: string, content: string) => void;
+  initialContent?: string;
+  initialName?: string;
 }
 
-const ContractTemplateEditor = ({ onClose, onSave }: ContractTemplateEditorProps) => {
+const ContractTemplateEditor = ({ 
+  onClose, 
+  onSave,
+  initialContent = '',
+  initialName = '' 
+}: ContractTemplateEditorProps) => {
   const [fileName, setFileName] = useState<string>('');
-  const [templateName, setTemplateName] = useState<string>('');
+  const [templateName, setTemplateName] = useState<string>(initialName);
 
   const editor = useEditor({
     extensions: [StarterKit],
-    content: '',
+    content: initialContent,
     editorProps: {
       attributes: {
         class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none',
@@ -97,24 +104,24 @@ const ContractTemplateEditor = ({ onClose, onSave }: ContractTemplateEditorProps
           </div>
         </div>
 
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => insertDynamicField('nome')}
-          >
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => insertDynamicField('nome')}>
             Inserir Nome
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => insertDynamicField('cpf')}
-          >
+          <Button variant="outline" onClick={() => insertDynamicField('cpf')}>
             Inserir CPF
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => insertDynamicField('rg')}
-          >
+          <Button variant="outline" onClick={() => insertDynamicField('rg')}>
             Inserir RG
+          </Button>
+          <Button variant="outline" onClick={() => insertDynamicField('endereco')}>
+            Inserir Endereço
+          </Button>
+          <Button variant="outline" onClick={() => insertDynamicField('profissao')}>
+            Inserir Profissão
+          </Button>
+          <Button variant="outline" onClick={() => insertDynamicField('telefone')}>
+            Inserir Telefone
           </Button>
         </div>
       </div>
