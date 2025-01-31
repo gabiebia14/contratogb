@@ -11,7 +11,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -20,39 +19,32 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
+import { useContractTemplates } from "@/hooks/useContractTemplates";
+import { useOCR } from "@/hooks/useOCR";
+import { Card, CardContent } from "@/components/ui/card";
+import { FileText, FileCheck } from "lucide-react";
 
 const formSchema = z.object({
   title: z.string().min(2, {
     message: "O título deve ter pelo menos 2 caracteres.",
   }),
-  contractType: z.string({
-    required_error: "Por favor selecione um tipo de contrato.",
+  templateId: z.string({
+    required_error: "Por favor selecione um modelo de contrato.",
   }),
-  parties: z.string().min(2, {
-    message: "Por favor insira as partes envolvidas.",
-  }),
-  description: z.string().min(10, {
-    message: "A descrição deve ter pelo menos 10 caracteres.",
-  }),
-  value: z.string().min(1, {
-    message: "Por favor insira o valor do contrato.",
-  }),
-  duration: z.string().min(1, {
-    message: "Por favor insira a duração do contrato.",
-  }),
+  documentId: z.string().optional(),
 });
 
 export default function NewContract() {
   const { toast } = useToast();
+  const { templates } = useContractTemplates();
+  const { processedDocuments } = useOCR();
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
-      description: "",
-      parties: "",
-      value: "",
-      duration: "",
+      templateId: "",
+      documentId: "",
     },
   });
 
@@ -60,7 +52,7 @@ export default function NewContract() {
     console.log(values);
     toast({
       title: "Contrato criado com sucesso!",
-      description: "O contrato foi salvo e está pronto para revisão.",
+      description: "O contrato foi gerado e está pronto para revisão.",
     });
   }
 
@@ -86,22 +78,22 @@ export default function NewContract() {
 
             <FormField
               control={form.control}
-              name="contractType"
+              name="templateId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tipo de Contrato</FormLabel>
+                  <FormLabel>Modelo de Contrato</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione o tipo de contrato" />
+                        <SelectValue placeholder="Selecione um modelo de contrato" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="service">Prestação de Serviços</SelectItem>
-                      <SelectItem value="partnership">Parceria</SelectItem>
-                      <SelectItem value="employment">Trabalho</SelectItem>
-                      <SelectItem value="lease">Locação</SelectItem>
-                      <SelectItem value="other">Outro</SelectItem>
+                      {templates.map((template) => (
+                        <SelectItem key={template.id} value={String(template.id)}>
+                          {template.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -109,70 +101,39 @@ export default function NewContract() {
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="parties"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Partes Envolvidas</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ex: Empresa A e Empresa B" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Descreva os principais pontos do contrato..."
-                      className="min-h-[100px]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="value"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Valor do Contrato</FormLabel>
-                    <FormControl>
-                      <Input placeholder="R$ 0,00" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="duration"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Duração</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ex: 12 meses" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <div className="space-y-4">
+              <FormLabel>Documentos Disponíveis</FormLabel>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {processedDocuments.map((doc) => (
+                  <Card 
+                    key={doc.id}
+                    className={`cursor-pointer transition-all ${
+                      form.watch("documentId") === doc.id ? "ring-2 ring-primary" : ""
+                    }`}
+                    onClick={() => form.setValue("documentId", doc.id)}
+                  >
+                    <CardContent className="flex items-start p-4 space-x-4">
+                      <div className="p-2 bg-primary/10 rounded-lg">
+                        {form.watch("documentId") === doc.id ? (
+                          <FileCheck className="h-6 w-6 text-primary" />
+                        ) : (
+                          <FileText className="h-6 w-6 text-gray-400" />
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="font-medium">{doc.name}</h3>
+                        <p className="text-sm text-gray-500">
+                          Processado em: {new Date(doc.processedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
 
             <div className="flex justify-end">
-              <Button type="submit">Criar Contrato</Button>
+              <Button type="submit">Gerar Contrato</Button>
             </div>
           </form>
         </Form>
