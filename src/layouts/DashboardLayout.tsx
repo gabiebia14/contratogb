@@ -4,9 +4,9 @@ import { Link, Outlet } from "react-router-dom"
 
 export default function DashboardLayout() {
   return (
-    <SidebarProvider defaultOpen>
+    <SidebarProvider defaultOpen={true}>
       <div className="flex min-h-screen w-full">
-        <Sidebar>
+        <Sidebar variant="sidebar" collapsible="icon">
           <SidebarHeader className="p-4">
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <span className="text-cyan-400">▲</span> ContractPro
