@@ -23,7 +23,8 @@ serve(async (req) => {
     }
 
     const genAI = new GoogleGenerativeAI(geminiApiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+    // Updated to use the correct model name
+    const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
 
     // Create system prompt based on document type
     const prompt = `Você é um assistente especialista na extração e organização de dados para a geração automatizada de contratos. Sua tarefa é extrair informações relevantes do documento fornecido para um ${documentType}. O estado civil da pessoa é ${maritalStatus} e ${sharedAddress ? 'compartilha endereço com cônjuge' : 'possui endereço diferente do cônjuge'}.
