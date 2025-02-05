@@ -9,7 +9,147 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      contract_templates: {
+        Row: {
+          category: string | null
+          content: string
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          tags: string[] | null
+          updated_at: string | null
+          user_id: string | null
+          version: number | null
+        }
+        Insert: {
+          category?: string | null
+          content: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          tags?: string[] | null
+          updated_at?: string | null
+          user_id?: string | null
+          version?: number | null
+        }
+        Update: {
+          category?: string | null
+          content?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          tags?: string[] | null
+          updated_at?: string | null
+          user_id?: string | null
+          version?: number | null
+        }
+        Relationships: []
+      }
+      contracts: {
+        Row: {
+          content: string
+          created_at: string | null
+          document_id: string | null
+          file_path: string | null
+          id: string
+          metadata: Json | null
+          status: string | null
+          template_id: string | null
+          title: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          document_id?: string | null
+          file_path?: string | null
+          id?: string
+          metadata?: Json | null
+          status?: string | null
+          template_id?: string | null
+          title: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          document_id?: string | null
+          file_path?: string | null
+          id?: string
+          metadata?: Json | null
+          status?: string | null
+          template_id?: string | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contracts_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "processed_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "contract_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      processed_documents: {
+        Row: {
+          created_at: string | null
+          document_type: Database["public"]["Enums"]["document_type"] | null
+          error_message: string | null
+          extracted_data: Json | null
+          file_name: string
+          file_path: string
+          file_type: string | null
+          id: string
+          processed_at: string | null
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          document_type?: Database["public"]["Enums"]["document_type"] | null
+          error_message?: string | null
+          extracted_data?: Json | null
+          file_name: string
+          file_path: string
+          file_type?: string | null
+          id?: string
+          processed_at?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          document_type?: Database["public"]["Enums"]["document_type"] | null
+          error_message?: string | null
+          extracted_data?: Json | null
+          file_name?: string
+          file_path?: string
+          file_type?: string | null
+          id?: string
+          processed_at?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +158,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      document_type: "locador" | "locatario" | "fiador"
+      marital_status: "solteiro" | "casado" | "divorciado" | "viuvo"
     }
     CompositeTypes: {
       [_ in never]: never
