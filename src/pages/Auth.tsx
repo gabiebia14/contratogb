@@ -39,7 +39,27 @@ const Auth = () => {
         email,
         password,
       });
-      if (error) throw error;
+      
+      if (error) {
+        // Check if the error is due to unconfirmed email
+        if (error.message.includes('Email not confirmed')) {
+          toast.error('Email não confirmado. Por favor, verifique sua caixa de entrada e confirme seu email.');
+          
+          // Option to resend confirmation email
+          const { error: resendError } = await supabase.auth.resend({
+            type: 'signup',
+            email,
+          });
+          
+          if (!resendError) {
+            toast.info('Um novo email de confirmação foi enviado.');
+          }
+        } else {
+          throw error;
+        }
+        return;
+      }
+      
       navigate('/');
     } catch (error: any) {
       toast.error(error.message);
