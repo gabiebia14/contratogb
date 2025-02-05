@@ -10,45 +10,34 @@ const mockData = {
 
 export const RecentContracts = () => {
   return (
-    <div>
-      <h3 className="font-medium mb-4 text-gray-900">Contratos Recentes</h3>
-      <div className="bg-white rounded-lg shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="text-left text-gray-500 text-sm bg-gray-50">
-              <tr>
-                <th className="p-4 font-medium">Nome</th>
-                <th className="p-4 font-medium">Cliente</th>
-                <th className="p-4 font-medium">Status</th>
-                <th className="p-4 font-medium">Data</th>
-                <th className="p-4 font-medium">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {mockData.recentContracts.map((contract) => (
-                <tr key={contract.id}>
-                  <td className="p-4">{contract.name}</td>
-                  <td className="p-4">{contract.client}</td>
-                  <td className="p-4">
-                    <span className={`px-2 py-1 rounded-full text-sm ${
-                      contract.status === 'Ativo' ? 'bg-green-100 text-green-700' :
-                      contract.status === 'Pendente' ? 'bg-amber-100 text-amber-700' :
-                      'bg-gray-100 text-gray-700'
-                    }`}>
-                      {contract.status}
-                    </span>
-                  </td>
-                  <td className="p-4 text-gray-500">{contract.date}</td>
-                  <td className="p-4">
-                    <Button variant="ghost" className="text-indigo-600 hover:text-indigo-800">
-                      Ver detalhes
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+    <div className="bg-white rounded-xl shadow-sm">
+      <div className="p-6 border-b border-gray-100">
+        <h3 className="font-semibold text-gray-900">Contratos Recentes</h3>
+      </div>
+      <div className="divide-y divide-gray-100">
+        {mockData.recentContracts.map((contract) => (
+          <div key={contract.id} className="p-4">
+            <div className="flex items-center justify-between mb-1">
+              <h4 className="font-medium text-gray-900 truncate">{contract.name}</h4>
+              <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                contract.status === 'Ativo' ? 'bg-green-100 text-green-700' :
+                contract.status === 'Pendente' ? 'bg-amber-100 text-amber-700' :
+                'bg-gray-100 text-gray-700'
+              }`}>
+                {contract.status}
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600">{contract.client}</span>
+              <span className="text-gray-500">{contract.date}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="p-4 border-t border-gray-100">
+        <Button variant="outline" className="w-full">
+          Ver todos os contratos
+        </Button>
       </div>
     </div>
   );
