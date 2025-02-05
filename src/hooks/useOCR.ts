@@ -1,9 +1,9 @@
+
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { ExtractedField } from '@/types/ocr';
 import { useStorage } from './useStorage';
-import { useFirebase } from '@/contexts/FirebaseContext';
-import { collection, addDoc, query, orderBy, getDocs } from 'firebase/firestore';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ProcessedDocument {
   id: string;
@@ -18,20 +18,23 @@ export const useOCR = () => {
   const [extractedData, setExtractedData] = useState<ExtractedField[]>([]);
   const [processedDocuments, setProcessedDocuments] = useState<ProcessedDocument[]>([]);
   const { uploadFile } = useStorage();
-  const { db } = useFirebase();
 
   const loadProcessedDocuments = async () => {
     try {
-      const processedDocsRef = collection(db, 'processedDocuments');
-      const q = query(processedDocsRef, orderBy('processedAt', 'desc'));
-      const querySnapshot = await getDocs(q);
-      
-      const docs = querySnapshot.docs.map(doc => ({
+      const { data, error } = await supabase
+        .from('processed_documents')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const docs = data.map(doc => ({
         id: doc.id,
-        ...doc.data(),
-        processedAt: doc.data().processedAt.toDate()
-      })) as ProcessedDocument[];
-      
+        name: doc.file_name,
+        processedAt: new Date(doc.processed_at || doc.created_at),
+        extractedData: doc.extracted_data as ExtractedField[]
+      }));
+
       setProcessedDocuments(docs);
     } catch (error) {
       console.error('Error loading processed documents:', error);
@@ -55,40 +58,17 @@ export const useOCR = () => {
     
     try {
       const file = selectedFiles[0];
-      const fileUrl = await uploadFile(file, `ocr/${file.name}`);
+      const fileUrl = await uploadFile(file, 'ocr');
 
-      const response = await fetch('/api/ocr', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          fileUrl,
-          prompt: `
-            Analise este documento e extraia as seguintes informações no formato JSON:
-            - Nome completo
-            - Nacionalidade
-            - Estado Civil
-            - Profissão
-            - RG
-            - CPF
-            - Endereço completo
-            - Bairro
-            - CEP
-            - Cidade
-            - Estado
-            - Telefone (se disponível)
-          `,
-        }),
+      const response = await supabase.functions.invoke('process-ocr', {
+        body: { fileUrl }
       });
 
-      if (!response.ok) {
+      if (response.error) {
         throw new Error('Falha ao processar o documento');
       }
 
-      const result = await response.json();
-      const extractedFields: ExtractedField[] = Object.entries(result).map(([field, data]: [string, any]) => ({
+      const extractedFields = Object.entries(response.data).map(([field, data]: [string, any]) => ({
         field,
         value: data.value,
         confidence: data.confidence,
@@ -96,17 +76,21 @@ export const useOCR = () => {
 
       setExtractedData(extractedFields);
 
-      // Salvar no Firestore
-      const processedDoc: ProcessedDocument = {
-        id: Date.now().toString(),
-        name: file.name,
-        processedAt: new Date(),
-        extractedData: extractedFields,
-      };
+      // Salvar no Supabase
+      const { error: insertError } = await supabase
+        .from('processed_documents')
+        .insert({
+          file_name: file.name,
+          file_path: fileUrl,
+          file_type: file.type,
+          extracted_data: extractedFields,
+          status: 'completed',
+          processed_at: new Date().toISOString()
+        });
 
-      await addDoc(collection(db, 'processedDocuments'), processedDoc);
-      await loadProcessedDocuments(); // Recarrega a lista
-      
+      if (insertError) throw insertError;
+
+      await loadProcessedDocuments();
       toast.success('Documento processado com sucesso!');
     } catch (error) {
       console.error('Erro no processamento OCR:', error);

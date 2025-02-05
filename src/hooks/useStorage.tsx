@@ -1,21 +1,35 @@
+
 import { useState } from 'react';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { useFirebase } from '@/contexts/FirebaseContext';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useStorage = () => {
-  const { storage } = useFirebase();
   const [uploading, setUploading] = useState(false);
 
   const uploadFile = async (file: File, path: string) => {
     setUploading(true);
     try {
-      const storageRef = ref(storage, path);
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `${path}/${fileName}`;
+
+      const { error: uploadError, data } = await supabase.storage
+        .from('ocr_documents')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('ocr_documents')
+        .getPublicUrl(filePath);
+
       toast.success('Arquivo enviado com sucesso!');
-      return url;
+      return publicUrl;
     } catch (error) {
+      console.error('Error uploading file:', error);
       toast.error('Erro ao enviar arquivo.');
       throw error;
     } finally {
@@ -25,10 +39,17 @@ export const useStorage = () => {
 
   const deleteFile = async (path: string) => {
     try {
-      const storageRef = ref(storage, path);
-      await deleteObject(storageRef);
+      const { error } = await supabase.storage
+        .from('ocr_documents')
+        .remove([path]);
+
+      if (error) {
+        throw error;
+      }
+
       toast.success('Arquivo excluído com sucesso!');
     } catch (error) {
+      console.error('Error deleting file:', error);
       toast.error('Erro ao excluir arquivo.');
       throw error;
     }
