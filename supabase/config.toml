@@ -1,1 +1,4 @@
 project_id = "gzamgeekhujhorkggjnl"
+
+[functions.process-ocr]
+verify_jwt = true

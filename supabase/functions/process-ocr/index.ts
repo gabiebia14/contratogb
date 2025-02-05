@@ -23,7 +23,23 @@ serve(async (req) => {
     }
 
     // Create system message based on document type
-    const systemMessage = `You are an expert assistant in extracting and organizing data for automated contract generation. Your task is to extract relevant information from the provided document image for a ${documentType}. The person's marital status is ${maritalStatus} and ${sharedAddress ? 'shares address with spouse' : 'has a different address than spouse'}.`;
+    const systemMessage = `You are an expert assistant in extracting and organizing data for automated contract generation. Your task is to extract relevant information from the provided document image for a ${documentType}. The person's marital status is ${maritalStatus} and ${sharedAddress ? 'shares address with spouse' : 'has a different address than spouse'}.
+
+    Please extract the following information in a structured format:
+    - Full Name
+    - Nationality
+    - Marital Status
+    - Profession
+    - RG (ID)
+    - CPF (Tax ID)
+    - Address
+    - Neighborhood
+    - ZIP Code
+    - City
+    - State
+    - Phone Number (if available)
+
+    Return the data in a JSON format using these exact field names.`;
 
     // Call OpenAI API with the image
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -41,7 +57,7 @@ serve(async (req) => {
             content: [
               {
                 type: 'text',
-                text: 'Please extract all relevant information from this document image. Include name, nationality, marital status, profession, RG, CPF, address, neighborhood, ZIP code, city, state, and phone number if available.',
+                text: 'Please extract all relevant information from this document image.',
               },
               {
                 type: 'image_url',
@@ -58,47 +74,35 @@ serve(async (req) => {
     const data = await response.json();
     console.log('OpenAI Response:', data);
 
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${data.error?.message || 'Unknown error'}`);
+    }
+
     // Process the extracted data
     const extractedText = data.choices[0].message.content;
     
-    // Parse the extracted text into structured data
-    // This is a simple example - you might want to enhance this parsing logic
-    const extractedData = {
-      name: extractText(extractedText, 'nome'),
-      nationality: extractText(extractedText, 'nacionalidade'),
-      maritalStatus: extractText(extractedText, 'estado civil'),
-      profession: extractText(extractedText, 'profissão'),
-      rg: extractText(extractedText, 'rg'),
-      cpf: extractText(extractedText, 'cpf'),
-      address: extractText(extractedText, 'endereço'),
-      neighborhood: extractText(extractedText, 'bairro'),
-      zipCode: extractText(extractedText, 'cep'),
-      city: extractText(extractedText, 'cidade'),
-      state: extractText(extractedText, 'estado'),
-      phone: extractText(extractedText, 'telefone'),
-    };
+    // Parse the JSON response
+    let extractedData;
+    try {
+      extractedData = JSON.parse(extractedText);
+    } catch (error) {
+      console.error('Error parsing OpenAI response:', error);
+      extractedData = {
+        error: 'Failed to parse extracted data',
+        rawText: extractedText
+      };
+    }
 
-    return new Response(JSON.stringify({ 
-      success: true, 
-      data: extractedData 
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ success: true, data: extractedData }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
   } catch (error) {
-    console.error('Error processing OCR:', error);
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: error.message 
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error('Error processing document:', error);
+    return new Response(
+      JSON.stringify({ success: false, error: error.message }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+    );
   }
 });
-
-// Helper function to extract specific fields from the text
-function extractText(text: string, field: string): string {
-  const regex = new RegExp(`${field}[:\\s]+(.*?)(?=\\n|$)`, 'i');
-  const match = text.match(regex);
-  return match ? match[1].trim() : '';
-}
