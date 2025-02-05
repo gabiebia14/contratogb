@@ -18,7 +18,7 @@ export default function DashboardLayout() {
                 <SidebarMenu>
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild>
-                      <Link to="/">
+                      <Link to="/contracts">
                         <FileText className="w-4 h-4" />
                         <span>Contratos</span>
                       </Link>
@@ -26,7 +26,7 @@ export default function DashboardLayout() {
                   </SidebarMenuItem>
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild>
-                      <Link to="/novo-contrato">
+                      <Link to="/new-contract">
                         <Upload className="w-4 h-4" />
                         <span>Novo Contrato</span>
                       </Link>
@@ -34,7 +34,7 @@ export default function DashboardLayout() {
                   </SidebarMenuItem>
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild>
-                      <Link to="/modelos-contratos">
+                      <Link to="/templates">
                         <BookOpen className="w-4 h-4" />
                         <span>Modelos de Contratos</span>
                       </Link>
@@ -50,7 +50,7 @@ export default function DashboardLayout() {
                   </SidebarMenuItem>
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild>
-                      <Link to="/gestao-contratos">
+                      <Link to="/contracts">
                         <ClipboardList className="w-4 h-4" />
                         <span>Gestão de Contratos</span>
                       </Link>

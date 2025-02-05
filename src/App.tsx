@@ -4,8 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import NotFound from '@/pages/NotFound';
 import Auth from '@/pages/Auth';
-import Index from '@/pages/Index';
-import ContractManagement from '@/pages/ContractManagement';
+import ContractsPage from '@/components/ContractsPage';
 import ContractTemplates from '@/pages/ContractTemplates';
 import NewContract from '@/pages/NewContract';
 import OCRPage from '@/components/OCRPage';
@@ -19,8 +18,7 @@ function App() {
         <Routes>
           <Route path="/auth" element={<Auth />} />
           <Route path="/" element={<DashboardLayout />}>
-            <Route index element={<Index />} />
-            <Route path="contracts" element={<ContractManagement />} />
+            <Route path="contracts" element={<ContractsPage />} />
             <Route path="templates" element={<ContractTemplates />} />
             <Route path="new-contract" element={<NewContract />} />
             <Route path="ocr-documentos" element={<OCRPage />} />
