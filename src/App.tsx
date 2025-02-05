@@ -7,7 +7,6 @@ import Auth from '@/pages/Auth';
 import ContractsPage from '@/components/ContractsPage';
 import ContractTemplates from '@/pages/ContractTemplates';
 import NewContract from '@/pages/NewContract';
-import OCRPage from '@/components/OCRPage';
 import Documents from '@/pages/Documents';
 
 const queryClient = new QueryClient();
@@ -22,7 +21,6 @@ function App() {
             <Route path="contracts" element={<ContractsPage />} />
             <Route path="templates" element={<ContractTemplates />} />
             <Route path="new-contract" element={<NewContract />} />
-            <Route path="ocr-documentos" element={<OCRPage />} />
             <Route path="documentos" element={<Documents />} />
           </Route>
           <Route path="*" element={<NotFound />} />

@@ -18,7 +18,7 @@ serve(async (req) => {
     const genAI = new GoogleGenerativeAI(Deno.env.get('GEMINI_API_KEY') ?? '')
 
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: "gemini-2.0-flash-exp",
       generationConfig: {
         temperature: 1,
         topP: 0.95,
@@ -27,23 +27,58 @@ serve(async (req) => {
       }
     })
 
-    const prompt = `Você é um assistente especialista na extração e organização de dados para a geração automatizada de contratos. Sua tarefa é extrair informações relevantes do documento fornecido para um ${documentType}. O estado civil da pessoa é ${maritalStatus} e ${sharedAddress ? 'compartilha endereço com cônjuge' : 'possui endereço diferente do cônjuge'}.
+    const systemInstruction = `Você é um assistente especialista na extração e organização de dados para a geração automatizada de contratos. Sua função é utilizar técnicas avançadas de OCR para processar documentos ou imagens carregadas, identificar as informações relevantes e organizá-las em parâmetros dinâmicos.
 
-    Por favor, extraia as seguintes informações em um formato estruturado:
-    - Nome Completo (full_name)
-    - Nacionalidade (nationality)
-    - Estado Civil (marital_status)
-    - Profissão (profession)
-    - RG (rg)
-    - CPF (cpf)
-    - Endereço (address)
-    - Bairro (neighborhood)
-    - CEP (zip_code)
-    - Cidade (city)
-    - Estado (state)
-    - Telefone (phone) (se disponível)
+    Tipo de documento: ${documentType}
+    Estado civil: ${maritalStatus}
+    Endereço compartilhado com cônjuge: ${sharedAddress ? 'Sim' : 'Não'}
 
-    Retorne os dados em formato JSON usando exatamente esses nomes de campos em inglês.`
+    Por favor, extraia e organize as seguintes informações no formato JSON:
+
+    Para LOCADOR:
+    - Nome ({locador_nome})
+    - Nacionalidade ({locador_nacionalidade})
+    - Estado Civil ({locador_estado_civil})
+    - Profissão ({locador_profissao})
+    - RG ({locador_rg})
+    - CPF ({locador_cpf})
+    - Endereço ({locador_endereco})
+    - Bairro ({locador_bairro})
+    - CEP ({locador_cep})
+    - Cidade ({locador_cidade})
+    - Estado ({locador_estado})
+
+    Para LOCATÁRIO(A):
+    - Nome ({locataria_nome} ou {locatario_nome})
+    - Nacionalidade ({locataria_nacionalidade} ou {locatario_nacionalidade})
+    - Estado Civil ({locataria_estado_civil} ou {locatario_estado_civil})
+    - Profissão ({locataria_profissao} ou {locatario_profissao})
+    - RG ({locataria_rg} ou {locatario_rg})
+    - CPF ({locataria_cpf} ou {locatario_cpf})
+    - Endereço ({locataria_endereco} ou {locatario_endereco})
+    - Bairro ({locataria_bairro} ou {locatario_bairro})
+    - CEP ({locataria_cep} ou {locatario_cep})
+    - Cidade ({locataria_cidade} ou {locatario_cidade})
+    - Estado ({locataria_estado} ou {locatario_estado})
+    - Telefone ({locataria_telefone} ou {locatario_telefone})
+
+    Para FIADOR(A):
+    - Nome ({fiadora_nome} ou {fiador_nome})
+    - Nacionalidade ({fiadora_nacionalidade} ou {fiador_nacionalidade})
+    - Estado Civil ({fiadora_estado_civil} ou {fiador_estado_civil})
+    - Profissão ({fiadora_profissao} ou {fiador_profissao})
+    - RG ({fiadora_rg} ou {fiador_rg})
+    - CPF ({fiadora_cpf} ou {fiador_cpf})
+    - Endereço ({fiadora_endereco} ou {fiador_endereco})
+    - Bairro ({fiadora_bairro} ou {fiador_bairro})
+    - CEP ({fiadora_cep} ou {fiador_cep})
+    - Cidade ({fiadora_cidade} ou {fiador_cidade})
+    - Estado ({fiadora_estado} ou {fiador_estado})
+    - Telefone ({fiadora_telefone} ou {fiador_telefone})
+
+    Retorne os dados em formato JSON usando exatamente esses nomes de campos.
+    Se alguma informação estiver faltando, indique com null.
+    RESPONDA SEMPRE EM PORTUGUÊS DO BRASIL.`
 
     console.log('Processing document with Gemini API...')
     
@@ -52,7 +87,9 @@ serve(async (req) => {
     
     // Call Gemini API with the image
     const result = await model.generateContent([
-      prompt,
+      {
+        text: systemInstruction
+      },
       {
         inlineData: {
           mimeType: "image/jpeg",
