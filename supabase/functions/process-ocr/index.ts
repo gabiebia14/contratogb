@@ -18,7 +18,7 @@ serve(async (req) => {
     const genAI = new GoogleGenerativeAI(Deno.env.get('GEMINI_API_KEY') ?? '')
 
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash-exp",
+      model: "gemini-pro-vision",
       generationConfig: {
         temperature: 1,
         topP: 0.95,
