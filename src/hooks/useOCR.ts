@@ -32,7 +32,9 @@ export const useOCR = () => {
         id: doc.id,
         name: doc.file_name,
         processedAt: new Date(doc.processed_at || doc.created_at),
-        extractedData: doc.extracted_data as ExtractedField[]
+        extractedData: Array.isArray(doc.extracted_data) 
+          ? (doc.extracted_data as ExtractedField[])
+          : []
       }));
 
       setProcessedDocuments(docs);
