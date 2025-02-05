@@ -19,16 +19,16 @@ const mockData = {
 export const ContractsChart = () => {
   return (
     <div className="mb-8">
-      <div className="bg-white rounded-2xl p-6 shadow-sm">
-        <div className="flex justify-between items-center mb-6">
+      <div className="bg-white rounded-2xl p-4 md:p-6 shadow-sm">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <h3 className="font-medium text-gray-900">Contratos por Período</h3>
-          <select className="border rounded-lg px-3 py-1.5 text-sm">
+          <select className="w-full md:w-auto border rounded-lg px-3 py-1.5 text-sm">
             <option>Este Mês</option>
             <option>Último Mês</option>
             <option>Este Ano</option>
           </select>
         </div>
-        <div className="h-[300px]">
+        <div className="h-[300px] w-full overflow-x-auto">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={mockData.processedContracts}>
               <XAxis dataKey="date" />

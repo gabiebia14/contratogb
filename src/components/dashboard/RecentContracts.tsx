@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 
 const mockData = {
@@ -12,9 +13,9 @@ export const RecentContracts = () => {
   return (
     <div>
       <h3 className="font-medium mb-4 text-gray-900">Contratos Recentes</h3>
-      <div className="bg-white rounded-lg shadow-sm">
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[640px]">
             <thead className="text-left text-gray-500 text-sm bg-gray-50">
               <tr>
                 <th className="p-4 font-medium">Nome</th>
@@ -27,10 +28,10 @@ export const RecentContracts = () => {
             <tbody className="divide-y divide-gray-100">
               {mockData.recentContracts.map((contract) => (
                 <tr key={contract.id}>
-                  <td className="p-4">{contract.name}</td>
-                  <td className="p-4">{contract.client}</td>
+                  <td className="p-4 text-sm">{contract.name}</td>
+                  <td className="p-4 text-sm">{contract.client}</td>
                   <td className="p-4">
-                    <span className={`px-2 py-1 rounded-full text-sm ${
+                    <span className={`px-2 py-1 rounded-full text-xs ${
                       contract.status === 'Ativo' ? 'bg-green-100 text-green-700' :
                       contract.status === 'Pendente' ? 'bg-amber-100 text-amber-700' :
                       'bg-gray-100 text-gray-700'
@@ -38,9 +39,9 @@ export const RecentContracts = () => {
                       {contract.status}
                     </span>
                   </td>
-                  <td className="p-4 text-gray-500">{contract.date}</td>
+                  <td className="p-4 text-sm text-gray-500">{contract.date}</td>
                   <td className="p-4">
-                    <Button variant="ghost" className="text-indigo-600 hover:text-indigo-800">
+                    <Button variant="ghost" className="text-indigo-600 hover:text-indigo-800 text-sm">
                       Ver detalhes
                     </Button>
                   </td>
