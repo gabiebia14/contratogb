@@ -1,5 +1,5 @@
-import React from 'react';
-import { ScanLine } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { ScanLine, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -10,7 +10,9 @@ import { useForm } from 'react-hook-form';
 import FileUploadArea from './ocr/FileUploadArea';
 import ExtractedDataDisplay from './ocr/ExtractedDataDisplay';
 import { useOCR } from '@/hooks/useOCR';
-import { OCRFormData, DocumentType, MaritalStatus } from '@/types/ocr';
+import { OCRFormData } from '@/types/ocr';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 const OCRPage = () => {
   const form = useForm<OCRFormData>({
@@ -26,9 +28,15 @@ const OCRPage = () => {
     selectedFiles,
     processing,
     extractedData,
+    processedDocuments,
     handleFilesSelected,
-    processFiles
+    processFiles,
+    loadProcessedDocuments
   } = useOCR();
+
+  useEffect(() => {
+    loadProcessedDocuments();
+  }, []);
 
   const watchMaritalStatus = form.watch('maritalStatus');
   const watchHasGuarantor = form.watch('hasGuarantor');
@@ -195,6 +203,37 @@ const OCRPage = () => {
           </CardHeader>
           <CardContent>
             <ExtractedDataDisplay data={extractedData} />
+          </CardContent>
+        </Card>
+      )}
+
+      {processedDocuments.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <History className="h-5 w-5" />
+              Histórico de Documentos Processados
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {processedDocuments.map((doc) => (
+                <div
+                  key={doc.id}
+                  className="rounded-lg border p-4 hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-medium">{doc.name}</h3>
+                    <span className="text-sm text-gray-500">
+                      {format(doc.processedAt, "dd 'de' MMMM 'de' yyyy 'às' HH:mm", {
+                        locale: ptBR,
+                      })}
+                    </span>
+                  </div>
+                  <ExtractedDataDisplay data={doc.extractedData} />
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       )}

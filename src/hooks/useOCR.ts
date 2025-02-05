@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { ExtractedField } from '@/types/ocr';
 import { useStorage } from './useStorage';
+import { useFirebase } from '@/contexts/FirebaseContext';
+import { collection, addDoc, query, orderBy, getDocs } from 'firebase/firestore';
 
 interface ProcessedDocument {
   id: string;
@@ -16,6 +18,26 @@ export const useOCR = () => {
   const [extractedData, setExtractedData] = useState<ExtractedField[]>([]);
   const [processedDocuments, setProcessedDocuments] = useState<ProcessedDocument[]>([]);
   const { uploadFile } = useStorage();
+  const { db } = useFirebase();
+
+  const loadProcessedDocuments = async () => {
+    try {
+      const processedDocsRef = collection(db, 'processedDocuments');
+      const q = query(processedDocsRef, orderBy('processedAt', 'desc'));
+      const querySnapshot = await getDocs(q);
+      
+      const docs = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        processedAt: doc.data().processedAt.toDate()
+      })) as ProcessedDocument[];
+      
+      setProcessedDocuments(docs);
+    } catch (error) {
+      console.error('Error loading processed documents:', error);
+      toast.error('Erro ao carregar histórico de documentos');
+    }
+  };
 
   const handleFilesSelected = (files: File[]) => {
     setSelectedFiles(files);
@@ -33,30 +55,8 @@ export const useOCR = () => {
     
     try {
       const file = selectedFiles[0];
-      
-      // Upload do arquivo para obter a URL
       const fileUrl = await uploadFile(file, `ocr/${file.name}`);
 
-      // Preparar o prompt para o modelo
-      const prompt = `
-        Analise este documento e extraia as seguintes informações no formato JSON:
-        - Nome completo
-        - Nacionalidade
-        - Estado Civil
-        - Profissão
-        - RG
-        - CPF
-        - Endereço completo
-        - Bairro
-        - CEP
-        - Cidade
-        - Estado
-        - Telefone (se disponível)
-
-        Retorne apenas o JSON com os campos encontrados e a confiança da extração para cada campo.
-      `;
-
-      // Fazer a chamada para a API com o modelo gpt-4o-mini
       const response = await fetch('/api/ocr', {
         method: 'POST',
         headers: {
@@ -65,7 +65,21 @@ export const useOCR = () => {
         body: JSON.stringify({
           model: 'gpt-4o-mini',
           fileUrl,
-          prompt,
+          prompt: `
+            Analise este documento e extraia as seguintes informações no formato JSON:
+            - Nome completo
+            - Nacionalidade
+            - Estado Civil
+            - Profissão
+            - RG
+            - CPF
+            - Endereço completo
+            - Bairro
+            - CEP
+            - Cidade
+            - Estado
+            - Telefone (se disponível)
+          `,
         }),
       });
 
@@ -74,8 +88,6 @@ export const useOCR = () => {
       }
 
       const result = await response.json();
-
-      // Converter o resultado para o formato ExtractedField[]
       const extractedFields: ExtractedField[] = Object.entries(result).map(([field, data]: [string, any]) => ({
         field,
         value: data.value,
@@ -84,7 +96,7 @@ export const useOCR = () => {
 
       setExtractedData(extractedFields);
 
-      // Adicionar ao histórico
+      // Salvar no Firestore
       const processedDoc: ProcessedDocument = {
         id: Date.now().toString(),
         name: file.name,
@@ -92,7 +104,8 @@ export const useOCR = () => {
         extractedData: extractedFields,
       };
 
-      setProcessedDocuments(prev => [processedDoc, ...prev]);
+      await addDoc(collection(db, 'processedDocuments'), processedDoc);
+      await loadProcessedDocuments(); // Recarrega a lista
       
       toast.success('Documento processado com sucesso!');
     } catch (error) {
@@ -109,6 +122,7 @@ export const useOCR = () => {
     extractedData,
     processedDocuments,
     handleFilesSelected,
-    processFiles
+    processFiles,
+    loadProcessedDocuments
   };
 };
