@@ -1,6 +1,5 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ExtractedField } from '@/types/ocr';
 
 interface ExtractedDataDisplayProps {
@@ -9,6 +8,52 @@ interface ExtractedDataDisplayProps {
 
 const ExtractedDataDisplay = ({ data }: ExtractedDataDisplayProps) => {
   if (!data.length) return null;
+
+  // Try to parse the raw text if it's a JSON string
+  const parseExtractedData = (data: ExtractedField[]) => {
+    try {
+      const rawTextField = data.find(item => item.field === 'Raw Text');
+      if (rawTextField) {
+        const jsonMatch = rawTextField.value.match(/```json\s*({.*})\s*```/s);
+        if (jsonMatch) {
+          const jsonData = JSON.parse(jsonMatch[1]);
+          return Object.entries(jsonData)
+            .filter(([_, value]) => value !== null && value !== '')
+            .map(([key, value]) => ({
+              field: key,
+              value: value as string,
+              confidence: 0.95 // Using default confidence since it's parsed data
+            }));
+        }
+      }
+      return data.filter(item => 
+        item.field !== 'Raw Text' && 
+        item.field !== 'Error' &&
+        item.value !== null && 
+        item.value !== '' && 
+        item.value !== 'null'
+      );
+    } catch (error) {
+      console.error('Error parsing extracted data:', error);
+      return [];
+    }
+  };
+
+  const validData = parseExtractedData(data);
+
+  // Ordenar dados por tipo
+  const sortedData = validData.sort((a, b) => {
+    const getOrder = (field: string) => {
+      if (field.startsWith('locador')) return 1;
+      if (field.startsWith('locatario')) return 2;
+      if (field.startsWith('fiador')) return 3;
+      return 4;
+    };
+
+    const orderA = getOrder(a.field);
+    const orderB = getOrder(b.field);
+    return orderA - orderB;
+  });
 
   // Função para traduzir os campos para português
   const getFieldLabel = (field: string): string => {
@@ -53,36 +98,6 @@ const ExtractedDataDisplay = ({ data }: ExtractedDataDisplayProps) => {
     return translations[field] || field;
   };
 
-  // Filtrar apenas os campos com valores não nulos
-  const validData = data.filter(item => 
-    item.value !== null && 
-    item.value !== undefined && 
-    item.value !== '' && 
-    item.value !== 'null'
-  );
-
-  // Ordenar dados por tipo (locador, locatário, fiador) e confiança
-  const sortedData = validData.sort((a, b) => {
-    const getOrder = (field: string) => {
-      if (field.startsWith('locador')) return 1;
-      if (field.startsWith('locatario')) return 2;
-      if (field.startsWith('fiador')) return 3;
-      return 4;
-    };
-
-    const orderA = getOrder(a.field);
-    const orderB = getOrder(b.field);
-
-    if (orderA !== orderB) return orderA - orderB;
-    return b.confidence - a.confidence;
-  });
-
-  const getConfidenceColor = (confidence: number) => {
-    if (confidence > 0.9) return 'bg-green-100 text-green-800';
-    if (confidence > 0.8) return 'bg-yellow-100 text-yellow-800';
-    return 'bg-red-100 text-red-800';
-  };
-
   return (
     <Card className="shadow-lg">
       <CardHeader className="bg-gray-50">
@@ -90,33 +105,13 @@ const ExtractedDataDisplay = ({ data }: ExtractedDataDisplayProps) => {
           Dados Extraídos do Documento
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-6">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-1/2">Campo</TableHead>
-              <TableHead className="w-1/2">Valor</TableHead>
-              <TableHead className="w-32 text-right">Confiança</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sortedData.map((item, index) => (
-              <TableRow key={index} className="hover:bg-gray-50">
-                <TableCell className="font-medium text-gray-700">
-                  {getFieldLabel(item.field)}
-                </TableCell>
-                <TableCell className="text-gray-900">{item.value}</TableCell>
-                <TableCell className="text-right">
-                  <span 
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getConfidenceColor(item.confidence)}`}
-                  >
-                    {(item.confidence * 100).toFixed(1)}%
-                  </span>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+      <CardContent className="p-6 space-y-4">
+        {sortedData.map((item, index) => (
+          <div key={index} className="flex justify-between items-center border-b pb-2">
+            <span className="font-medium text-gray-700">{getFieldLabel(item.field)}:</span>
+            <span className="text-gray-900">{item.value}</span>
+          </div>
+        ))}
       </CardContent>
     </Card>
   );
