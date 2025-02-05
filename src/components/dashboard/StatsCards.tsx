@@ -1,50 +1,38 @@
-
-import { FileText, Clock, AlertCircle, Mail } from 'lucide-react';
+import { FileText, Clock, AlertCircle } from 'lucide-react';
 
 export const StatsCards = () => {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
-      <div className="bg-[#F97316] p-4 md:p-6 rounded-2xl text-white">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="bg-white p-6 rounded-lg shadow-sm">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-gray-100 text-sm mb-2">Entrevistas Agendadas</p>
-            <p className="text-2xl md:text-3xl font-bold">86</p>
+            <p className="text-gray-500 text-sm">Contratos Ativos</p>
+            <p className="text-2xl font-bold text-indigo-600">234</p>
           </div>
-          <div className="bg-[#FB923C] p-2 md:p-3 rounded-xl">
-            <Clock className="text-white w-5 h-5" />
+          <div className="bg-indigo-100 p-3 rounded-lg">
+            <FileText className="text-indigo-600" />
           </div>
         </div>
       </div>
-      <div className="bg-[#0EA5E9] p-4 md:p-6 rounded-2xl text-white">
+      <div className="bg-white p-6 rounded-lg shadow-sm">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-gray-100 text-sm mb-2">Contratos Enviados</p>
-            <p className="text-2xl md:text-3xl font-bold">75</p>
+            <p className="text-gray-500 text-sm">Contratos Pendentes</p>
+            <p className="text-2xl font-bold text-amber-600">56</p>
           </div>
-          <div className="bg-[#38BDF8] p-2 md:p-3 rounded-xl">
-            <FileText className="text-white w-5 h-5" />
+          <div className="bg-amber-100 p-3 rounded-lg">
+            <Clock className="text-amber-600" />
           </div>
         </div>
       </div>
-      <div className="bg-[#F97316] p-4 md:p-6 rounded-2xl text-white">
+      <div className="bg-white p-6 rounded-lg shadow-sm">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-gray-100 text-sm mb-2">Perfil Visualizado</p>
-            <p className="text-2xl md:text-3xl font-bold">45,673</p>
+            <p className="text-gray-500 text-sm">Contratos Vencidos</p>
+            <p className="text-2xl font-bold text-red-600">12</p>
           </div>
-          <div className="bg-[#FB923C] p-2 md:p-3 rounded-xl">
-            <AlertCircle className="text-white w-5 h-5" />
-          </div>
-        </div>
-      </div>
-      <div className="bg-[#0EA5E9] p-4 md:p-6 rounded-2xl text-white">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-gray-100 text-sm mb-2">Mensagens não lidas</p>
-            <p className="text-2xl md:text-3xl font-bold">93</p>
-          </div>
-          <div className="bg-[#38BDF8] p-2 md:p-3 rounded-xl">
-            <Mail className="text-white w-5 h-5" />
+          <div className="bg-red-100 p-3 rounded-lg">
+            <AlertCircle className="text-red-600" />
           </div>
         </div>
       </div>
