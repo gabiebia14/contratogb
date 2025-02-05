@@ -1,73 +1,93 @@
 import { useState } from 'react';
-import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import { ExtractedField } from '@/types/ocr';
+import { toast } from 'sonner';
 
-interface ProcessedDocument {
-  id: string;
-  name: string;
-  processedAt: Date;
-  extractedData: ExtractedField[];
+interface ProcessOptions {
+  documentType: 'locador' | 'locatario' | 'fiador';
+  maritalStatus: 'solteiro' | 'casado' | 'divorciado' | 'viuvo';
+  sharedAddress: boolean;
+  needsGuarantor: boolean;
 }
 
 export const useOCR = () => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [processing, setProcessing] = useState(false);
   const [extractedData, setExtractedData] = useState<ExtractedField[]>([]);
-  const [processedDocuments, setProcessedDocuments] = useState<ProcessedDocument[]>([]);
+  const [processedDocuments, setProcessedDocuments] = useState<any[]>([]);
 
   const handleFilesSelected = (files: File[]) => {
     setSelectedFiles(files);
     setExtractedData([]);
   };
 
-  const processFiles = async () => {
-    if (!selectedFiles.length) {
-      toast.error('Selecione pelo menos um arquivo para processar');
-      return;
-    }
+  const processFiles = async (options: ProcessOptions) => {
+    if (!selectedFiles.length) return;
 
     setProcessing(true);
-    toast.info('Iniciando processamento do documento...');
-    
     try {
       const file = selectedFiles[0];
       
-      // Simular extração de dados do documento
-      // Em um caso real, você usaria uma API de OCR
-      const extractedFields: ExtractedField[] = [
-        {
-          field: "Nome completo",
-          value: "João da Silva",
-          confidence: 0.95
+      // Convert file to base64
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+      });
+
+      // Upload file to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('ocr_documents')
+        .upload(`${Date.now()}_${file.name}`, file);
+
+      if (uploadError) {
+        throw new Error('Error uploading file');
+      }
+
+      // Process with OpenAI via Edge Function
+      const { data: processedData, error } = await supabase.functions.invoke('process-ocr', {
+        body: {
+          documentType: options.documentType,
+          base64Image: base64,
+          maritalStatus: options.maritalStatus,
+          sharedAddress: options.sharedAddress
         },
-        {
-          field: "CPF",
-          value: "123.456.789-00",
-          confidence: 0.98
-        },
-        {
-          field: "RG",
-          value: "12.345.678-9",
-          confidence: 0.92
-        }
-      ];
+      });
 
-      setExtractedData(extractedFields);
+      if (error) throw error;
 
-      // Adicionar ao histórico
-      const processedDoc: ProcessedDocument = {
-        id: Date.now().toString(),
-        name: file.name,
-        processedAt: new Date(),
-        extractedData: extractedFields
-      };
+      // Save to processed_documents table
+      const { data: documentData, error: dbError } = await supabase
+        .from('processed_documents')
+        .insert({
+          file_name: file.name,
+          file_path: uploadData.path,
+          document_type: options.documentType,
+          marital_status: options.maritalStatus,
+          shared_address: options.sharedAddress,
+          extracted_data: processedData.data,
+          status: 'completed',
+          processed_at: new Date().toISOString()
+        })
+        .select()
+        .single();
 
-      setProcessedDocuments(prev => [processedDoc, ...prev]);
-      
+      if (dbError) throw dbError;
+
+      // Format extracted data for display
+      const formattedData = Object.entries(processedData.data).map(([field, value]) => ({
+        field: field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1'),
+        value: value as string,
+        confidence: 0.95 // This is a placeholder - in a real implementation, we'd get this from the OCR service
+      }));
+
+      setExtractedData(formattedData);
+      setProcessedDocuments(prev => [documentData, ...prev]);
       toast.success('Documento processado com sucesso!');
     } catch (error) {
-      toast.error('Erro ao processar o documento');
-      console.error('OCR processing error:', error);
+      console.error('Error processing document:', error);
+      toast.error('Erro ao processar documento');
     } finally {
       setProcessing(false);
     }

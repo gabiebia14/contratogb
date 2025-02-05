@@ -17,3 +17,6 @@ export type DocumentField =
   | "Cidade"
   | "Estado"
   | "Telefone";
+
+export type DocumentRole = 'locador' | 'locatario' | 'fiador';
+export type MaritalStatus = 'solteiro' | 'casado' | 'divorciado' | 'viuvo';

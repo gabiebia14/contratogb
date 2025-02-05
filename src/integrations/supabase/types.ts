@@ -111,6 +111,7 @@ export type Database = {
       processed_documents: {
         Row: {
           created_at: string | null
+          document_role: string | null
           document_type: Database["public"]["Enums"]["document_type"] | null
           error_message: string | null
           extracted_data: Json | null
@@ -118,12 +119,16 @@ export type Database = {
           file_path: string
           file_type: string | null
           id: string
+          marital_status: string | null
           processed_at: string | null
+          shared_address: boolean | null
+          spouse_document_id: string | null
           status: string | null
           user_id: string | null
         }
         Insert: {
           created_at?: string | null
+          document_role?: string | null
           document_type?: Database["public"]["Enums"]["document_type"] | null
           error_message?: string | null
           extracted_data?: Json | null
@@ -131,12 +136,16 @@ export type Database = {
           file_path: string
           file_type?: string | null
           id?: string
+          marital_status?: string | null
           processed_at?: string | null
+          shared_address?: boolean | null
+          spouse_document_id?: string | null
           status?: string | null
           user_id?: string | null
         }
         Update: {
           created_at?: string | null
+          document_role?: string | null
           document_type?: Database["public"]["Enums"]["document_type"] | null
           error_message?: string | null
           extracted_data?: Json | null
@@ -144,11 +153,22 @@ export type Database = {
           file_path?: string
           file_type?: string | null
           id?: string
+          marital_status?: string | null
           processed_at?: string | null
+          shared_address?: boolean | null
+          spouse_document_id?: string | null
           status?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "processed_documents_spouse_document_id_fkey"
+            columns: ["spouse_document_id"]
+            isOneToOne: false
+            referencedRelation: "processed_documents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -158,8 +178,10 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      document_role_enum: "locador" | "locatario" | "fiador"
       document_type: "locador" | "locatario" | "fiador"
       marital_status: "solteiro" | "casado" | "divorciado" | "viuvo"
+      marital_status_enum: "solteiro" | "casado" | "divorciado" | "viuvo"
     }
     CompositeTypes: {
       [_ in never]: never
