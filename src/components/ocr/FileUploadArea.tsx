@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Upload } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { ScanLine } from 'lucide-react';
 
 interface FileUploadAreaProps {
   onFilesSelected: (files: File[]) => void;
@@ -40,10 +39,9 @@ const FileUploadArea = ({ onFilesSelected }: FileUploadAreaProps) => {
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={cn(
-        "border-2 border-dashed rounded-lg p-8 text-center transition-colors",
-        isDragging ? "border-primary bg-primary/5" : "border-muted"
-      )}
+      className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors ${
+        isDragging ? 'border-indigo-500 bg-indigo-50' : 'border-gray-300'
+      }`}
     >
       <input
         type="file"
@@ -57,14 +55,12 @@ const FileUploadArea = ({ onFilesSelected }: FileUploadAreaProps) => {
         htmlFor="ocrFileInput"
         className="cursor-pointer block"
       >
-        <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+        <ScanLine className="mx-auto h-16 w-16 text-gray-400 mb-4" />
         <h3 className="text-lg font-medium mb-2">
           Arraste documentos ou clique para fazer upload
         </h3>
-        <p className="text-sm text-muted-foreground">
-          Documentos aceitos: RG, CNH, Comprovante de Residência
-          <br />
-          Formatos: PDF, PNG, JPG (max. 10MB)
+        <p className="text-sm text-gray-500">
+          Suporte para PDF, PNG, JPG (max. 10MB)
         </p>
       </label>
     </div>

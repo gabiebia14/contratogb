@@ -1,7 +1,7 @@
 import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ExtractedField } from '@/types/ocr';
-import { Badge } from '@/components/ui/badge';
 
 interface ExtractedDataDisplayProps {
   data: ExtractedField[];
@@ -10,6 +10,7 @@ interface ExtractedDataDisplayProps {
 const ExtractedDataDisplay = ({ data }: ExtractedDataDisplayProps) => {
   if (!data.length) return null;
 
+  // Ordenar dados por confiança (do maior para o menor)
   const sortedData = [...data].sort((a, b) => b.confidence - a.confidence);
 
   const getConfidenceColor = (confidence: number) => {
@@ -19,33 +20,37 @@ const ExtractedDataDisplay = ({ data }: ExtractedDataDisplayProps) => {
   };
 
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[200px]">Campo</TableHead>
-            <TableHead>Valor</TableHead>
-            <TableHead className="text-right">Confiança</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {sortedData.map((item, index) => (
-            <TableRow key={index}>
-              <TableCell className="font-medium">{item.field}</TableCell>
-              <TableCell>{item.value}</TableCell>
-              <TableCell className="text-right">
-                <Badge 
-                  variant="secondary"
-                  className={getConfidenceColor(item.confidence)}
-                >
-                  {(item.confidence * 100).toFixed(1)}%
-                </Badge>
-              </TableCell>
+    <Card>
+      <CardHeader>
+        <CardTitle>Dados Extraídos do Documento</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Campo</TableHead>
+              <TableHead>Valor</TableHead>
+              <TableHead>Confiança</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+          </TableHeader>
+          <TableBody>
+            {sortedData.map((item, index) => (
+              <TableRow key={index}>
+                <TableCell className="font-medium">{item.field}</TableCell>
+                <TableCell>{item.value}</TableCell>
+                <TableCell>
+                  <span 
+                    className={`px-2 py-1 rounded-full text-xs ${getConfidenceColor(item.confidence)}`}
+                  >
+                    {(item.confidence * 100).toFixed(1)}%
+                  </span>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
   );
 };
 
