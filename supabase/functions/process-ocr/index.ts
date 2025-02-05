@@ -24,12 +24,12 @@ serve(async (req) => {
 
     const genAI = new GoogleGenerativeAI(geminiApiKey);
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-2.0-flash-exp",
+      model: "gemini-1.5-flash",
       generationConfig: {
-        temperature: 1,
-        topP: 0.95,
+        temperature: 0.4, // Lower temperature for more focused responses
+        topP: 0.8,
         topK: 40,
-        maxOutputTokens: 8192,
+        maxOutputTokens: 2048,
       }
     });
 
@@ -52,8 +52,8 @@ serve(async (req) => {
 
     Retorne os dados em formato JSON usando exatamente esses nomes de campos em inglês.`;
 
-    console.log('Calling Gemini API...');
-
+    console.log('Processing document with Gemini API...');
+    
     // Remove the data:image/[type];base64, prefix from the base64 string
     const base64Data = base64Image.split(',')[1];
     
@@ -64,11 +64,8 @@ serve(async (req) => {
       bytes[i] = binaryString.charCodeAt(i);
     }
 
-    // Start a chat session
-    const chat = model.startChat();
-    
     // Call Gemini API with the image
-    const result = await chat.sendMessage([
+    const result = await model.generateContent([
       prompt,
       {
         inlineData: {
