@@ -2,12 +2,15 @@ import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { DocumentRole, MaritalStatus, DocumentGender } from '@/types/ocr';
 
 interface OCRFormProps {
-  documentType: 'locador' | 'locatario' | 'fiador';
-  setDocumentType: (value: 'locador' | 'locatario' | 'fiador') => void;
-  maritalStatus: 'solteiro' | 'casado' | 'divorciado' | 'viuvo';
-  setMaritalStatus: (value: 'solteiro' | 'casado' | 'divorciado' | 'viuvo') => void;
+  documentType: DocumentRole;
+  setDocumentType: (value: DocumentRole) => void;
+  maritalStatus: MaritalStatus;
+  setMaritalStatus: (value: MaritalStatus) => void;
+  documentGender: DocumentGender;
+  setDocumentGender: (value: DocumentGender) => void;
   sharedAddress: boolean;
   setSharedAddress: (value: boolean) => void;
   needsGuarantor: boolean;
@@ -19,6 +22,8 @@ const OCRForm = ({
   setDocumentType,
   maritalStatus,
   setMaritalStatus,
+  documentGender,
+  setDocumentGender,
   sharedAddress,
   setSharedAddress,
   needsGuarantor,
@@ -28,7 +33,7 @@ const OCRForm = ({
     <div className="space-y-4">
       <div>
         <Label>Tipo de Documento</Label>
-        <Select value={documentType} onValueChange={(value: any) => setDocumentType(value)}>
+        <Select value={documentType} onValueChange={(value: DocumentRole) => setDocumentType(value)}>
           <SelectTrigger>
             <SelectValue placeholder="Selecione o tipo" />
           </SelectTrigger>
@@ -41,8 +46,21 @@ const OCRForm = ({
       </div>
 
       <div>
+        <Label>Gênero</Label>
+        <Select value={documentGender} onValueChange={(value: DocumentGender) => setDocumentGender(value)}>
+          <SelectTrigger>
+            <SelectValue placeholder="Selecione o gênero" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="masculino">Masculino</SelectItem>
+            <SelectItem value="feminino">Feminino</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div>
         <Label>Estado Civil</Label>
-        <Select value={maritalStatus} onValueChange={(value: any) => setMaritalStatus(value)}>
+        <Select value={maritalStatus} onValueChange={(value: MaritalStatus) => setMaritalStatus(value)}>
           <SelectTrigger>
             <SelectValue placeholder="Selecione o estado civil" />
           </SelectTrigger>

@@ -10,12 +10,14 @@ import { useOCR } from '@/hooks/useOCR';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { DocumentRole, MaritalStatus, DocumentGender } from '@/types/ocr';
 
 const OCRPage = () => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [documentType, setDocumentType] = useState<'locador' | 'locatario' | 'fiador'>('locador');
-  const [maritalStatus, setMaritalStatus] = useState<'solteiro' | 'casado' | 'divorciado' | 'viuvo'>('solteiro');
+  const [documentType, setDocumentType] = useState<DocumentRole>('locador');
+  const [maritalStatus, setMaritalStatus] = useState<MaritalStatus>('solteiro');
+  const [documentGender, setDocumentGender] = useState<DocumentGender>('masculino');
   const [sharedAddress, setSharedAddress] = useState(false);
   const [needsGuarantor, setNeedsGuarantor] = useState(false);
 
@@ -70,6 +72,7 @@ const OCRPage = () => {
       await processFiles({
         documentType,
         maritalStatus,
+        documentGender,
         sharedAddress,
         needsGuarantor
       });
@@ -92,6 +95,8 @@ const OCRPage = () => {
             setDocumentType={setDocumentType}
             maritalStatus={maritalStatus}
             setMaritalStatus={setMaritalStatus}
+            documentGender={documentGender}
+            setDocumentGender={setDocumentGender}
             sharedAddress={sharedAddress}
             setSharedAddress={setSharedAddress}
             needsGuarantor={needsGuarantor}

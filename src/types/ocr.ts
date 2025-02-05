@@ -20,3 +20,4 @@ export type DocumentField =
 
 export type DocumentRole = 'locador' | 'locatario' | 'fiador';
 export type MaritalStatus = 'solteiro' | 'casado' | 'divorciado' | 'viuvo';
+export type DocumentGender = 'masculino' | 'feminino';

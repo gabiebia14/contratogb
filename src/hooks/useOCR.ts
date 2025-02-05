@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { ExtractedField } from '@/types/ocr';
+import { ExtractedField, DocumentRole, MaritalStatus, DocumentGender } from '@/types/ocr';
 import { toast } from 'sonner';
 
 interface ProcessOptions {
-  documentType: 'locador' | 'locatario' | 'fiador';
-  maritalStatus: 'solteiro' | 'casado' | 'divorciado' | 'viuvo';
+  documentType: DocumentRole;
+  maritalStatus: MaritalStatus;
+  documentGender: DocumentGender;
   sharedAddress: boolean;
   needsGuarantor: boolean;
 }
@@ -31,7 +32,6 @@ export const useOCR = () => {
   const processFiles = async (options: ProcessOptions) => {
     if (!selectedFiles.length) return;
 
-    // Verificar se o usuário está autenticado
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       toast.error('Você precisa estar autenticado para fazer upload de arquivos');
@@ -56,7 +56,7 @@ export const useOCR = () => {
 
       console.log('Iniciando upload do arquivo...');
       
-      // Upload file to Supabase Storage com owner definido
+      // Upload file to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('ocr_documents')
         .upload(finalFileName, file, {
@@ -78,6 +78,7 @@ export const useOCR = () => {
           documentType: options.documentType,
           base64Image: base64,
           maritalStatus: options.maritalStatus,
+          documentGender: options.documentGender,
           sharedAddress: options.sharedAddress
         },
       });
@@ -96,12 +97,14 @@ export const useOCR = () => {
           file_name: file.name,
           file_path: uploadData.path,
           document_type: options.documentType,
+          document_gender: options.documentGender,
           marital_status: options.maritalStatus,
           shared_address: options.sharedAddress,
           extracted_data: processedData.data,
+          extracted_fields: processedData.data,
           status: 'completed',
           processed_at: new Date().toISOString(),
-          user_id: user.id // Adicionar user_id ao registro
+          user_id: user.id
         })
         .select()
         .single();

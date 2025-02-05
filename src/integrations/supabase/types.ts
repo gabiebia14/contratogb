@@ -111,10 +111,12 @@ export type Database = {
       processed_documents: {
         Row: {
           created_at: string | null
+          document_gender: string | null
           document_role: string | null
           document_type: Database["public"]["Enums"]["document_type"] | null
           error_message: string | null
           extracted_data: Json | null
+          extracted_fields: Json | null
           file_name: string
           file_path: string
           file_type: string | null
@@ -128,10 +130,12 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          document_gender?: string | null
           document_role?: string | null
           document_type?: Database["public"]["Enums"]["document_type"] | null
           error_message?: string | null
           extracted_data?: Json | null
+          extracted_fields?: Json | null
           file_name: string
           file_path: string
           file_type?: string | null
@@ -145,10 +149,12 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          document_gender?: string | null
           document_role?: string | null
           document_type?: Database["public"]["Enums"]["document_type"] | null
           error_message?: string | null
           extracted_data?: Json | null
+          extracted_fields?: Json | null
           file_name?: string
           file_path?: string
           file_type?: string | null
