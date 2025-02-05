@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ScanLine, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
@@ -9,8 +9,41 @@ import FileUploadArea from './ocr/FileUploadArea';
 import ExtractedDataDisplay from './ocr/ExtractedDataDisplay';
 import { useOCR } from '@/hooks/useOCR';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 const OCRPage = () => {
+  const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    checkAuth();
+    
+    // Inscrever-se para mudanças no estado de autenticação
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsAuthenticated(!!session);
+      if (!session) {
+        navigate('/auth');
+      }
+    });
+
+    return () => {
+      // Limpar o listener quando o componente for desmontado
+      if (authListener?.subscription) {
+        authListener.subscription.unsubscribe();
+      }
+    };
+  }, [navigate]);
+
+  const checkAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      navigate('/auth');
+      return;
+    }
+    setIsAuthenticated(true);
+  };
+
   const {
     selectedFiles,
     processing,
@@ -31,6 +64,12 @@ const OCRPage = () => {
       return;
     }
 
+    if (!isAuthenticated) {
+      toast.error('Você precisa estar autenticado para fazer upload de arquivos');
+      navigate('/auth');
+      return;
+    }
+
     try {
       await processFiles({
         documentType,
@@ -43,6 +82,10 @@ const OCRPage = () => {
       toast.error('Erro ao processar os arquivos');
     }
   };
+
+  if (!isAuthenticated) {
+    return null; // Não renderiza nada enquanto verifica a autenticação
+  }
 
   return (
     <div className="space-y-6">
