@@ -50,7 +50,7 @@ export const useOCR = () => {
       if (error) throw error;
       if (!mountedRef.current) return;
 
-      const docs = data.map(doc => ({
+      const docs: ProcessedDocument[] = data.map(doc => ({
         id: doc.id,
         name: doc.file_name,
         processedAt: new Date(doc.processed_at || doc.created_at),
