@@ -5,7 +5,7 @@ import FileUploadArea from '@/components/ocr/FileUploadArea';
 import OCRForm from '@/components/ocr/OCRForm';
 import ExtractedDataDisplay from '@/components/ocr/ExtractedDataDisplay';
 import { useOCR } from '@/hooks/useOCR';
-import { DocumentRole, MaritalStatus, DocumentGender } from '@/types/ocr';
+import { DocumentRole, MaritalStatus } from '@/types/ocr';
 
 const Documents = () => {
   const {
@@ -18,7 +18,6 @@ const Documents = () => {
 
   const [documentType, setDocumentType] = React.useState<DocumentRole>('locatario');
   const [maritalStatus, setMaritalStatus] = React.useState<MaritalStatus>('solteiro');
-  const [documentGender, setDocumentGender] = React.useState<DocumentGender>('masculino');
   const [sharedAddress, setSharedAddress] = React.useState(false);
   const [needsGuarantor, setNeedsGuarantor] = React.useState(false);
 
@@ -26,7 +25,6 @@ const Documents = () => {
     await processFiles({
       documentType,
       maritalStatus,
-      documentGender,
       sharedAddress,
       needsGuarantor
     });
@@ -55,8 +53,6 @@ const Documents = () => {
                 setDocumentType={setDocumentType}
                 maritalStatus={maritalStatus}
                 setMaritalStatus={setMaritalStatus}
-                documentGender={documentGender}
-                setDocumentGender={setDocumentGender}
                 sharedAddress={sharedAddress}
                 setSharedAddress={setSharedAddress}
                 needsGuarantor={needsGuarantor}

@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { ExtractedField, DocumentRole, MaritalStatus, DocumentGender } from '@/types/ocr';
+import { ExtractedField, DocumentRole, MaritalStatus } from '@/types/ocr';
 import { toast } from 'sonner';
 
 interface ProcessOptions {
   documentType: DocumentRole;
   maritalStatus: MaritalStatus;
-  documentGender: DocumentGender;
   sharedAddress: boolean;
   needsGuarantor: boolean;
 }
@@ -78,7 +77,6 @@ export const useOCR = () => {
           documentType: options.documentType,
           base64Image: base64,
           maritalStatus: options.maritalStatus,
-          documentGender: options.documentGender,
           sharedAddress: options.sharedAddress
         },
       });
@@ -97,7 +95,6 @@ export const useOCR = () => {
           file_name: file.name,
           file_path: uploadData.path,
           document_type: options.documentType,
-          document_gender: options.documentGender,
           marital_status: options.maritalStatus,
           shared_address: options.sharedAddress,
           extracted_data: processedData.data,

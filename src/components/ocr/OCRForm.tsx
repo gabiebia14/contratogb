@@ -2,15 +2,13 @@ import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { DocumentRole, MaritalStatus, DocumentGender } from '@/types/ocr';
+import { DocumentRole, MaritalStatus } from '@/types/ocr';
 
 interface OCRFormProps {
   documentType: DocumentRole;
   setDocumentType: (value: DocumentRole) => void;
   maritalStatus: MaritalStatus;
   setMaritalStatus: (value: MaritalStatus) => void;
-  documentGender: DocumentGender;
-  setDocumentGender: (value: DocumentGender) => void;
   sharedAddress: boolean;
   setSharedAddress: (value: boolean) => void;
   needsGuarantor: boolean;
@@ -22,8 +20,6 @@ const OCRForm = ({
   setDocumentType,
   maritalStatus,
   setMaritalStatus,
-  documentGender,
-  setDocumentGender,
   sharedAddress,
   setSharedAddress,
   needsGuarantor,
@@ -41,19 +37,6 @@ const OCRForm = ({
             <SelectItem value="locador">Locador</SelectItem>
             <SelectItem value="locatario">Locatário</SelectItem>
             <SelectItem value="fiador">Fiador</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div>
-        <Label>Gênero</Label>
-        <Select value={documentGender} onValueChange={(value: DocumentGender) => setDocumentGender(value)}>
-          <SelectTrigger>
-            <SelectValue placeholder="Selecione o gênero" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="masculino">Masculino</SelectItem>
-            <SelectItem value="feminino">Feminino</SelectItem>
           </SelectContent>
         </Select>
       </div>
