@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { ExtractedField } from '@/types/ocr';
 import { useStorage } from './useStorage';
@@ -31,7 +31,14 @@ export const useOCR = () => {
   const [processing, setProcessing] = useState(false);
   const [extractedData, setExtractedData] = useState<ExtractedField[]>([]);
   const [processedDocuments, setProcessedDocuments] = useState<ProcessedDocument[]>([]);
+  const mountedRef = useRef(true);
   const { uploadFile } = useStorage();
+
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const loadProcessedDocuments = async () => {
     try {
@@ -41,6 +48,7 @@ export const useOCR = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      if (!mountedRef.current) return;
 
       const docs = data.map(doc => ({
         id: doc.id,
@@ -54,13 +62,17 @@ export const useOCR = () => {
       setProcessedDocuments(docs);
     } catch (error) {
       console.error('Error loading processed documents:', error);
-      toast.error('Erro ao carregar histórico de documentos');
+      if (mountedRef.current) {
+        toast.error('Erro ao carregar histórico de documentos');
+      }
     }
   };
 
   const handleFilesSelected = (files: File[]) => {
-    setSelectedFiles(files);
-    setExtractedData([]);
+    if (mountedRef.current) {
+      setSelectedFiles(files);
+      setExtractedData([]);
+    }
   };
 
   const processFiles = async () => {
@@ -69,6 +81,7 @@ export const useOCR = () => {
       return;
     }
 
+    if (!mountedRef.current) return;
     setProcessing(true);
     toast.info('Iniciando processamento do documento...');
     
@@ -83,6 +96,8 @@ export const useOCR = () => {
       if (response.error) {
         throw new Error('Falha ao processar o documento');
       }
+
+      if (!mountedRef.current) return;
 
       const extractedFields = Object.entries(response.data).map(([field, data]: [string, any]) => ({
         field,
@@ -106,13 +121,19 @@ export const useOCR = () => {
 
       if (insertError) throw insertError;
 
-      await loadProcessedDocuments();
-      toast.success('Documento processado com sucesso!');
+      if (mountedRef.current) {
+        await loadProcessedDocuments();
+        toast.success('Documento processado com sucesso!');
+      }
     } catch (error) {
       console.error('Erro no processamento OCR:', error);
-      toast.error('Erro ao processar o documento');
+      if (mountedRef.current) {
+        toast.error('Erro ao processar o documento');
+      }
     } finally {
-      setProcessing(false);
+      if (mountedRef.current) {
+        setProcessing(false);
+      }
     }
   };
 
