@@ -23,24 +23,26 @@ serve(async (req) => {
     }
 
     // Create system message based on document type
-    const systemMessage = `You are an expert assistant in extracting and organizing data for automated contract generation. Your task is to extract relevant information from the provided document image for a ${documentType}. The person's marital status is ${maritalStatus} and ${sharedAddress ? 'shares address with spouse' : 'has a different address than spouse'}.
+    const systemMessage = `Você é um assistente especialista na extração e organização de dados para a geração automatizada de contratos. Sua tarefa é extrair informações relevantes do documento fornecido para um ${documentType}. O estado civil da pessoa é ${maritalStatus} e ${sharedAddress ? 'compartilha endereço com cônjuge' : 'possui endereço diferente do cônjuge'}.
 
-    Please extract the following information in a structured format:
-    - Full Name
-    - Nationality
-    - Marital Status
-    - Profession
-    - RG (ID)
-    - CPF (Tax ID)
-    - Address
-    - Neighborhood
-    - ZIP Code
-    - City
-    - State
-    - Phone Number (if available)
+    Por favor, extraia as seguintes informações em um formato estruturado:
+    - Nome Completo (full_name)
+    - Nacionalidade (nationality)
+    - Estado Civil (marital_status)
+    - Profissão (profession)
+    - RG (rg)
+    - CPF (cpf)
+    - Endereço (address)
+    - Bairro (neighborhood)
+    - CEP (zip_code)
+    - Cidade (city)
+    - Estado (state)
+    - Telefone (phone) (se disponível)
 
-    Return the data in a JSON format using these exact field names.`;
+    Retorne os dados em formato JSON usando exatamente esses nomes de campos em inglês.`;
 
+    console.log('Calling OpenAI API...');
+    
     // Call OpenAI API with the image
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -57,7 +59,7 @@ serve(async (req) => {
             content: [
               {
                 type: 'text',
-                text: 'Please extract all relevant information from this document image.',
+                text: 'Por favor, extraia todas as informações relevantes desta imagem de documento.',
               },
               {
                 type: 'image_url',
@@ -75,7 +77,7 @@ serve(async (req) => {
     console.log('OpenAI Response:', data);
 
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${data.error?.message || 'Unknown error'}`);
+      throw new Error(`OpenAI API error: ${data.error?.message || 'Erro desconhecido'}`);
     }
 
     // Process the extracted data
@@ -88,7 +90,7 @@ serve(async (req) => {
     } catch (error) {
       console.error('Error parsing OpenAI response:', error);
       extractedData = {
-        error: 'Failed to parse extracted data',
+        error: 'Falha ao analisar dados extraídos',
         rawText: extractedText
       };
     }

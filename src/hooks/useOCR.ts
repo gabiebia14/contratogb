@@ -36,14 +36,19 @@ export const useOCR = () => {
         reader.onerror = error => reject(error);
       });
 
+      console.log('Uploading file to storage...');
+      
       // Upload file to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('ocr_documents')
         .upload(`${Date.now()}_${file.name}`, file);
 
       if (uploadError) {
-        throw new Error('Error uploading file');
+        console.error('Upload error:', uploadError);
+        throw new Error('Erro ao fazer upload do arquivo');
       }
+
+      console.log('File uploaded successfully:', uploadData);
 
       // Process with OpenAI via Edge Function
       const { data: processedData, error } = await supabase.functions.invoke('process-ocr', {
@@ -55,7 +60,12 @@ export const useOCR = () => {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Processing error:', error);
+        throw error;
+      }
+
+      console.log('Document processed successfully:', processedData);
 
       // Save to processed_documents table
       const { data: documentData, error: dbError } = await supabase
@@ -73,13 +83,16 @@ export const useOCR = () => {
         .select()
         .single();
 
-      if (dbError) throw dbError;
+      if (dbError) {
+        console.error('Database error:', dbError);
+        throw dbError;
+      }
 
       // Format extracted data for display
       const formattedData = Object.entries(processedData.data).map(([field, value]) => ({
         field: field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1'),
         value: value as string,
-        confidence: 0.95 // This is a placeholder - in a real implementation, we'd get this from the OCR service
+        confidence: 0.95
       }));
 
       setExtractedData(formattedData);
@@ -87,7 +100,7 @@ export const useOCR = () => {
       toast.success('Documento processado com sucesso!');
     } catch (error) {
       console.error('Error processing document:', error);
-      toast.error('Erro ao processar documento');
+      toast.error('Erro ao processar documento: ' + error.message);
     } finally {
       setProcessing(false);
     }
