@@ -12,6 +12,20 @@ interface ProcessedDocument {
   extractedData: ExtractedField[];
 }
 
+// Type guard to check if an object is an ExtractedField
+const isExtractedField = (item: any): item is ExtractedField => {
+  return (
+    typeof item === 'object' &&
+    item !== null &&
+    'field' in item &&
+    'value' in item &&
+    'confidence' in item &&
+    typeof item.field === 'string' &&
+    typeof item.value === 'string' &&
+    typeof item.confidence === 'number'
+  );
+};
+
 export const useOCR = () => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [processing, setProcessing] = useState(false);
@@ -33,7 +47,7 @@ export const useOCR = () => {
         name: doc.file_name,
         processedAt: new Date(doc.processed_at || doc.created_at),
         extractedData: Array.isArray(doc.extracted_data) 
-          ? (doc.extracted_data as ExtractedField[])
+          ? doc.extracted_data.filter(isExtractedField)
           : []
       }));
 
