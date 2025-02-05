@@ -21,12 +21,25 @@ export const useOCR = () => {
     setExtractedData([]);
   };
 
+  const sanitizeFileName = (fileName: string): string => {
+    // Remove espaços e caracteres especiais
+    return fileName
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9.-]/g, '_');
+  };
+
   const processFiles = async (options: ProcessOptions) => {
     if (!selectedFiles.length) return;
 
     setProcessing(true);
     try {
       const file = selectedFiles[0];
+      
+      // Sanitizar nome do arquivo
+      const timestamp = Date.now();
+      const sanitizedFileName = sanitizeFileName(file.name);
+      const finalFileName = `${timestamp}_${sanitizedFileName}`;
       
       // Convert file to base64
       const base64 = await new Promise((resolve, reject) => {
@@ -36,19 +49,22 @@ export const useOCR = () => {
         reader.onerror = error => reject(error);
       });
 
-      console.log('Uploading file to storage...');
+      console.log('Iniciando upload do arquivo...');
       
       // Upload file to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('ocr_documents')
-        .upload(`${Date.now()}_${file.name}`, file);
+        .upload(finalFileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
       if (uploadError) {
-        console.error('Upload error:', uploadError);
-        throw new Error('Erro ao fazer upload do arquivo');
+        console.error('Erro no upload:', uploadError);
+        throw new Error('Erro ao fazer upload do arquivo: ' + uploadError.message);
       }
 
-      console.log('File uploaded successfully:', uploadData);
+      console.log('Arquivo enviado com sucesso:', uploadData);
 
       // Process with OpenAI via Edge Function
       const { data: processedData, error } = await supabase.functions.invoke('process-ocr', {
@@ -61,11 +77,11 @@ export const useOCR = () => {
       });
 
       if (error) {
-        console.error('Processing error:', error);
+        console.error('Erro no processamento:', error);
         throw error;
       }
 
-      console.log('Document processed successfully:', processedData);
+      console.log('Documento processado com sucesso:', processedData);
 
       // Save to processed_documents table
       const { data: documentData, error: dbError } = await supabase
@@ -84,7 +100,7 @@ export const useOCR = () => {
         .single();
 
       if (dbError) {
-        console.error('Database error:', dbError);
+        console.error('Erro no banco de dados:', dbError);
         throw dbError;
       }
 
@@ -99,8 +115,8 @@ export const useOCR = () => {
       setProcessedDocuments(prev => [documentData, ...prev]);
       toast.success('Documento processado com sucesso!');
     } catch (error) {
-      console.error('Error processing document:', error);
-      toast.error('Erro ao processar documento: ' + error.message);
+      console.error('Erro ao processar documento:', error);
+      toast.error('Erro ao processar documento: ' + (error.message || 'Erro desconhecido'));
     } finally {
       setProcessing(false);
     }
