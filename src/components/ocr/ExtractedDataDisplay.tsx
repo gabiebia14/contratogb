@@ -42,10 +42,11 @@ const ExtractedDataDisplay = ({ data }: ExtractedDataDisplayProps) => {
                 </Badge>
               </TableCell>
             </TableRow>
-          )TableBody>
-        </Table>
-      </div>
-    );
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
 };
 
 export default ExtractedDataDisplay;
