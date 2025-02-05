@@ -7,10 +7,10 @@ export default function DashboardLayout() {
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="flex min-h-screen w-full">
-        <Sidebar variant="sidebar" collapsible="icon" className="bg-[#4B1EB1]">
+        <Sidebar variant="sidebar" className="bg-[#0EA5E9]">
           <SidebarHeader className="p-4">
             <h1 className="text-2xl font-bold flex items-center gap-2 text-white">
-              <span className="text-cyan-400">▲</span> ContractPro
+              <span className="text-[#F97316]">▲</span> ContractPro
             </h1>
           </SidebarHeader>
           <SidebarContent>
@@ -18,7 +18,7 @@ export default function DashboardLayout() {
               <SidebarGroupContent>
                 <SidebarMenu>
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild className="text-gray-300 hover:text-white hover:bg-[#5d30c7]">
+                    <SidebarMenuButton asChild className="text-gray-100 hover:text-white hover:bg-[#33C3F0]">
                       <Link to="/">
                         <FileText className="w-4 h-4" />
                         <span>Contratos</span>
@@ -26,7 +26,7 @@ export default function DashboardLayout() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild className="text-gray-300 hover:text-white hover:bg-[#5d30c7]">
+                    <SidebarMenuButton asChild className="text-gray-100 hover:text-white hover:bg-[#33C3F0]">
                       <Link to="/novo-contrato">
                         <Upload className="w-4 h-4" />
                         <span>Novo Contrato</span>
@@ -34,7 +34,7 @@ export default function DashboardLayout() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild className="text-gray-300 hover:text-white hover:bg-[#5d30c7]">
+                    <SidebarMenuButton asChild className="text-gray-100 hover:text-white hover:bg-[#33C3F0]">
                       <Link to="/modelos-contratos">
                         <BookOpen className="w-4 h-4" />
                         <span>Modelos</span>
@@ -42,7 +42,7 @@ export default function DashboardLayout() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild className="text-gray-300 hover:text-white hover:bg-[#5d30c7]">
+                    <SidebarMenuButton asChild className="text-gray-100 hover:text-white hover:bg-[#33C3F0]">
                       <Link to="/ocr-documentos">
                         <ScanLine className="w-4 h-4" />
                         <span>OCR Docs</span>
@@ -50,7 +50,7 @@ export default function DashboardLayout() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild className="text-gray-300 hover:text-white hover:bg-[#5d30c7]">
+                    <SidebarMenuButton asChild className="text-gray-100 hover:text-white hover:bg-[#33C3F0]">
                       <Link to="/gestao-contratos">
                         <ClipboardList className="w-4 h-4" />
                         <span>Gestão</span>
@@ -58,7 +58,7 @@ export default function DashboardLayout() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild className="text-gray-300 hover:text-white hover:bg-[#5d30c7]">
+                    <SidebarMenuButton asChild className="text-gray-100 hover:text-white hover:bg-[#33C3F0]">
                       <Link to="/search">
                         <Search className="w-4 h-4" />
                         <span>Buscar</span>
@@ -66,7 +66,7 @@ export default function DashboardLayout() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild className="text-gray-300 hover:text-white hover:bg-[#5d30c7]">
+                    <SidebarMenuButton asChild className="text-gray-100 hover:text-white hover:bg-[#33C3F0]">
                       <Link to="/messages">
                         <MessageSquare className="w-4 h-4" />
                         <span>Mensagens</span>
@@ -74,7 +74,7 @@ export default function DashboardLayout() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild className="text-gray-300 hover:text-white hover:bg-[#5d30c7]">
+                    <SidebarMenuButton asChild className="text-gray-100 hover:text-white hover:bg-[#33C3F0]">
                       <Link to="/statistics">
                         <BarChart2 className="w-4 h-4" />
                         <span>Estatísticas</span>
@@ -82,7 +82,7 @@ export default function DashboardLayout() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild className="text-gray-300 hover:text-white hover:bg-[#5d30c7]">
+                    <SidebarMenuButton asChild className="text-gray-100 hover:text-white hover:bg-[#33C3F0]">
                       <Link to="/news">
                         <Newspaper className="w-4 h-4" />
                         <span>Notícias</span>
@@ -102,7 +102,7 @@ export default function DashboardLayout() {
                 <input
                   type="text"
                   placeholder="Buscar algo aqui..."
-                  className="pl-10 pr-4 py-2 rounded-lg border border-gray-200 w-[300px] focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="pl-10 pr-4 py-2 rounded-lg border border-gray-200 w-[300px] focus:outline-none focus:ring-2 focus:ring-[#0EA5E9]"
                 />
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               </div>
