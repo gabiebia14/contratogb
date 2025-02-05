@@ -7,7 +7,10 @@ import {
   doc, 
   query, 
   where, 
-  getDocs 
+  getDocs,
+  CollectionReference,
+  Query,
+  DocumentData
 } from 'firebase/firestore';
 import { useFirebase } from '@/contexts/FirebaseContext';
 import { toast } from 'sonner';
@@ -66,13 +69,14 @@ export const useFirestore = (collectionName: string) => {
   const getDocuments = async (conditions?: { field: string; operator: string; value: any }[]) => {
     setLoading(true);
     try {
-      let q = collection(db, collectionName);
+      const collectionRef = collection(db, collectionName);
+      let queryRef: Query<DocumentData> | CollectionReference<DocumentData> = collectionRef;
       
       if (conditions) {
-        q = query(q, ...conditions.map(c => where(c.field, c.operator as any, c.value)));
+        queryRef = query(collectionRef, ...conditions.map(c => where(c.field, c.operator as any, c.value)));
       }
 
-      const querySnapshot = await getDocs(q);
+      const querySnapshot = await getDocs(queryRef);
       return querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
