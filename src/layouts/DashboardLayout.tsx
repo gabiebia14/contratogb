@@ -1,5 +1,5 @@
 import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarGroup, SidebarGroupContent } from "@/components/ui/sidebar"
-import { FileText, Upload, Settings, Bell, ScanLine, BookOpen, ClipboardList, FileStack } from 'lucide-react'
+import { FileText, Upload, Settings, Bell, BookOpen, ClipboardList, FileStack } from 'lucide-react'
 import { Link, Outlet } from "react-router-dom"
 
 export default function DashboardLayout() {
@@ -45,14 +45,6 @@ export default function DashboardLayout() {
                       <Link to="/documentos">
                         <FileStack className="w-4 h-4" />
                         <span>Documentos</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <Link to="/ocr-documentos">
-                        <ScanLine className="w-4 h-4" />
-                        <span>OCR Documentos</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
