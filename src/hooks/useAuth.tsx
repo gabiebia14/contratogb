@@ -21,8 +21,16 @@ export const useAuth = () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       toast.success('Login realizado com sucesso!');
-    } catch (error) {
-      toast.error('Erro ao fazer login. Verifique suas credenciais.');
+    } catch (error: any) {
+      if (error.code === 'auth/invalid-credential') {
+        toast.error('Email ou senha incorretos. Por favor, verifique suas credenciais.');
+      } else if (error.code === 'auth/user-not-found') {
+        toast.error('Usuário não encontrado. Por favor, registre-se primeiro.');
+      } else if (error.code === 'auth/wrong-password') {
+        toast.error('Senha incorreta. Por favor, tente novamente.');
+      } else {
+        toast.error('Erro ao fazer login. Por favor, tente novamente.');
+      }
       throw error;
     }
   };
@@ -31,8 +39,16 @@ export const useAuth = () => {
     try {
       await createUserWithEmailAndPassword(auth, email, password);
       toast.success('Conta criada com sucesso!');
-    } catch (error) {
-      toast.error('Erro ao criar conta.');
+    } catch (error: any) {
+      if (error.code === 'auth/email-already-in-use') {
+        toast.error('Este email já está em uso. Por favor, use outro email.');
+      } else if (error.code === 'auth/weak-password') {
+        toast.error('A senha deve ter pelo menos 6 caracteres.');
+      } else if (error.code === 'auth/invalid-email') {
+        toast.error('Email inválido. Por favor, verifique o formato do email.');
+      } else {
+        toast.error('Erro ao criar conta. Por favor, tente novamente.');
+      }
       throw error;
     }
   };
