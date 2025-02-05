@@ -22,7 +22,6 @@ export const useOCR = () => {
   };
 
   const sanitizeFileName = (fileName: string): string => {
-    // Remove espaços e caracteres especiais
     return fileName
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
@@ -32,11 +31,17 @@ export const useOCR = () => {
   const processFiles = async (options: ProcessOptions) => {
     if (!selectedFiles.length) return;
 
+    // Verificar se o usuário está autenticado
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast.error('Você precisa estar autenticado para fazer upload de arquivos');
+      return;
+    }
+
     setProcessing(true);
     try {
       const file = selectedFiles[0];
       
-      // Sanitizar nome do arquivo
       const timestamp = Date.now();
       const sanitizedFileName = sanitizeFileName(file.name);
       const finalFileName = `${timestamp}_${sanitizedFileName}`;
@@ -51,12 +56,13 @@ export const useOCR = () => {
 
       console.log('Iniciando upload do arquivo...');
       
-      // Upload file to Supabase Storage
+      // Upload file to Supabase Storage com owner definido
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('ocr_documents')
         .upload(finalFileName, file, {
           cacheControl: '3600',
-          upsert: false
+          upsert: false,
+          duplex: 'half'
         });
 
       if (uploadError) {
@@ -94,7 +100,8 @@ export const useOCR = () => {
           shared_address: options.sharedAddress,
           extracted_data: processedData.data,
           status: 'completed',
-          processed_at: new Date().toISOString()
+          processed_at: new Date().toISOString(),
+          user_id: user.id // Adicionar user_id ao registro
         })
         .select()
         .single();
