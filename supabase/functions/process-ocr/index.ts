@@ -23,8 +23,15 @@ serve(async (req) => {
     }
 
     const genAI = new GoogleGenerativeAI(geminiApiKey);
-    // Updated to use the correct model name
-    const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-2.0-flash-exp",
+      generationConfig: {
+        temperature: 1,
+        topP: 0.95,
+        topK: 40,
+        maxOutputTokens: 8192,
+      }
+    });
 
     // Create system prompt based on document type
     const prompt = `Você é um assistente especialista na extração e organização de dados para a geração automatizada de contratos. Sua tarefa é extrair informações relevantes do documento fornecido para um ${documentType}. O estado civil da pessoa é ${maritalStatus} e ${sharedAddress ? 'compartilha endereço com cônjuge' : 'possui endereço diferente do cônjuge'}.
@@ -57,8 +64,11 @@ serve(async (req) => {
       bytes[i] = binaryString.charCodeAt(i);
     }
 
+    // Start a chat session
+    const chat = model.startChat();
+    
     // Call Gemini API with the image
-    const result = await model.generateContent([
+    const result = await chat.sendMessage([
       prompt,
       {
         inlineData: {
