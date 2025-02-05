@@ -1,6 +1,6 @@
 import React from 'react';
 import { Clock } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, isValid, parseISO } from 'date-fns';
 import ExtractedDataDisplay from './ExtractedDataDisplay';
 
 interface ProcessedHistoryProps {
@@ -9,6 +9,15 @@ interface ProcessedHistoryProps {
 
 const ProcessedHistory = ({ processedDocuments }: ProcessedHistoryProps) => {
   if (!processedDocuments.length) return null;
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'Data não disponível';
+    
+    const date = parseISO(dateString);
+    if (!isValid(date)) return 'Data inválida';
+    
+    return format(date, "dd/MM/yyyy HH:mm");
+  };
 
   return (
     <div className="bg-white rounded-lg p-6">
@@ -24,12 +33,12 @@ const ProcessedHistory = ({ processedDocuments }: ProcessedHistoryProps) => {
             className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
           >
             <div className="flex items-center justify-between mb-2">
-              <h4 className="font-medium">{doc.name}</h4>
+              <h4 className="font-medium">{doc.file_name}</h4>
               <span className="text-sm text-gray-500">
-                {format(doc.processedAt, "dd/MM/yyyy HH:mm")}
+                {formatDate(doc.processed_at)}
               </span>
             </div>
-            <ExtractedDataDisplay data={doc.extractedData} />
+            <ExtractedDataDisplay data={doc.extracted_data} />
           </div>
         ))}
       </div>
