@@ -112,7 +112,7 @@ export default function DashboardLayout() {
         </Sheet>
       ) : (
         <SidebarProvider defaultOpen={true}>
-          <Sidebar variant="sidebar" className="bg-[#0EA5E9] min-w-[280px]">
+          <Sidebar variant="sidebar" className="bg-[#0EA5E9] min-w-[280px] border-r-0">
             <SidebarNavigation />
           </Sidebar>
         </SidebarProvider>
