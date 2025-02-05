@@ -1,4 +1,3 @@
-
 import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarGroup, SidebarGroupContent } from "@/components/ui/sidebar"
 import { FileText, Upload, Settings, Bell, ScanLine, BookOpen, ClipboardList, Search, MessageSquare, BarChart2, Newspaper, Menu } from 'lucide-react'
 import { Link, Outlet } from "react-router-dom"
@@ -8,7 +7,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 export default function DashboardLayout() {
   const isMobile = useIsMobile()
 
-  const SidebarContent = () => (
+  const SidebarNavigation = () => (
     <>
       <SidebarHeader className="p-4">
         <h1 className="text-2xl font-bold flex items-center gap-2 text-white">
@@ -108,13 +107,13 @@ export default function DashboardLayout() {
             </button>
           </SheetTrigger>
           <SheetContent side="left" className="w-[280px] p-0 bg-[#0EA5E9]">
-            <SidebarContent />
+            <SidebarNavigation />
           </SheetContent>
         </Sheet>
       ) : (
         <SidebarProvider defaultOpen={true}>
           <Sidebar variant="sidebar" className="bg-[#0EA5E9] min-w-[280px]">
-            <SidebarContent />
+            <SidebarNavigation />
           </Sidebar>
         </SidebarProvider>
       )}
