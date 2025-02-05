@@ -1,6 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.1.3";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,14 +16,17 @@ serve(async (req) => {
   try {
     const { documentType, base64Image, maritalStatus, sharedAddress } = await req.json();
 
-    // Initialize OpenAI
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured');
+    // Initialize Gemini
+    const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
+    if (!geminiApiKey) {
+      throw new Error('Gemini API key not configured');
     }
 
-    // Create system message based on document type
-    const systemMessage = `Você é um assistente especialista na extração e organização de dados para a geração automatizada de contratos. Sua tarefa é extrair informações relevantes do documento fornecido para um ${documentType}. O estado civil da pessoa é ${maritalStatus} e ${sharedAddress ? 'compartilha endereço com cônjuge' : 'possui endereço diferente do cônjuge'}.
+    const genAI = new GoogleGenerativeAI(geminiApiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
+
+    // Create system prompt based on document type
+    const prompt = `Você é um assistente especialista na extração e organização de dados para a geração automatizada de contratos. Sua tarefa é extrair informações relevantes do documento fornecido para um ${documentType}. O estado civil da pessoa é ${maritalStatus} e ${sharedAddress ? 'compartilha endereço com cônjuge' : 'possui endereço diferente do cônjuge'}.
 
     Por favor, extraia as seguintes informações em um formato estruturado:
     - Nome Completo (full_name)
@@ -41,57 +44,42 @@ serve(async (req) => {
 
     Retorne os dados em formato JSON usando exatamente esses nomes de campos em inglês.`;
 
-    console.log('Calling OpenAI API...');
+    console.log('Calling Gemini API...');
+
+    // Remove the data:image/[type];base64, prefix from the base64 string
+    const base64Data = base64Image.split(',')[1];
     
-    // Call OpenAI API with the image
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        messages: [
-          { role: 'system', content: systemMessage },
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: 'Por favor, extraia todas as informações relevantes desta imagem de documento.',
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: base64Image,
-                },
-              },
-            ],
-          },
-        ],
-      }),
-    });
-
-    const data = await response.json();
-    console.log('OpenAI Response:', data);
-
-    if (!response.ok) {
-      throw new Error(`OpenAI API error: ${data.error?.message || 'Erro desconhecido'}`);
+    // Convert base64 to Uint8Array
+    const binaryString = atob(base64Data);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
     }
 
+    // Call Gemini API with the image
+    const result = await model.generateContent([
+      prompt,
+      {
+        inlineData: {
+          mimeType: "image/jpeg",
+          data: base64Data
+        }
+      }
+    ]);
+
+    const response = await result.response;
+    const text = response.text();
+    console.log('Gemini Response:', text);
+
     // Process the extracted data
-    const extractedText = data.choices[0].message.content;
-    
-    // Parse the JSON response
     let extractedData;
     try {
-      extractedData = JSON.parse(extractedText);
+      extractedData = JSON.parse(text);
     } catch (error) {
-      console.error('Error parsing OpenAI response:', error);
+      console.error('Error parsing Gemini response:', error);
       extractedData = {
         error: 'Falha ao analisar dados extraídos',
-        rawText: extractedText
+        rawText: text
       };
     }
 
