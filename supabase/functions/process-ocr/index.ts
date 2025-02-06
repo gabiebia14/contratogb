@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.1.3"
@@ -7,6 +8,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -14,15 +20,16 @@ serve(async (req) => {
 
   try {
     const { documentType, base64Image, maritalStatus, sharedAddress } = await req.json()
+    
+    console.log('Processing document with type:', documentType);
 
     const genAI = new GoogleGenerativeAI(Deno.env.get('GEMINI_API_KEY') ?? '')
-
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: "gemini-pro-vision",
       generationConfig: {
-        temperature: 1,
-        topP: 0.95,
-        topK: 40,
+        temperature: 0.4,
+        topP: 0.8,
+        topK: 32,
         maxOutputTokens: 8192,
       }
     })
@@ -78,52 +85,69 @@ serve(async (req) => {
 
     Retorne os dados em formato JSON usando exatamente esses nomes de campos.
     Se alguma informação estiver faltando, indique com null.
-    RESPONDA SEMPRE EM PORTUGUÊS DO BRASIL.`
+    RESPONDA SEMPRE EM PORTUGUÊS DO BRASIL.
+    RETORNE APENAS O JSON, SEM NENHUM OUTRO TEXTO.`
 
     console.log('Processing document with Gemini API...')
     
     // Remove the data:image/[type];base64, prefix from the base64 string
     const base64Data = base64Image.split(',')[1]
     
-    // Call Gemini API with the image
-    const result = await model.generateContent([
-      {
-        text: systemInstruction
-      },
-      {
-        inlineData: {
-          mimeType: "image/jpeg",
-          data: base64Data
+    let lastError = null;
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        // Call Gemini API with the image
+        const result = await model.generateContent([
+          {
+            text: systemInstruction
+          },
+          {
+            inlineData: {
+              mimeType: "image/jpeg",
+              data: base64Data
+            }
+          }
+        ])
+
+        const response = await result.response
+        const text = response.text()
+        console.log('Gemini Response:', text)
+
+        // Process the extracted data
+        try {
+          const extractedData = JSON.parse(text.replace(/```json\s*([\s\S]*?)\s*```/g, '$1').trim())
+          return new Response(
+            JSON.stringify({ success: true, data: extractedData }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        } catch (parseError) {
+          console.error('Error parsing JSON response:', parseError)
+          throw new Error('Failed to parse Gemini response as JSON')
         }
-      }
-    ])
-
-    const response = await result.response
-    const text = response.text()
-    console.log('Gemini Response:', text)
-
-    // Process the extracted data
-    let extractedData
-    try {
-      extractedData = JSON.parse(text)
-    } catch (error) {
-      console.error('Error parsing Gemini response:', error)
-      extractedData = {
-        error: 'Falha ao analisar dados extraídos',
-        rawText: text
+      } catch (error) {
+        console.error(`Attempt ${attempt} failed:`, error)
+        lastError = error
+        if (attempt < MAX_RETRIES) {
+          console.log(`Retrying in ${RETRY_DELAY}ms...`)
+          await delay(RETRY_DELAY)
+        }
       }
     }
 
-    return new Response(
-      JSON.stringify({ success: true, data: extractedData }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    throw new Error(`All ${MAX_RETRIES} attempts failed. Last error: ${lastError?.message}`)
 
   } catch (error) {
     console.error('Error processing document:', error)
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      JSON.stringify({ 
+        success: false, 
+        error: error.message,
+        details: 'An error occurred while processing the document. Please try again.'
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
+        status: 500 
+      }
     )
   }
 })
