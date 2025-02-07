@@ -1,0 +1,51 @@
+/* Adicione este arquivo de estilos */
+.sidebar-container {
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  z-index: 50;
+  transition: transform 0.3s ease;
+}
+
+@media (max-width: 768px) {
+  .sidebar-container {
+    width: 100%;
+    max-width: 300px;
+    transform: translateX(-100%);
+  }
+  
+  .sidebar-container.open {
+    transform: translateX(0);
+  }
+  
+  .main-content {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+}
+
+.main-content {
+  margin-left: 280px; /* Ajuste conforme a largura do seu sidebar */
+  min-height: 100vh;
+  transition: margin-left 0.3s ease;
+}
+
+/* Botão do menu mobile */
+.mobile-toggle {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 60;
+  display: none;
+  padding: 0.5rem;
+  background: white;
+  border-radius: 0.375rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 768px) {
+  .mobile-toggle {
+    display: block;
+  }
+}
