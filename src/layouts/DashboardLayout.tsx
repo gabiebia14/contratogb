@@ -14,7 +14,7 @@ export default function DashboardLayout() {
 
   return (
     <SidebarProvider defaultOpen={true}>
-      <div className="flex h-screen w-full overflow-hidden relative">
+      <div className="flex-1 min-w-0 overflow-auto">
         {/* Botão Mobile */}
         <button 
           className="mobile-toggle"
@@ -110,7 +110,7 @@ export default function DashboardLayout() {
                 />
               </div>
             </div>
-            <div className="max-w-7xl mx-auto">
+            <div className="w-full max-w-7xl mx-auto">
               <Outlet />
             </div>
           </div>
