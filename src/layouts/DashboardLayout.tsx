@@ -1,6 +1,6 @@
 
 import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarGroup, SidebarGroupContent } from "@/components/ui/sidebar"
-import { FileText, Upload, Settings, Bell, BookOpen, ClipboardList, FileStack, Home } from 'lucide-react'
+import { FileText, Upload, Settings, Bell, BookOpen, FileStack, Home } from 'lucide-react'
 import { Link, Outlet, useLocation } from "react-router-dom"
 
 export default function DashboardLayout() {
@@ -8,8 +8,8 @@ export default function DashboardLayout() {
   
   return (
     <SidebarProvider defaultOpen={true}>
-      <div className="flex min-h-screen w-full">
-        <Sidebar className="hidden md:flex" variant="sidebar">
+      <div className="flex h-screen w-full overflow-hidden">
+        <Sidebar className="flex border-r bg-background" variant="sidebar">
           <SidebarHeader className="p-4">
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <span className="text-cyan-400">▲</span> ContractPro
@@ -85,7 +85,7 @@ export default function DashboardLayout() {
           </SidebarContent>
         </Sidebar>
 
-        <main className="flex-1 bg-gray-50">
+        <main className="flex-1 overflow-y-auto bg-gray-50">
           <div className="p-4 md:p-8">
             <div className="flex justify-end items-center mb-4 md:mb-8">
               <div className="flex items-center gap-4">
