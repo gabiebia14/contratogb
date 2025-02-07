@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -9,19 +10,22 @@ import mammoth from 'mammoth';
 
 interface ContractTemplateEditorProps {
   onClose: () => void;
-  onSave: (name: string, content: string) => void;
+  onSave: (name: string, content: string, variables: Record<string, string>) => void;
   initialContent?: string;
   initialName?: string;
+  initialVariables?: Record<string, string>;
 }
 
 const ContractTemplateEditor = ({ 
   onClose, 
   onSave,
   initialContent = '',
-  initialName = '' 
+  initialName = '',
+  initialVariables = {}
 }: ContractTemplateEditorProps) => {
   const [fileName, setFileName] = useState<string>('');
   const [templateName, setTemplateName] = useState<string>(initialName);
+  const [variables, setVariables] = useState<Record<string, string>>(initialVariables);
 
   const editor = useEditor({
     extensions: [StarterKit],
@@ -59,7 +63,12 @@ const ContractTemplateEditor = ({
   };
 
   const insertDynamicField = (fieldName: string) => {
-    editor?.commands.insertContent(`{{${fieldName}}}`);
+    const variableName = fieldName.toLowerCase();
+    editor?.commands.insertContent(`{{${variableName}}}`);
+    setVariables(prev => ({
+      ...prev,
+      [variableName]: fieldName
+    }));
   };
 
   const handleSave = () => {
@@ -69,7 +78,7 @@ const ContractTemplateEditor = ({
     }
 
     const content = editor?.getHTML() || '';
-    onSave(templateName, content);
+    onSave(templateName, content, variables);
   };
 
   return (

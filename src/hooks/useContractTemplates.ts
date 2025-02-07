@@ -1,25 +1,44 @@
+
 import { useState, useEffect } from 'react';
 import { Template } from '@/types/contracts';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export const useContractTemplates = () => {
-  const [templates, setTemplates] = useState<Template[]>([
-    {
-      id: 1,
-      name: 'Contrato de Prestação de Serviços',
-      category: 'Serviços',
-      lastModified: '15/03/2024',
-      downloads: 128,
-      content: 'template-servicos.pdf'
-    },
-    {
-      id: 2,
-      name: 'Termo de Confidencialidade',
-      category: 'Legal',
-      lastModified: '14/03/2024',
-      downloads: 85,
-      content: 'template-nda.pdf'
-    }
-  ]);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  return { templates };
+  useEffect(() => {
+    fetchTemplates();
+  }, []);
+
+  const fetchTemplates = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('contract_templates')
+        .select('*')
+        .eq('is_active', true);
+
+      if (error) throw error;
+
+      const formattedTemplates = data.map(template => ({
+        id: template.id,
+        name: template.name,
+        category: template.category || 'Geral',
+        lastModified: new Date(template.updated_at || template.created_at).toLocaleDateString(),
+        downloads: 0,
+        content: template.content,
+        template_variables: template.template_variables as Record<string, string>
+      }));
+
+      setTemplates(formattedTemplates);
+    } catch (error) {
+      console.error('Error fetching templates:', error);
+      toast.error('Erro ao carregar modelos de contrato');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { templates, loading };
 };
