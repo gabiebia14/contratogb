@@ -19,6 +19,7 @@ export type Database = {
           is_active: boolean | null
           name: string
           tags: string[] | null
+          template_variables: Json | null
           updated_at: string | null
           user_id: string | null
           version: number | null
@@ -32,6 +33,7 @@ export type Database = {
           is_active?: boolean | null
           name: string
           tags?: string[] | null
+          template_variables?: Json | null
           updated_at?: string | null
           user_id?: string | null
           version?: number | null
@@ -45,6 +47,7 @@ export type Database = {
           is_active?: boolean | null
           name?: string
           tags?: string[] | null
+          template_variables?: Json | null
           updated_at?: string | null
           user_id?: string | null
           version?: number | null
@@ -64,6 +67,7 @@ export type Database = {
           title: string
           updated_at: string | null
           user_id: string | null
+          variables: Json | null
         }
         Insert: {
           content: string
@@ -77,6 +81,7 @@ export type Database = {
           title: string
           updated_at?: string | null
           user_id?: string | null
+          variables?: Json | null
         }
         Update: {
           content?: string
@@ -90,6 +95,7 @@ export type Database = {
           title?: string
           updated_at?: string | null
           user_id?: string | null
+          variables?: Json | null
         }
         Relationships: [
           {
