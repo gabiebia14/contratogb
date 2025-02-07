@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, SidebarMenu, 
-  SidebarMenuItem, SidebarMenuButton, SidebarGroup, SidebarGroupContent } from "@/components/ui/sidebar"
-import { FileText, Upload, Settings, Bell, BookOpen, FileStack, Home, Menu } from 'lucide-react'
-import { Link, Outlet, useLocation } from "react-router-dom"
+  SidebarMenuItem, SidebarMenuButton, SidebarGroup, SidebarGroupContent } from "@/components/ui/sidebar";
+import { Bell, Menu } from 'lucide-react';
+import { Link, Outlet, useLocation } from "react-router-dom";
 
 export default function DashboardLayout() {
   const location = useLocation();
@@ -11,7 +11,7 @@ export default function DashboardLayout() {
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
-  
+
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="flex h-screen w-full overflow-hidden relative">
@@ -39,7 +39,7 @@ export default function DashboardLayout() {
                     <SidebarMenuItem>
                       <SidebarMenuButton asChild isActive={location.pathname === '/'}>
                         <Link to="/">
-                          <Home className="w-4 h-4" />
+                          <Menu className="w-4 h-4" />
                           <span>Dashboard</span>
                         </Link>
                       </SidebarMenuButton>
@@ -47,7 +47,6 @@ export default function DashboardLayout() {
                     <SidebarMenuItem>
                       <SidebarMenuButton asChild isActive={location.pathname === '/contracts'}>
                         <Link to="/contracts">
-                          <FileText className="w-4 h-4" />
                           <span>Contratos</span>
                         </Link>
                       </SidebarMenuButton>
@@ -55,7 +54,6 @@ export default function DashboardLayout() {
                     <SidebarMenuItem>
                       <SidebarMenuButton asChild isActive={location.pathname === '/new-contract'}>
                         <Link to="/new-contract">
-                          <Upload className="w-4 h-4" />
                           <span>Novo Contrato</span>
                         </Link>
                       </SidebarMenuButton>
@@ -63,7 +61,6 @@ export default function DashboardLayout() {
                     <SidebarMenuItem>
                       <SidebarMenuButton asChild isActive={location.pathname === '/templates'}>
                         <Link to="/templates">
-                          <BookOpen className="w-4 h-4" />
                           <span>Modelos de Contratos</span>
                         </Link>
                       </SidebarMenuButton>
@@ -71,7 +68,6 @@ export default function DashboardLayout() {
                     <SidebarMenuItem>
                       <SidebarMenuButton asChild isActive={location.pathname === '/documentos'}>
                         <Link to="/documentos">
-                          <FileStack className="w-4 h-4" />
                           <span>Documentos</span>
                         </Link>
                       </SidebarMenuButton>
@@ -79,7 +75,6 @@ export default function DashboardLayout() {
                     <SidebarMenuItem>
                       <SidebarMenuButton asChild isActive={location.pathname === '/settings'}>
                         <Link to="/settings">
-                          <Settings className="w-4 h-4" />
                           <span>Configurações</span>
                         </Link>
                       </SidebarMenuButton>
@@ -87,7 +82,6 @@ export default function DashboardLayout() {
                   </SidebarMenu>
                 </SidebarGroupContent>
               </SidebarGroup>
-
               <SidebarGroup className="mt-auto">
                 <SidebarGroupContent>
                   <div className="bg-indigo-800 rounded-lg p-4 mx-2 mb-4">
