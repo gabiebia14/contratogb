@@ -20,7 +20,7 @@ export default function DashboardLayout() {
               <SidebarGroupContent>
                 <SidebarMenu>
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild active={location.pathname === '/'}>
+                    <SidebarMenuButton asChild isActive={location.pathname === '/'}>
                       <Link to="/">
                         <Home className="w-4 h-4" />
                         <span>Dashboard</span>
@@ -28,7 +28,7 @@ export default function DashboardLayout() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild active={location.pathname === '/contracts'}>
+                    <SidebarMenuButton asChild isActive={location.pathname === '/contracts'}>
                       <Link to="/contracts">
                         <FileText className="w-4 h-4" />
                         <span>Contratos</span>
@@ -36,7 +36,7 @@ export default function DashboardLayout() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild active={location.pathname === '/new-contract'}>
+                    <SidebarMenuButton asChild isActive={location.pathname === '/new-contract'}>
                       <Link to="/new-contract">
                         <Upload className="w-4 h-4" />
                         <span>Novo Contrato</span>
@@ -44,7 +44,7 @@ export default function DashboardLayout() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild active={location.pathname === '/templates'}>
+                    <SidebarMenuButton asChild isActive={location.pathname === '/templates'}>
                       <Link to="/templates">
                         <BookOpen className="w-4 h-4" />
                         <span>Modelos de Contratos</span>
@@ -52,7 +52,7 @@ export default function DashboardLayout() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild active={location.pathname === '/documentos'}>
+                    <SidebarMenuButton asChild isActive={location.pathname === '/documentos'}>
                       <Link to="/documentos">
                         <FileStack className="w-4 h-4" />
                         <span>Documentos</span>
@@ -60,7 +60,7 @@ export default function DashboardLayout() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild active={false}>
+                    <SidebarMenuButton asChild isActive={location.pathname === '/settings'}>
                       <Link to="/settings">
                         <Settings className="w-4 h-4" />
                         <span>Configurações</span>
