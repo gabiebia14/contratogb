@@ -3,7 +3,6 @@ import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, SidebarMenu,
   SidebarMenuItem, SidebarMenuButton, SidebarGroup, SidebarGroupContent } from "@/components/ui/sidebar"
 import { FileText, Upload, Settings, Bell, BookOpen, FileStack, Home, Menu } from 'lucide-react'
 import { Link, Outlet, useLocation } from "react-router-dom"
-import '../styles/dashboard.css'
 
 export default function DashboardLayout() {
   const location = useLocation();
@@ -34,11 +33,57 @@ export default function DashboardLayout() {
               </h1>
             </SidebarHeader>
             <SidebarContent>
-              {/* Resto do conteúdo do Sidebar permanece igual */}
               <SidebarGroup>
                 <SidebarGroupContent>
                   <SidebarMenu>
-                    {/* ... seus itens de menu existentes ... */}
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild isActive={location.pathname === '/'}>
+                        <Link to="/">
+                          <Home className="w-4 h-4" />
+                          <span>Dashboard</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild isActive={location.pathname === '/contracts'}>
+                        <Link to="/contracts">
+                          <FileText className="w-4 h-4" />
+                          <span>Contratos</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild isActive={location.pathname === '/new-contract'}>
+                        <Link to="/new-contract">
+                          <Upload className="w-4 h-4" />
+                          <span>Novo Contrato</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild isActive={location.pathname === '/templates'}>
+                        <Link to="/templates">
+                          <BookOpen className="w-4 h-4" />
+                          <span>Modelos de Contratos</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild isActive={location.pathname === '/documentos'}>
+                        <Link to="/documentos">
+                          <FileStack className="w-4 h-4" />
+                          <span>Documentos</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild isActive={location.pathname === '/settings'}>
+                        <Link to="/settings">
+                          <Settings className="w-4 h-4" />
+                          <span>Configurações</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
                   </SidebarMenu>
                 </SidebarGroupContent>
               </SidebarGroup>
@@ -58,7 +103,7 @@ export default function DashboardLayout() {
           </Sidebar>
         </div>
 
-        {/* Conteúdo principal com classe para margin automática */}
+        {/* Conteúdo principal */}
         <main className="main-content overflow-y-auto bg-gray-50">
           <div className="p-4 md:p-8">
             <div className="flex justify-end items-center mb-4 md:mb-8">
