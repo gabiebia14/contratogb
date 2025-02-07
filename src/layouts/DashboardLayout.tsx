@@ -1,13 +1,15 @@
 
 import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarGroup, SidebarGroupContent } from "@/components/ui/sidebar"
-import { FileText, Upload, Settings, Bell, BookOpen, ClipboardList, FileStack } from 'lucide-react'
-import { Link, Outlet } from "react-router-dom"
+import { FileText, Upload, Settings, Bell, BookOpen, ClipboardList, FileStack, Home } from 'lucide-react'
+import { Link, Outlet, useLocation } from "react-router-dom"
 
 export default function DashboardLayout() {
+  const location = useLocation();
+  
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="flex min-h-screen w-full">
-        <Sidebar className="hidden md:block" variant="sidebar">
+        <Sidebar className="hidden md:flex" variant="sidebar">
           <SidebarHeader className="p-4">
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <span className="text-cyan-400">▲</span> ContractPro
@@ -18,7 +20,15 @@ export default function DashboardLayout() {
               <SidebarGroupContent>
                 <SidebarMenu>
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
+                    <SidebarMenuButton asChild active={location.pathname === '/'}>
+                      <Link to="/">
+                        <Home className="w-4 h-4" />
+                        <span>Dashboard</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild active={location.pathname === '/contracts'}>
                       <Link to="/contracts">
                         <FileText className="w-4 h-4" />
                         <span>Contratos</span>
@@ -26,7 +36,7 @@ export default function DashboardLayout() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
+                    <SidebarMenuButton asChild active={location.pathname === '/new-contract'}>
                       <Link to="/new-contract">
                         <Upload className="w-4 h-4" />
                         <span>Novo Contrato</span>
@@ -34,7 +44,7 @@ export default function DashboardLayout() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
+                    <SidebarMenuButton asChild active={location.pathname === '/templates'}>
                       <Link to="/templates">
                         <BookOpen className="w-4 h-4" />
                         <span>Modelos de Contratos</span>
@@ -42,7 +52,7 @@ export default function DashboardLayout() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
+                    <SidebarMenuButton asChild active={location.pathname === '/documentos'}>
                       <Link to="/documentos">
                         <FileStack className="w-4 h-4" />
                         <span>Documentos</span>
@@ -50,17 +60,11 @@ export default function DashboardLayout() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <Link to="/contracts">
-                        <ClipboardList className="w-4 h-4" />
-                        <span>Gestão de Contratos</span>
+                    <SidebarMenuButton asChild active={false}>
+                      <Link to="/settings">
+                        <Settings className="w-4 h-4" />
+                        <span>Configurações</span>
                       </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton>
-                      <Settings className="w-4 h-4" />
-                      <span>Configurações</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 </SidebarMenu>
@@ -70,7 +74,7 @@ export default function DashboardLayout() {
             <SidebarGroup className="mt-auto">
               <SidebarGroupContent>
                 <div className="bg-indigo-800 rounded-lg p-4 mx-2 mb-4">
-                  <h3 className="font-medium mb-2">Tutorial</h3>
+                  <h3 className="font-medium mb-2 text-white">Tutorial</h3>
                   <p className="text-sm text-gray-300 mb-4">Aprenda a gerenciar contratos</p>
                   <button className="bg-cyan-400 text-white px-4 py-2 rounded-lg text-sm w-full hover:bg-cyan-500 transition-colors">
                     Começar
@@ -83,7 +87,7 @@ export default function DashboardLayout() {
 
         <main className="flex-1 bg-gray-50">
           <div className="p-4 md:p-8">
-            <div className="flex justify-between items-center mb-4 md:mb-8">
+            <div className="flex justify-end items-center mb-4 md:mb-8">
               <div className="flex items-center gap-4">
                 <Bell className="text-gray-400 cursor-pointer hover:text-gray-600 transition-colors" />
                 <img 

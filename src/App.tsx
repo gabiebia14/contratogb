@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/sonner';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import DashboardLayout from '@/layouts/DashboardLayout';
@@ -8,6 +9,7 @@ import ContractsPage from '@/components/ContractsPage';
 import ContractTemplates from '@/pages/ContractTemplates';
 import NewContract from '@/pages/NewContract';
 import Documents from '@/pages/Documents';
+import Dashboard from '@/pages/Index';
 
 const queryClient = new QueryClient();
 
@@ -18,6 +20,7 @@ function App() {
         <Routes>
           <Route path="/auth" element={<Auth />} />
           <Route path="/" element={<DashboardLayout />}>
+            <Route index element={<Dashboard />} />
             <Route path="contracts" element={<ContractsPage />} />
             <Route path="templates" element={<ContractTemplates />} />
             <Route path="new-contract" element={<NewContract />} />
