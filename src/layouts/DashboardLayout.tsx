@@ -98,7 +98,7 @@ export default function DashboardLayout() {
         </div>
 
         {/* Conteúdo principal */}
-        <main className="main-content overflow-y-auto bg-gray-50">
+        <main className="main-content bg-gray-50">
           <div className="p-4 md:p-8">
             <div className="flex justify-end items-center mb-4 md:mb-8">
               <div className="flex items-center gap-4">
