@@ -7,7 +7,7 @@ import OCRForm from '@/components/ocr/OCRForm';
 import ExtractedDataDisplay from '@/components/ocr/ExtractedDataDisplay';
 import ProcessedHistory from '@/components/ocr/ProcessedHistory';
 import { useOCR } from '@/hooks/useOCR';
-import { DocumentRole, MaritalStatus } from '@/types/ocr';
+import { DocumentRole, DocumentType, MaritalStatus } from '@/types/ocr';
 
 const Documents = () => {
   const {
@@ -20,6 +20,7 @@ const Documents = () => {
   } = useOCR();
 
   const [documentType, setDocumentType] = React.useState<DocumentRole>('locatario');
+  const [documentCategory, setDocumentCategory] = React.useState<DocumentType>('documentos_pessoais');
   const [maritalStatus, setMaritalStatus] = React.useState<MaritalStatus>('solteiro');
   const [sharedAddress, setSharedAddress] = React.useState(false);
   const [needsGuarantor, setNeedsGuarantor] = React.useState(false);
@@ -27,6 +28,7 @@ const Documents = () => {
   const handleProcess = async () => {
     await processFiles({
       documentType,
+      documentCategory,
       maritalStatus,
       sharedAddress,
       needsGuarantor
@@ -54,6 +56,8 @@ const Documents = () => {
               <OCRForm
                 documentType={documentType}
                 setDocumentType={setDocumentType}
+                documentCategory={documentCategory}
+                setDocumentCategory={setDocumentCategory}
                 maritalStatus={maritalStatus}
                 setMaritalStatus={setMaritalStatus}
                 sharedAddress={sharedAddress}
@@ -85,25 +89,11 @@ const Documents = () => {
           </Card>
 
           {extractedData.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Dados Extraídos</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ExtractedDataDisplay data={extractedData} />
-              </CardContent>
-            </Card>
+            <ExtractedDataDisplay data={extractedData} />
           )}
 
           {processedDocuments.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Histórico de Processamentos</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ProcessedHistory processedDocuments={processedDocuments} />
-              </CardContent>
-            </Card>
+            <ProcessedHistory processedDocuments={processedDocuments} />
           )}
         </TabsContent>
 

@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 
 interface ProcessOptions {
   documentType: DocumentRole;
+  documentCategory: DocumentType;
   maritalStatus: MaritalStatus;
   sharedAddress: boolean;
   needsGuarantor: boolean;
@@ -30,7 +31,10 @@ export const useOCR = () => {
   };
 
   const processFiles = async (options: ProcessOptions) => {
-    if (!selectedFiles.length) return;
+    if (!selectedFiles.length) {
+      toast.error('Selecione um arquivo para processar');
+      return;
+    }
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
@@ -72,10 +76,11 @@ export const useOCR = () => {
 
       console.log('Arquivo enviado com sucesso:', uploadData);
 
-      // Process with OpenAI via Edge Function
+      // Process with Edge Function
       const { data: processedData, error } = await supabase.functions.invoke('process-ocr', {
         body: {
           documentType: options.documentType,
+          documentCategory: options.documentCategory,
           base64Image: base64,
           maritalStatus: options.maritalStatus,
           sharedAddress: options.sharedAddress
@@ -96,7 +101,7 @@ export const useOCR = () => {
           file_name: file.name,
           file_path: uploadData.path,
           document_role: options.documentType,
-          document_type: 'rg_cpf' as DocumentType,
+          document_type: options.documentCategory,
           marital_status: options.maritalStatus,
           shared_address: options.sharedAddress,
           extracted_data: processedData.data,
