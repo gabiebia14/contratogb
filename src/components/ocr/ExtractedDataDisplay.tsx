@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ExtractedField } from '@/types/ocr';
@@ -18,6 +19,18 @@ const fieldTranslations: Record<string, string> = {
   locador_cep: 'CEP do Locador',
   locador_cidade: 'Cidade do Locador',
   locador_estado: 'Estado do Locador',
+  locataria_nome: 'Nome do Locatário',
+  locataria_nacionalidade: 'Nacionalidade do Locatário',
+  locataria_estado_civil: 'Estado Civil do Locatário',
+  locataria_profissao: 'Profissão do Locatário',
+  locataria_rg: 'RG do Locatário',
+  locataria_cpf: 'CPF do Locatário',
+  locataria_endereco: 'Endereço do Locatário',
+  locataria_bairro: 'Bairro do Locatário',
+  locataria_cep: 'CEP do Locatário',
+  locataria_cidade: 'Cidade do Locatário',
+  locataria_estado: 'Estado do Locatário',
+  locataria_telefone: 'Telefone do Locatário',
   locatario_nome: 'Nome do Locatário',
   locatario_nacionalidade: 'Nacionalidade do Locatário',
   locatario_estado_civil: 'Estado Civil do Locatário',
@@ -47,35 +60,31 @@ const fieldTranslations: Record<string, string> = {
 const ExtractedDataDisplay = ({ data }: ExtractedDataDisplayProps) => {
   if (!data.length) return null;
 
-  const parseJsonFromRawText = (rawText: string): Record<string, string | null> => {
-    try {
-      const jsonMatch = rawText.match(/```json\s*({.*})\s*```/s);
-      return jsonMatch ? JSON.parse(jsonMatch[1]) : {};
-    } catch (error) {
-      console.error('Error parsing JSON from raw text:', error);
-      return {};
-    }
-  };
-
   const getValidFields = () => {
-    const rawTextField = data.find(item => item.field === 'Raw Text');
-    if (!rawTextField) return [];
-
-    const jsonData = parseJsonFromRawText(rawTextField.value);
+    // Find the field containing our data
+    const extractedField = data.find(item => item.value && typeof item.value === 'string');
+    if (!extractedField) return [];
     
-    return Object.entries(jsonData)
-      .filter(([_, value]) => value !== null && value !== '')
-      .map(([key, value]) => ({
-        field: key,
-        value: value as string
-      }));
+    // Try to parse the data as an object
+    try {
+      const jsonData = JSON.parse(extractedField.value);
+      return Object.entries(jsonData)
+        .filter(([_, value]) => value !== null && value !== '')
+        .map(([key, value]) => ({
+          field: key,
+          value: value as string
+        }));
+    } catch (error) {
+      console.error('Error parsing data:', error);
+      return [];
+    }
   };
 
   const sortFields = (fields: { field: string; value: string }[]) => {
     return fields.sort((a, b) => {
       const getOrder = (field: string) => {
         if (field.startsWith('locador')) return 1;
-        if (field.startsWith('locatario')) return 2;
+        if (field.startsWith('locatario') || field.startsWith('locataria')) return 2;
         if (field.startsWith('fiador')) return 3;
         return 4;
       };
@@ -102,6 +111,11 @@ const ExtractedDataDisplay = ({ data }: ExtractedDataDisplayProps) => {
             <span className="text-gray-900">{item.value}</span>
           </div>
         ))}
+        {validFields.length === 0 && (
+          <div className="text-gray-500 text-center py-4">
+            Nenhum dado extraído do documento
+          </div>
+        )}
       </CardContent>
     </Card>
   );

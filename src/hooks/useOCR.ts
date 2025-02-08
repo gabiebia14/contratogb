@@ -96,7 +96,7 @@ export const useOCR = () => {
           file_name: file.name,
           file_path: uploadData.path,
           document_role: options.documentType,
-          document_type: 'rg_cpf' as DocumentType, // Default to RG/CPF type
+          document_type: 'rg_cpf' as DocumentType,
           marital_status: options.maritalStatus,
           shared_address: options.sharedAddress,
           extracted_data: processedData.data,
@@ -114,13 +114,12 @@ export const useOCR = () => {
       }
 
       // Format extracted data for display
-      const formattedData = Object.entries(processedData.data).map(([field, value]) => ({
-        field: field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1'),
-        value: value as string,
-        confidence: 0.95
-      }));
-
-      setExtractedData(formattedData);
+      setExtractedData([{
+        field: 'data',
+        value: JSON.stringify(processedData.data),
+        confidence: 1
+      }]);
+      
       setProcessedDocuments(prev => [documentData, ...prev]);
       toast.success('Documento processado com sucesso!');
     } catch (error) {
