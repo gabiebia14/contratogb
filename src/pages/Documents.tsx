@@ -1,9 +1,11 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import FileUploadArea from '@/components/ocr/FileUploadArea';
 import OCRForm from '@/components/ocr/OCRForm';
 import ExtractedDataDisplay from '@/components/ocr/ExtractedDataDisplay';
+import ProcessedHistory from '@/components/ocr/ProcessedHistory';
 import { useOCR } from '@/hooks/useOCR';
 import { DocumentRole, MaritalStatus } from '@/types/ocr';
 
@@ -12,6 +14,7 @@ const Documents = () => {
     selectedFiles,
     processing,
     extractedData,
+    processedDocuments,
     handleFilesSelected,
     processFiles
   } = useOCR();
@@ -91,6 +94,17 @@ const Documents = () => {
               </CardContent>
             </Card>
           )}
+
+          {processedDocuments.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Histórico de Processamentos</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ProcessedHistory processedDocuments={processedDocuments} />
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="history">
@@ -99,7 +113,7 @@ const Documents = () => {
               <CardTitle>Histórico de Documentos</CardTitle>
             </CardHeader>
             <CardContent>
-              {/* ProcessedHistory component will be implemented here */}
+              <ProcessedHistory processedDocuments={processedDocuments} />
             </CardContent>
           </Card>
         </TabsContent>
