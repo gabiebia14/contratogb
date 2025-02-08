@@ -115,7 +115,7 @@ export const useOCR = () => {
 
       // Format extracted data for display
       setExtractedData([{
-        field: 'data',
+        field: 'extracted_data',
         value: JSON.stringify(processedData.data),
         confidence: 1
       }]);

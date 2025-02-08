@@ -19,18 +19,6 @@ const fieldTranslations: Record<string, string> = {
   locador_cep: 'CEP do Locador',
   locador_cidade: 'Cidade do Locador',
   locador_estado: 'Estado do Locador',
-  locataria_nome: 'Nome do Locatário',
-  locataria_nacionalidade: 'Nacionalidade do Locatário',
-  locataria_estado_civil: 'Estado Civil do Locatário',
-  locataria_profissao: 'Profissão do Locatário',
-  locataria_rg: 'RG do Locatário',
-  locataria_cpf: 'CPF do Locatário',
-  locataria_endereco: 'Endereço do Locatário',
-  locataria_bairro: 'Bairro do Locatário',
-  locataria_cep: 'CEP do Locatário',
-  locataria_cidade: 'Cidade do Locatário',
-  locataria_estado: 'Estado do Locatário',
-  locataria_telefone: 'Telefone do Locatário',
   locatario_nome: 'Nome do Locatário',
   locatario_nacionalidade: 'Nacionalidade do Locatário',
   locatario_estado_civil: 'Estado Civil do Locatário',
@@ -61,21 +49,23 @@ const ExtractedDataDisplay = ({ data }: ExtractedDataDisplayProps) => {
   if (!data.length) return null;
 
   const getValidFields = () => {
-    // Find the field containing our data
-    const extractedField = data.find(item => item.value && typeof item.value === 'string');
-    if (!extractedField) return [];
-    
-    // Try to parse the data as an object
     try {
-      const jsonData = JSON.parse(extractedField.value);
-      return Object.entries(jsonData)
+      // Get the data from the extracted_data field
+      const extractedDataField = data.find(item => item.field === 'extracted_data');
+      if (!extractedDataField || !extractedDataField.value) return [];
+
+      // Parse the JSON string
+      const parsedData = JSON.parse(extractedDataField.value);
+      
+      // Convert the object to an array of fields and filter out null/empty values
+      return Object.entries(parsedData)
         .filter(([_, value]) => value !== null && value !== '')
         .map(([key, value]) => ({
           field: key,
           value: value as string
         }));
     } catch (error) {
-      console.error('Error parsing data:', error);
+      console.error('Error processing extracted data:', error);
       return [];
     }
   };
@@ -84,7 +74,7 @@ const ExtractedDataDisplay = ({ data }: ExtractedDataDisplayProps) => {
     return fields.sort((a, b) => {
       const getOrder = (field: string) => {
         if (field.startsWith('locador')) return 1;
-        if (field.startsWith('locatario') || field.startsWith('locataria')) return 2;
+        if (field.startsWith('locatario')) return 2;
         if (field.startsWith('fiador')) return 3;
         return 4;
       };
