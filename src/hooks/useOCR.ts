@@ -1,6 +1,7 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { ExtractedField, DocumentRole, MaritalStatus } from '@/types/ocr';
+import { ExtractedField, DocumentRole, DocumentType, MaritalStatus } from '@/types/ocr';
 import { toast } from 'sonner';
 
 interface ProcessOptions {
@@ -94,7 +95,8 @@ export const useOCR = () => {
         .insert({
           file_name: file.name,
           file_path: uploadData.path,
-          document_type: options.documentType,
+          document_role: options.documentType,
+          document_type: 'rg_cpf' as DocumentType, // Default to RG/CPF type
           marital_status: options.maritalStatus,
           shared_address: options.sharedAddress,
           extracted_data: processedData.data,

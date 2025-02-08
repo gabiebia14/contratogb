@@ -1,3 +1,4 @@
+
 export interface ExtractedField {
   field: string;
   value: string;
@@ -19,5 +20,7 @@ export type DocumentField =
   | "Telefone";
 
 export type DocumentRole = 'locador' | 'locatario' | 'fiador';
+export type DocumentType = 'rg_cpf' | 'comprovante_endereco';
 export type MaritalStatus = 'solteiro' | 'casado' | 'divorciado' | 'viuvo';
 export type DocumentGender = 'masculino' | 'feminino';
+
