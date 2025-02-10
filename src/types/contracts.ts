@@ -1,3 +1,4 @@
+
 export interface TemplateVariables {
   locador_nome?: string;
   locador_nacionalidade?: string;
@@ -72,8 +73,13 @@ export interface Template {
   id: string;
   name: string;
   category: string;
-  lastModified: string;
-  downloads: number;
   content: string;
+  created_at: string;
+  updated_at: string;
   template_variables?: TemplateVariables;
+  is_active?: boolean;
+  tags?: string[];
+  version?: number;
+  user_id?: string;
+  description?: string;
 }
