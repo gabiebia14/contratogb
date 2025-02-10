@@ -63,8 +63,6 @@ RG ({rg})
 CPF ({cpf})
 Data de Nascimento ({data_nascimento})
 - [Remover explicitamente qualquer menção de endereço aqui]
-+ IMPORTANTE: Não extraia quaisquer informações de endereço, como logradouro, bairro, cidade, CEP ou estado
-+ (mesmo que constem no documento RG/CNH). Apenas ignore esses dados.
 
 2.2. Se for Comprovante de Endereço:
 Extraia os seguintes parâmetros:
