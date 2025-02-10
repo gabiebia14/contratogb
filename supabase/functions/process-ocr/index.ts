@@ -50,32 +50,32 @@ Fiador
 Fiadora
 Tipo de Documento
 Opções disponíveis:
-
 Documentos Pessoais
 Comprovante de Endereço
+
 2. Extração de Dados Baseada no Tipo de Documento
 A extração de dados será limitada conforme o tipo de documento selecionado pelo usuário:
 
-Documentos Pessoais:
+2.1. Se for Documentos Pessoais:
 Extraia os seguintes parâmetros:
-
 Nome Completo ({nome_completo})
 RG ({rg})
 CPF ({cpf})
 Data de Nascimento ({data_nascimento})
-Comprovante de Endereço:
-Extraia os seguintes parâmetros:
+- [Remover explicitamente qualquer menção de endereço aqui]
++ IMPORTANTE: Não extraia quaisquer informações de endereço, como logradouro, bairro, cidade, CEP ou estado
++ (mesmo que constem no documento RG/CNH). Apenas ignore esses dados.
 
+2.2. Se for Comprovante de Endereço:
+Extraia os seguintes parâmetros:
 Endereço ({endereco})
 Bairro ({bairro})
 CEP ({cep})
 Cidade ({cidade})
 Estado ({estado})
-Nota: No caso de documentos pessoais, o sistema não deve extrair informações relacionadas ao endereço (como cidade ou estado), para evitar confusões com os dados do local de expedição do RG.
 
 3. Parâmetros Dinâmicos
 Os dados extraídos devem ser organizados nos seguintes parâmetros:
-
 LOCADOR(A):
 Nome do Locador(a): {locador_nome}
 Nacionalidade: {locador_nacionalidade}
@@ -88,6 +88,7 @@ Bairro: {locador_bairro}
 CEP: {locador_cep}
 Cidade: {locador_cidade}
 Estado: {locador_estado}
+
 LOCATÁRIO(A):
 Nome: {locatario_nome} ou {locataria_nome}
 Nacionalidade: {locatario_nacionalidade} ou {locataria_nacionalidade}
@@ -101,6 +102,7 @@ CEP: {locatario_cep} ou {locataria_cep}
 Cidade: {locatario_cidade} ou {locataria_cidade}
 Estado: {locatario_estado} ou {locataria_estado}
 Telefone: {locatario_telefone} ou {locataria_telefone}
+
 FIADOR(A):
 Nome: {fiador_nome} ou {fiadora_nome}
 Nacionalidade: {fiador_nacionalidade} ou {fiadora_nacionalidade}
