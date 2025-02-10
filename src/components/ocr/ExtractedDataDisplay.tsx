@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ExtractedField } from '@/types/ocr';
@@ -7,7 +6,7 @@ interface ExtractedDataDisplayProps {
   data: ExtractedField[];
 }
 
-const fieldTranslations: Record<string, string> = {
+export const fieldTranslations: Record<string, string> = {
   locador_nome: 'Nome do Locador',
   locador_nacionalidade: 'Nacionalidade do Locador',
   locador_estado_civil: 'Estado Civil do Locador',
