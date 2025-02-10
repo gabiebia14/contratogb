@@ -58,11 +58,13 @@ A extração de dados será limitada conforme o tipo de documento selecionado pe
 
 2.1. Se for Documentos Pessoais:
 Extraia os seguintes parâmetros:
-Nome Completo ({nome_completo})
-RG ({rg})
-CPF ({cpf})
+Nome Completo ({nome_completo}) ou ({locador_nome}) ou ({locatario_nome}) ou ({locataria_nome}) ou {fiador_nome} ou {fiadora_nome}
+RG ({rg}) ou {locador_rg} ou {fiador_rg} ou {fiadora_rg}
+CPF ({cpf}) ou {locatario_cpf} ou {locataria_cpf} ou {fiador_cpf} ou {fiadora_cpf}
 Data de Nascimento ({data_nascimento})
 - [Remover explicitamente qualquer menção de endereço aqui]
++ IMPORTANTE: Não extraia quaisquer informações de endereço, como logradouro, bairro, cidade, CEP ou estado
++ (mesmo que constem no documento RG/CNH). Apenas ignore esses dados.
 
 2.2. Se for Comprovante de Endereço:
 Extraia os seguintes parâmetros:
