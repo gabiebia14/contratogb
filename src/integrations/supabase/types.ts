@@ -118,7 +118,9 @@ export type Database = {
         Row: {
           created_at: string | null
           document_gender: string | null
-          document_role: string
+          document_role:
+            | Database["public"]["Enums"]["document_role_enum"]
+            | null
           document_type: Database["public"]["Enums"]["document_type"]
           error_message: string | null
           extracted_data: Json | null
@@ -127,7 +129,9 @@ export type Database = {
           file_path: string
           file_type: string | null
           id: string
-          marital_status: string
+          marital_status:
+            | Database["public"]["Enums"]["marital_status_enum"]
+            | null
           processed_at: string | null
           shared_address: boolean
           spouse_document_id: string | null
@@ -137,8 +141,10 @@ export type Database = {
         Insert: {
           created_at?: string | null
           document_gender?: string | null
-          document_role: string
-          document_type: Database["public"]["Enums"]["document_type"]
+          document_role?:
+            | Database["public"]["Enums"]["document_role_enum"]
+            | null
+          document_type?: Database["public"]["Enums"]["document_type"]
           error_message?: string | null
           extracted_data?: Json | null
           extracted_fields?: Json | null
@@ -146,7 +152,9 @@ export type Database = {
           file_path: string
           file_type?: string | null
           id?: string
-          marital_status: string
+          marital_status?:
+            | Database["public"]["Enums"]["marital_status_enum"]
+            | null
           processed_at?: string | null
           shared_address?: boolean
           spouse_document_id?: string | null
@@ -156,7 +164,9 @@ export type Database = {
         Update: {
           created_at?: string | null
           document_gender?: string | null
-          document_role?: string
+          document_role?:
+            | Database["public"]["Enums"]["document_role_enum"]
+            | null
           document_type?: Database["public"]["Enums"]["document_type"]
           error_message?: string | null
           extracted_data?: Json | null
@@ -165,7 +175,9 @@ export type Database = {
           file_path?: string
           file_type?: string | null
           id?: string
-          marital_status?: string
+          marital_status?:
+            | Database["public"]["Enums"]["marital_status_enum"]
+            | null
           processed_at?: string | null
           shared_address?: boolean
           spouse_document_id?: string | null
@@ -190,7 +202,13 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      document_role_enum: "locador" | "locatario" | "fiador"
+      document_role_enum:
+        | "locador"
+        | "locadora"
+        | "locatario"
+        | "locataria"
+        | "fiador"
+        | "fiadora"
       document_type: "documentos_pessoais" | "comprovante_endereco"
       document_type_new: "documentos_pessoais" | "comprovante_endereco"
       marital_status: "solteiro" | "casado" | "divorciado" | "viuvo"

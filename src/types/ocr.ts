@@ -16,4 +16,3 @@ export type DocumentRole =
 export type DocumentType = 'documentos_pessoais' | 'comprovante_endereco';
 export type MaritalStatus = 'solteiro' | 'casado' | 'divorciado' | 'viuvo';
 export type DocumentGender = 'masculino' | 'feminino';
-
