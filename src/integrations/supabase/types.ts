@@ -191,7 +191,8 @@ export type Database = {
     }
     Enums: {
       document_role_enum: "locador" | "locatario" | "fiador"
-      document_type: "rg_cpf" | "comprovante_endereco"
+      document_type: "documentos_pessoais" | "comprovante_endereco"
+      document_type_new: "documentos_pessoais" | "comprovante_endereco"
       marital_status: "solteiro" | "casado" | "divorciado" | "viuvo"
       marital_status_enum: "solteiro" | "casado" | "divorciado" | "viuvo"
     }
