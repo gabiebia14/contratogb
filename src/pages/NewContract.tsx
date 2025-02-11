@@ -1,4 +1,3 @@
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -37,8 +36,8 @@ const formSchema = z.object({
 
 export default function NewContract() {
   const { toast } = useToast();
-  const { templates } = useContractTemplates();
-  const { processedDocuments } = useOCR();
+  const { templates, loading: templatesLoading } = useContractTemplates();
+  const { processedDocuments, loading: documentsLoading } = useOCR();
   
   console.log('Todos os documentos:', processedDocuments);
 
@@ -116,7 +115,7 @@ export default function NewContract() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Modelo de Contrato</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={templatesLoading}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione um modelo de contrato" />
@@ -141,7 +140,7 @@ export default function NewContract() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Documento</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={documentsLoading}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione um documento" />
@@ -167,7 +166,7 @@ export default function NewContract() {
             />
 
             <div className="flex justify-end">
-              <Button type="submit">Gerar Contrato</Button>
+              <Button type="submit" disabled={templatesLoading || documentsLoading}>Gerar Contrato</Button>
             </div>
           </form>
         </Form>
