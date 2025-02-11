@@ -25,12 +25,13 @@ const ProcessedHistory = ({ processedDocuments }: ProcessedHistoryProps) => {
     return format(date, "dd/MM/yyyy HH:mm");
   };
 
-  const getValidFields = (data: any[]) => {
-    const extractedField = data.find(item => item.value && typeof item.value === 'string');
-    if (!extractedField) return [];
+  const getValidFields = (extractedData: any) => {
+    if (!extractedData || typeof extractedData !== 'object') return [];
     
     try {
-      const jsonData = JSON.parse(extractedField.value);
+      // If extractedData is already an object with key-value pairs, use it directly
+      const jsonData = typeof extractedData === 'string' ? JSON.parse(extractedData) : extractedData;
+      
       return Object.entries(jsonData)
         .filter(([_, value]) => value !== null && value !== '')
         .map(([key, value]) => ({
@@ -43,7 +44,7 @@ const ProcessedHistory = ({ processedDocuments }: ProcessedHistoryProps) => {
     }
   };
 
-  const handleEdit = (docId: string, data: any[]) => {
+  const handleEdit = (docId: string, data: any) => {
     const fields = getValidFields(data);
     const initialData = Object.fromEntries(
       fields.map(({ field, value }) => [field, value])
