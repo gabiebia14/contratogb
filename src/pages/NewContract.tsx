@@ -57,10 +57,29 @@ export default function NewContract() {
     });
   }
 
-  // Filtra apenas documentos que possuem nome completo
+  const getValidFields = (extractedData: any) => {
+    if (!extractedData || typeof extractedData !== 'object') return [];
+    
+    try {
+      const jsonData = typeof extractedData === 'string' ? JSON.parse(extractedData) : extractedData;
+      return Object.entries(jsonData)
+        .filter(([_, value]) => value !== null && value !== '')
+        .map(([key, value]) => ({
+          field: key,
+          value: String(value)
+        }));
+    } catch (error) {
+      console.error('Error parsing data:', error);
+      return [];
+    }
+  };
+
+  // Filter documents using the same logic as ProcessedHistory
   const validDocuments = processedDocuments.filter((doc) => {
-    const extractedData = doc.extracted_data || {};
-    return extractedData.nome_completo || extractedData.nome;
+    const fields = getValidFields(doc.extracted_data);
+    return fields.some(({ field, value }) => 
+      (field === 'nome_completo' || field === 'nome') && value
+    );
   });
 
   return (
@@ -121,11 +140,17 @@ export default function NewContract() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {validDocuments.map((doc) => (
-                        <SelectItem key={doc.id} value={String(doc.id)}>
-                          {doc.extracted_data?.nome_completo || doc.extracted_data?.nome || 'Documento sem nome'}
-                        </SelectItem>
-                      ))}
+                      {validDocuments.map((doc) => {
+                        const fields = getValidFields(doc.extracted_data);
+                        const nameField = fields.find(f => 
+                          f.field === 'nome_completo' || f.field === 'nome'
+                        );
+                        return (
+                          <SelectItem key={doc.id} value={String(doc.id)}>
+                            {nameField?.value || 'Documento sem nome'}
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                   <FormMessage />
