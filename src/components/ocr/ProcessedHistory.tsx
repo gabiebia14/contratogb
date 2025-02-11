@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Clock, Edit2, Save, X } from 'lucide-react';
 import { format, isValid, parseISO } from 'date-fns';
@@ -29,15 +28,28 @@ const ProcessedHistory = ({ processedDocuments }: ProcessedHistoryProps) => {
     if (!extractedData || typeof extractedData !== 'object') return [];
     
     try {
-      // If extractedData is already an object with key-value pairs, use it directly
       const jsonData = typeof extractedData === 'string' ? JSON.parse(extractedData) : extractedData;
       
-      return Object.entries(jsonData)
-        .filter(([_, value]) => value !== null && value !== '')
-        .map(([key, value]) => ({
-          field: key,
-          value: value as string
-        }));
+      const uniqueFields = new Map();
+      
+      Object.entries(jsonData).forEach(([key, value]) => {
+        if (value !== null && value !== '') {
+          const baseKey = key
+            .replace('_locatario_', '_')
+            .replace('_locataria_', '_')
+            .replace('locatario_', '')
+            .replace('locataria_', '');
+          
+          if (!uniqueFields.has(baseKey)) {
+            uniqueFields.set(baseKey, {
+              field: key,
+              value: value as string
+            });
+          }
+        }
+      });
+
+      return Array.from(uniqueFields.values());
     } catch (error) {
       console.error('Error parsing data:', error);
       return [];
@@ -55,7 +67,6 @@ const ProcessedHistory = ({ processedDocuments }: ProcessedHistoryProps) => {
 
   const handleSave = async (docId: string) => {
     try {
-      // TODO: Implement the save functionality with your backend
       console.log('Saving edited data:', editedData);
       toast.success('Dados atualizados com sucesso!');
       setEditingId(null);
