@@ -1,35 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FileText, Download, Search } from 'lucide-react';
-
-const mockContracts = [
-  {
-    id: 1,
-    name: 'Contrato de Prestação de Serviços',
-    client: 'Empresa ABC Ltda',
-    date: '15/03/2024',
-    status: 'Ativo'
-  },
-  {
-    id: 2,
-    name: 'Termo de Confidencialidade',
-    client: 'XYZ Corporação',
-    date: '14/03/2024',
-    status: 'Pendente'
-  },
-  {
-    id: 3,
-    name: 'Contrato de Parceria',
-    client: 'Tech Solutions SA',
-    date: '13/03/2024',
-    status: 'Finalizado'
-  }
-];
+import { supabase } from '@/integrations/supabase/client';  // Ensure this import is correct
 
 const ContractsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
+  const [contracts, setContracts] = useState([]);
 
-  const filteredContracts = mockContracts.filter(contract => {
+  useEffect(() => {
+    const fetchContracts = async () => {
+      const { data, error } = await supabase.from('contracts').select('*');
+      if (error) {
+        console.error('Error fetching contracts:', error);
+      } else {
+        setContracts(data);
+      }
+    };
+    fetchContracts();
+  }, []);
+
+  const filteredContracts = contracts.filter(contract => {
     const matchesSearch = contract.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          contract.client.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'todos' || contract.status.toLowerCase() === statusFilter.toLowerCase();
