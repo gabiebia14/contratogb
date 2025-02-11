@@ -1,3 +1,4 @@
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -21,8 +22,6 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { useContractTemplates } from "@/hooks/useContractTemplates";
 import { useOCR } from "@/hooks/useOCR";
-import { Card, CardContent } from "@/components/ui/card";
-import { FileText, FileCheck } from "lucide-react";
 
 const formSchema = z.object({
   title: z.string().min(2, {
@@ -31,7 +30,9 @@ const formSchema = z.object({
   templateId: z.string({
     required_error: "Por favor selecione um modelo de contrato.",
   }),
-  documentId: z.string().optional(),
+  documentId: z.string({
+    required_error: "Por favor selecione um documento.",
+  }),
 });
 
 export default function NewContract() {
@@ -55,6 +56,12 @@ export default function NewContract() {
       description: "O contrato foi gerado e está pronto para revisão.",
     });
   }
+
+  // Filtra apenas documentos que possuem nome completo
+  const validDocuments = processedDocuments.filter((doc) => {
+    const extractedData = doc.extracted_data || {};
+    return extractedData.nome_completo || extractedData.nome;
+  });
 
   return (
     <div>
@@ -101,36 +108,30 @@ export default function NewContract() {
               )}
             />
 
-            <div className="space-y-4">
-              <FormLabel>Documentos Disponíveis</FormLabel>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {processedDocuments.map((doc) => (
-                  <Card 
-                    key={doc.id}
-                    className={`cursor-pointer transition-all ${
-                      form.watch("documentId") === doc.id ? "ring-2 ring-primary" : ""
-                    }`}
-                    onClick={() => form.setValue("documentId", doc.id)}
-                  >
-                    <CardContent className="flex items-start p-4 space-x-4">
-                      <div className="p-2 bg-primary/10 rounded-lg">
-                        {form.watch("documentId") === doc.id ? (
-                          <FileCheck className="h-6 w-6 text-primary" />
-                        ) : (
-                          <FileText className="h-6 w-6 text-gray-400" />
-                        )}
-                      </div>
-                      <div>
-                        <h3 className="font-medium">{doc.name}</h3>
-                        <p className="text-sm text-gray-500">
-                          Processado em: {new Date(doc.processedAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
+            <FormField
+              control={form.control}
+              name="documentId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Documento</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um documento" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {validDocuments.map((doc) => (
+                        <SelectItem key={doc.id} value={String(doc.id)}>
+                          {doc.extracted_data?.nome_completo || doc.extracted_data?.nome || 'Documento sem nome'}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <div className="flex justify-end">
               <Button type="submit">Gerar Contrato</Button>
