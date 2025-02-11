@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { ExtractedField, DocumentRole, DocumentType, MaritalStatus } from '@/types/ocr';
 import { toast } from 'sonner';
@@ -17,6 +17,30 @@ export const useOCR = () => {
   const [processing, setProcessing] = useState(false);
   const [extractedData, setExtractedData] = useState<ExtractedField[]>([]);
   const [processedDocuments, setProcessedDocuments] = useState<any[]>([]);
+
+  // Fetch processed documents on mount
+  useEffect(() => {
+    fetchProcessedDocuments();
+  }, []);
+
+  const fetchProcessedDocuments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('processed_documents')
+        .select('*')
+        .order('processed_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching documents:', error);
+        throw error;
+      }
+
+      setProcessedDocuments(data || []);
+    } catch (error) {
+      console.error('Error fetching processed documents:', error);
+      toast.error('Erro ao carregar documentos processados');
+    }
+  };
 
   const handleFilesSelected = (files: File[]) => {
     setSelectedFiles(files);
@@ -125,7 +149,9 @@ export const useOCR = () => {
         confidence: 1
       }]);
       
-      setProcessedDocuments(prev => [documentData, ...prev]);
+      // Update the processed documents list
+      await fetchProcessedDocuments();
+      
       toast.success('Documento processado com sucesso!');
     } catch (error) {
       console.error('Erro ao processar documento:', error);
