@@ -40,6 +40,8 @@ export default function NewContract() {
   const { templates } = useContractTemplates();
   const { processedDocuments } = useOCR();
   
+  console.log('Todos os documentos:', processedDocuments);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -62,6 +64,7 @@ export default function NewContract() {
     
     try {
       const jsonData = typeof extractedData === 'string' ? JSON.parse(extractedData) : extractedData;
+      console.log('Dados extraídos processados:', jsonData);
       return Object.entries(jsonData)
         .filter(([_, value]) => value !== null && value !== '')
         .map(([key, value]) => ({
@@ -77,10 +80,15 @@ export default function NewContract() {
   // Filter documents using the same logic as ProcessedHistory
   const validDocuments = processedDocuments.filter((doc) => {
     const fields = getValidFields(doc.extracted_data);
-    return fields.some(({ field, value }) => 
+    console.log('Campos do documento:', doc.id, fields);
+    const hasValidName = fields.some(({ field, value }) => 
       (field === 'nome_completo' || field === 'nome') && value
     );
+    console.log('Documento tem nome válido:', doc.id, hasValidName);
+    return hasValidName;
   });
+
+  console.log('Documentos válidos:', validDocuments);
 
   return (
     <div>
