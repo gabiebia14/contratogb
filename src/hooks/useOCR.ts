@@ -15,6 +15,7 @@ interface ProcessOptions {
 export const useOCR = () => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [processing, setProcessing] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [extractedData, setExtractedData] = useState<ExtractedField[]>([]);
   const [processedDocuments, setProcessedDocuments] = useState<any[]>([]);
 
@@ -25,6 +26,7 @@ export const useOCR = () => {
 
   const fetchProcessedDocuments = async () => {
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('processed_documents')
         .select('*')
@@ -39,6 +41,8 @@ export const useOCR = () => {
     } catch (error) {
       console.error('Error fetching processed documents:', error);
       toast.error('Erro ao carregar documentos processados');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -164,6 +168,7 @@ export const useOCR = () => {
   return {
     selectedFiles,
     processing,
+    loading,
     extractedData,
     processedDocuments,
     handleFilesSelected,
