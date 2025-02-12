@@ -1,29 +1,22 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 import {
   GoogleGenerativeAI,
-  HarmCategory,
-  HarmBlockThreshold,
-} from "@google/generative-ai"
-import { GoogleAIFileManager } from "@google/generative-ai/server"
+} from "@google/generative-ai";
+import { GoogleAIFileManager } from "@google/generative-ai/server";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-const MAX_RETRIES = 3;
-const RETRY_DELAY = 1000; // 1 second
+};
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { documentType, base64Image, maritalStatus, sharedAddress } = await req.json()
+    const { documentType, base64Image, maritalStatus, sharedAddress } = await req.json();
     
     console.log('Processing document with type:', documentType);
 
@@ -62,9 +55,7 @@ Nome Completo ({nome_completo})
 RG ({rg})
 CPF ({cpf})
 Data de Nascimento ({data_nascimento})
-- [Remover explicitamente qualquer menção de endereço aqui]
-+ IMPORTANTE: Não extraia quaisquer informações de endereço, como logradouro, bairro, cidade, CEP ou estado
-+ (mesmo que constem no documento RG/CNH). Apenas ignore esses dados.
+IMPORTANTE: Não extraia quaisquer informações de endereço, como logradouro, bairro, cidade, CEP ou estado (mesmo que constem no documento RG/CNH). Apenas ignore esses dados.
 
 2.2. Se for Comprovante de Endereço:
 Extraia os seguintes parâmetros:
@@ -126,10 +117,10 @@ Telefone: {fiador_telefone} ou {fiadora_telefone}`,
       responseMimeType: "text/plain",
     };
 
-    console.log('Processing document with Gemini API...')
+    console.log('Processing document with Gemini API...');
     
     // Remove the data:image/[type];base64, prefix from the base64 string
-    const base64Data = base64Image.split(',')[1]
+    const base64Data = base64Image.split(',')[1];
 
     // Upload image to Gemini
     const result = await model.generateContent({
@@ -154,17 +145,17 @@ Telefone: {fiador_telefone} ou {fiadora_telefone}`,
 
     // Process the extracted data
     try {
-      const extractedData = JSON.parse(text.replace(/```json\s*([\s\S]*?)\s*```/g, '$1').trim())
+      const extractedData = JSON.parse(text.replace(/```json\s*([\s\S]*?)\s*```/g, '$1').trim());
       return new Response(
         JSON.stringify({ success: true, data: extractedData }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      );
     } catch (parseError) {
-      console.error('Error parsing JSON response:', parseError)
-      throw new Error('Failed to parse Gemini response as JSON')
+      console.error('Error parsing JSON response:', parseError);
+      throw new Error('Failed to parse Gemini response as JSON');
     }
   } catch (error) {
-    console.error('Error processing document:', error)
+    console.error('Error processing document:', error);
     return new Response(
       JSON.stringify({ 
         success: false, 
@@ -175,6 +166,6 @@ Telefone: {fiador_telefone} ou {fiadora_telefone}`,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
         status: 500 
       }
-    )
+    );
   }
-})
+});
