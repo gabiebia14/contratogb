@@ -21,8 +21,8 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Landing />} />
-          <Route path="/auth" element={<Auth />} />
           <Route path="/dashboard-selection" element={<DashboardSelection />} />
+          <Route path="/auth" element={<Auth />} />
           
           {/* Juridical Dashboard */}
           <Route path="/juridico" element={<DashboardLayout />}>

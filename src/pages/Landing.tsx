@@ -11,7 +11,7 @@ export default function Landing() {
       {/* Hero Section */}
       <div className="container mx-auto px-4 py-16">
         <div className="text-center max-w-3xl mx-auto">
-          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+          <h1 className="text-4xl md:text-6xl font-bold text-[#0EA5E9] mb-6">
             Gestão Imobiliária Simplificada
           </h1>
           <p className="text-xl text-gray-600 mb-8">
@@ -19,8 +19,8 @@ export default function Landing() {
           </p>
           <Button
             size="lg"
-            className="text-lg px-8"
-            onClick={() => navigate("/auth")}
+            className="text-lg px-8 bg-[#F97316] hover:bg-[#F97316]/90"
+            onClick={() => navigate("/dashboard-selection")}
           >
             Entrar na Plataforma
           </Button>
@@ -32,28 +32,28 @@ export default function Landing() {
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center p-6">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Building2 className="w-8 h-8 text-primary" />
+              <div className="w-16 h-16 bg-[#0EA5E9]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Building2 className="w-8 h-8 text-[#0EA5E9]" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Gestão de Imóveis</h3>
+              <h3 className="text-xl font-semibold mb-2 text-[#0EA5E9]">Gestão de Imóveis</h3>
               <p className="text-gray-600">
                 Administre sua carteira de imóveis com eficiência e organização.
               </p>
             </div>
             <div className="text-center p-6">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Scale className="w-8 h-8 text-primary" />
+              <div className="w-16 h-16 bg-[#0EA5E9]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Scale className="w-8 h-8 text-[#0EA5E9]" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Suporte Jurídico</h3>
+              <h3 className="text-xl font-semibold mb-2 text-[#0EA5E9]">Suporte Jurídico</h3>
               <p className="text-gray-600">
                 Contratos e documentação legal sempre em dia e seguros.
               </p>
             </div>
             <div className="text-center p-6">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Users className="w-8 h-8 text-primary" />
+              <div className="w-16 h-16 bg-[#0EA5E9]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Users className="w-8 h-8 text-[#0EA5E9]" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Relacionamento</h3>
+              <h3 className="text-xl font-semibold mb-2 text-[#0EA5E9]">Relacionamento</h3>
               <p className="text-gray-600">
                 Gestão eficiente da relação entre proprietários e inquilinos.
               </p>
