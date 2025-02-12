@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 
 const Auth = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -59,7 +60,18 @@ const Auth = () => {
         return;
       }
       
-      navigate('/dashboard-selection');
+      // Determine which dashboard to redirect to based on the previous path
+      const path = location.pathname;
+      if (path.includes('juridico')) {
+        navigate('/juridico');
+      } else if (path.includes('proprietario')) {
+        navigate('/proprietario');
+      } else if (path.includes('admin')) {
+        navigate('/admin');
+      } else {
+        // Default to juridico if no specific path
+        navigate('/juridico');
+      }
     } catch (error: any) {
       toast.error(error.message);
     } finally {
