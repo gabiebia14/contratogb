@@ -21,7 +21,17 @@ export const useOCR = () => {
 
   // Fetch processed documents on mount
   useEffect(() => {
-    fetchProcessedDocuments();
+    const checkAuthAndFetch = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        fetchProcessedDocuments();
+      } else {
+        setLoading(false);
+        toast.error('Por favor, faça login para ver os documentos');
+      }
+    };
+
+    checkAuthAndFetch();
   }, []);
 
   const fetchProcessedDocuments = async () => {
@@ -37,6 +47,7 @@ export const useOCR = () => {
         throw error;
       }
 
+      console.log('Documentos carregados:', data);
       setProcessedDocuments(data || []);
     } catch (error) {
       console.error('Error fetching processed documents:', error);
@@ -64,8 +75,8 @@ export const useOCR = () => {
       return;
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
       toast.error('Você precisa estar autenticado para fazer upload de arquivos');
       return;
     }
@@ -136,7 +147,7 @@ export const useOCR = () => {
           extracted_fields: processedData.data,
           status: 'completed',
           processed_at: new Date().toISOString(),
-          user_id: user.id
+          user_id: session.user.id
         })
         .select()
         .single();
@@ -147,11 +158,14 @@ export const useOCR = () => {
       }
 
       // Format extracted data for display
-      setExtractedData([{
-        field: 'data',
-        value: JSON.stringify(processedData.data),
-        confidence: 1
-      }]);
+      if (processedData.data) {
+        const fields = Object.entries(processedData.data).map(([field, value]) => ({
+          field,
+          value: String(value),
+          confidence: 1
+        }));
+        setExtractedData(fields);
+      }
       
       // Update the processed documents list
       await fetchProcessedDocuments();
