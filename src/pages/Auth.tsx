@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -41,11 +42,9 @@ const Auth = () => {
       });
       
       if (error) {
-        // Check if the error is due to unconfirmed email
         if (error.message.includes('Email not confirmed')) {
           toast.error('Email não confirmado. Por favor, verifique sua caixa de entrada e confirme seu email.');
           
-          // Option to resend confirmation email
           const { error: resendError } = await supabase.auth.resend({
             type: 'signup',
             email,
@@ -60,7 +59,7 @@ const Auth = () => {
         return;
       }
       
-      navigate('/');
+      navigate('/dashboard-selection');
     } catch (error: any) {
       toast.error(error.message);
     } finally {

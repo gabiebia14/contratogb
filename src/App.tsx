@@ -10,6 +10,8 @@ import ContractTemplates from '@/pages/ContractTemplates';
 import NewContract from '@/pages/NewContract';
 import Documents from '@/pages/Documents';
 import Dashboard from '@/pages/Index';
+import Landing from '@/pages/Landing';
+import DashboardSelection from '@/pages/DashboardSelection';
 
 const queryClient = new QueryClient();
 
@@ -18,14 +20,23 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
+          <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/" element={<DashboardLayout />}>
+          <Route path="/dashboard-selection" element={<DashboardSelection />} />
+          
+          {/* Juridical Dashboard */}
+          <Route path="/juridico" element={<DashboardLayout />}>
             <Route index element={<Dashboard />} />
             <Route path="contracts" element={<ContractsPage />} />
             <Route path="templates" element={<ContractTemplates />} />
             <Route path="new-contract" element={<NewContract />} />
             <Route path="documentos" element={<Documents />} />
           </Route>
+
+          {/* Placeholder routes for other dashboards */}
+          <Route path="/proprietario" element={<Navigate to="/em-construcao" />} />
+          <Route path="/admin" element={<Navigate to="/em-construcao" />} />
+          
           <Route path="*" element={<NotFound />} />
         </Routes>
         <Toaster />
