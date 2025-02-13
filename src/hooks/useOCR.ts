@@ -130,11 +130,16 @@ export const useOCR = () => {
         throw error;
       }
 
-      console.log('Documento processado com sucesso:', processedData);
+      console.log('Dados brutos recebidos da Edge Function:', processedData);
 
-      // Format extracted data
-      const extractedDataObject = processedData?.data || {};
-      console.log('Dados extraídos formatados:', extractedDataObject);
+      // Certifique-se de que temos dados válidos
+      if (!processedData?.data) {
+        throw new Error('Nenhum dado foi extraído do documento');
+      }
+
+      // Format extracted data for database
+      const extractedDataObject = processedData.data;
+      console.log('Dados extraídos formatados para o banco:', extractedDataObject);
 
       // Save to processed_documents table
       const { data: documentData, error: dbError } = await supabase
@@ -160,14 +165,14 @@ export const useOCR = () => {
       }
 
       // Format extracted data for display
-      if (extractedDataObject) {
-        const fields = [{
-          field: 'extracted_data',
-          value: extractedDataObject,
-          confidence: 1
-        }];
-        setExtractedData(fields);
-      }
+      const fields: ExtractedField[] = [{
+        field: 'extracted_data',
+        value: extractedDataObject,
+        confidence: 1
+      }];
+
+      console.log('Dados formatados para exibição:', fields);
+      setExtractedData(fields);
       
       // Update the processed documents list
       await fetchProcessedDocuments();

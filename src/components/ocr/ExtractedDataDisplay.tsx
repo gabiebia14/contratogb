@@ -58,30 +58,42 @@ export const fieldTranslations: Record<string, string> = {
 };
 
 const ExtractedDataDisplay = ({ data }: ExtractedDataDisplayProps) => {
-  if (!data.length) return null;
+  if (!data?.length) {
+    console.log('No data provided to ExtractedDataDisplay');
+    return null;
+  }
 
   const getValidFields = () => {
     // Find the field containing our data
-    const extractedField = data.find(item => item.value);
-    if (!extractedField?.value) return [];
+    const extractedField = data[0]; // Pegamos o primeiro item pois sabemos que é onde estão os dados
+    if (!extractedField?.value) {
+      console.log('No value found in extracted field:', extractedField);
+      return [];
+    }
     
     try {
       // Handle both string and object formats
-      const parsedData = typeof extractedField.value === 'string' 
-        ? JSON.parse(extractedField.value)
-        : extractedField.value;
+      let parsedData = extractedField.value;
+      if (typeof parsedData === 'string') {
+        parsedData = JSON.parse(parsedData);
+      }
+
+      console.log('Parsed data:', parsedData);
 
       if (!parsedData || typeof parsedData !== 'object') {
         console.error('Invalid data format:', parsedData);
         return [];
       }
 
-      return Object.entries(parsedData)
+      const fields = Object.entries(parsedData)
         .filter(([_, value]) => value != null && value !== '')
         .map(([key, value]) => ({
           field: key,
           value: typeof value === 'string' ? value : JSON.stringify(value)
         }));
+
+      console.log('Processed fields:', fields);
+      return fields;
     } catch (error) {
       console.error('Error processing data:', error);
       return [];
@@ -102,6 +114,7 @@ const ExtractedDataDisplay = ({ data }: ExtractedDataDisplayProps) => {
   };
 
   const validFields = sortFields(getValidFields());
+  console.log('Final valid fields:', validFields);
 
   return (
     <Card className="shadow-lg">
