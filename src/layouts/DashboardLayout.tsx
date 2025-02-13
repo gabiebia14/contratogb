@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, SidebarMenu, 
   SidebarMenuItem, SidebarMenuButton, SidebarGroup, SidebarGroupContent } from "@/components/ui/sidebar";
@@ -37,44 +38,44 @@ export default function DashboardLayout() {
                 <SidebarGroupContent>
                   <SidebarMenu>
                     <SidebarMenuItem>
-                      <SidebarMenuButton asChild isActive={location.pathname === '/'}>
-                        <Link to="/">
+                      <SidebarMenuButton asChild isActive={location.pathname === '/juridico'}>
+                        <Link to="">
                           <Menu className="w-4 h-4" />
                           <span>Dashboard</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
-                      <SidebarMenuButton asChild isActive={location.pathname === '/contracts'}>
-                        <Link to="/contracts">
+                      <SidebarMenuButton asChild isActive={location.pathname === '/juridico/contracts'}>
+                        <Link to="contracts">
                           <span>Contratos</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
-                      <SidebarMenuButton asChild isActive={location.pathname === '/new-contract'}>
-                        <Link to="/new-contract">
+                      <SidebarMenuButton asChild isActive={location.pathname === '/juridico/new-contract'}>
+                        <Link to="new-contract">
                           <span>Novo Contrato</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
-                      <SidebarMenuButton asChild isActive={location.pathname === '/templates'}>
-                        <Link to="/templates">
+                      <SidebarMenuButton asChild isActive={location.pathname === '/juridico/templates'}>
+                        <Link to="templates">
                           <span>Modelos de Contratos</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
-                      <SidebarMenuButton asChild isActive={location.pathname === '/documentos'}>
-                        <Link to="/documentos">
+                      <SidebarMenuButton asChild isActive={location.pathname === '/juridico/documentos'}>
+                        <Link to="documentos">
                           <span>Documentos</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
-                      <SidebarMenuButton asChild isActive={location.pathname === '/settings'}>
-                        <Link to="/settings">
+                      <SidebarMenuButton asChild isActive={location.pathname === '/juridico/settings'}>
+                        <Link to="settings">
                           <span>Configurações</span>
                         </Link>
                       </SidebarMenuButton>
