@@ -19,7 +19,6 @@ export const useOCR = () => {
   const [extractedData, setExtractedData] = useState<ExtractedField[]>([]);
   const [processedDocuments, setProcessedDocuments] = useState<any[]>([]);
 
-  // Fetch processed documents on mount
   useEffect(() => {
     const checkAuthAndFetch = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -133,6 +132,10 @@ export const useOCR = () => {
 
       console.log('Documento processado com sucesso:', processedData);
 
+      // Format extracted data
+      const extractedDataObject = processedData?.data || {};
+      console.log('Dados extraídos formatados:', extractedDataObject);
+
       // Save to processed_documents table
       const { data: documentData, error: dbError } = await supabase
         .from('processed_documents')
@@ -143,8 +146,7 @@ export const useOCR = () => {
           document_type: options.documentCategory,
           marital_status: options.maritalStatus,
           shared_address: options.sharedAddress,
-          extracted_data: processedData.data,
-          extracted_fields: processedData.data,
+          extracted_data: extractedDataObject,
           status: 'completed',
           processed_at: new Date().toISOString(),
           user_id: session.user.id
@@ -158,12 +160,12 @@ export const useOCR = () => {
       }
 
       // Format extracted data for display
-      if (processedData.data) {
-        const fields = Object.entries(processedData.data).map(([field, value]) => ({
-          field,
-          value: String(value),
+      if (extractedDataObject) {
+        const fields = [{
+          field: 'extracted_data',
+          value: extractedDataObject,
           confidence: 1
-        }));
+        }];
         setExtractedData(fields);
       }
       
@@ -171,7 +173,7 @@ export const useOCR = () => {
       await fetchProcessedDocuments();
       
       toast.success('Documento processado com sucesso!');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao processar documento:', error);
       toast.error('Erro ao processar documento: ' + (error.message || 'Erro desconhecido'));
     } finally {

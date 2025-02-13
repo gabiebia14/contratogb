@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ExtractedField } from '@/types/ocr';
@@ -61,20 +62,28 @@ const ExtractedDataDisplay = ({ data }: ExtractedDataDisplayProps) => {
 
   const getValidFields = () => {
     // Find the field containing our data
-    const extractedField = data.find(item => item.value && typeof item.value === 'string');
-    if (!extractedField) return [];
+    const extractedField = data.find(item => item.value);
+    if (!extractedField?.value) return [];
     
-    // Try to parse the data as an object
     try {
-      const jsonData = JSON.parse(extractedField.value);
-      return Object.entries(jsonData)
-        .filter(([_, value]) => value !== null && value !== '')
+      // Handle both string and object formats
+      const parsedData = typeof extractedField.value === 'string' 
+        ? JSON.parse(extractedField.value)
+        : extractedField.value;
+
+      if (!parsedData || typeof parsedData !== 'object') {
+        console.error('Invalid data format:', parsedData);
+        return [];
+      }
+
+      return Object.entries(parsedData)
+        .filter(([_, value]) => value != null && value !== '')
         .map(([key, value]) => ({
           field: key,
-          value: value as string
+          value: typeof value === 'string' ? value : JSON.stringify(value)
         }));
     } catch (error) {
-      console.error('Error parsing data:', error);
+      console.error('Error processing data:', error);
       return [];
     }
   };
