@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { ExtractedField, DocumentRole, DocumentType, MaritalStatus } from '@/types/ocr';
@@ -84,17 +83,32 @@ export const useOCR = () => {
     try {
       const file = selectedFiles[0];
       
+      // Validar tamanho do arquivo
+      if (file.size > 10 * 1024 * 1024) { // 10MB
+        throw new Error('O arquivo deve ter no máximo 10MB');
+      }
+
+      // Validar tipo do arquivo
+      if (!['image/jpeg', 'image/png', 'application/pdf'].includes(file.type)) {
+        throw new Error('Formato de arquivo não suportado. Use JPEG, PNG ou PDF');
+      }
+
       const timestamp = Date.now();
       const sanitizedFileName = sanitizeFileName(file.name);
       const finalFileName = `${timestamp}_${sanitizedFileName}`;
       
-      // Convert file to base64
-      const base64 = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = error => reject(error);
-      });
+      // Converter arquivo para base64 com tratamento de erro
+      let base64;
+      try {
+        base64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = error => reject(error);
+        });
+      } catch (error) {
+        throw new Error('Erro ao converter arquivo para base64');
+      }
 
       console.log('Iniciando upload do arquivo...');
       
@@ -126,8 +140,8 @@ export const useOCR = () => {
       });
 
       if (error) {
-        console.error('Erro no processamento:', error);
-        throw error;
+        console.error('Erro detalhado da Edge Function:', error);
+        throw new Error(`Erro no processamento: ${error.message}`);
       }
 
       console.log('Dados brutos recebidos da Edge Function:', processedData);
@@ -179,8 +193,8 @@ export const useOCR = () => {
       
       toast.success('Documento processado com sucesso!');
     } catch (error: any) {
-      console.error('Erro ao processar documento:', error);
-      toast.error('Erro ao processar documento: ' + (error.message || 'Erro desconhecido'));
+      console.error('Erro detalhado ao processar documento:', error);
+      toast.error(`Erro ao processar documento: ${error.message}`);
     } finally {
       setProcessing(false);
     }
