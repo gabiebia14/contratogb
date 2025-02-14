@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ExtractedField } from '@/types/ocr';
@@ -17,6 +16,7 @@ export const fieldTranslations: Record<string, string> = {
   cep: 'CEP',
   cidade: 'Cidade',
   estado: 'Estado',
+  data_processamento: 'Data de Processamento',
   locador_nome: 'Nome do Locador',
   locador_nacionalidade: 'Nacionalidade do Locador',
   locador_estado_civil: 'Estado Civil do Locador',
@@ -51,43 +51,19 @@ export const fieldTranslations: Record<string, string> = {
   locatario_cep: 'CEP do Locatário',
   locatario_cidade: 'Cidade do Locatário',
   locatario_estado: 'Estado do Locatário',
-  locatario_telefone: 'Telefone do Locatário',
-  fiadora_nome: 'Nome da Fiadora',
-  fiadora_nacionalidade: 'Nacionalidade da Fiadora',
-  fiadora_estado_civil: 'Estado Civil da Fiadora',
-  fiadora_profissao: 'Profissão da Fiadora',
-  fiadora_rg: 'RG da Fiadora',
-  fiadora_cpf: 'CPF da Fiadora',
-  fiadora_endereco: 'Endereço da Fiadora',
-  fiadora_bairro: 'Bairro da Fiadora',
-  fiadora_cep: 'CEP da Fiadora',
-  fiadora_cidade: 'Cidade da Fiadora',
-  fiadora_estado: 'Estado da Fiadora',
-  fiadora_telefone: 'Telefone da Fiadora',
-  fiador_nome: 'Nome do Fiador',
-  fiador_nacionalidade: 'Nacionalidade do Fiador',
-  fiador_estado_civil: 'Estado Civil do Fiador',
-  fiador_profissao: 'Profissão do Fiador',
-  fiador_rg: 'RG do Fiador',
-  fiador_cpf: 'CPF do Fiador',
-  fiador_endereco: 'Endereço do Fiador',
-  fiador_bairro: 'Bairro do Fiador',
-  fiador_cep: 'CEP do Fiador',
-  fiador_cidade: 'Cidade do Fiador',
-  fiador_estado: 'Estado do Fiador',
-  fiador_telefone: 'Telefone do Fiador'
+  locatario_telefone: 'Telefone do Locatário'
 };
 
 const ExtractedDataDisplay = ({ data }: ExtractedDataDisplayProps) => {
   if (!data?.length) {
-    console.log('No data provided to ExtractedDataDisplay');
+    console.log('Nenhum dado fornecido para ExtractedDataDisplay');
     return null;
   }
 
   const getValidFields = () => {
     const extractedField = data[0];
     if (!extractedField?.value) {
-      console.log('No value found in extracted field:', extractedField);
+      console.log('Nenhum valor encontrado no campo extraído:', extractedField);
       return [];
     }
     
@@ -97,56 +73,43 @@ const ExtractedDataDisplay = ({ data }: ExtractedDataDisplayProps) => {
         parsedData = JSON.parse(parsedData);
       }
 
-      console.log('Parsed data:', parsedData);
+      console.log('Dados parseados:', parsedData);
 
       if (!parsedData || typeof parsedData !== 'object') {
-        console.error('Invalid data format:', parsedData);
+        console.error('Formato de dados inválido:', parsedData);
         return [];
       }
 
-      // Remove campos duplicados baseados no tipo de locatário/locatária
+      // Mantém todos os campos, sem filtrar
       const fields = Object.entries(parsedData)
-        .filter(([key, value]) => value != null && value !== '')
-        .reduce((acc, [key, value]) => {
-          // Se já existe um campo equivalente para locatário/locatária, não adicione
-          const baseField = key.replace(/(locatario|locataria)_/, '');
-          const existingKey = acc.find(item => 
-            item.field.endsWith(`_${baseField}`) && 
-            item.field !== key
-          );
+        .filter(([_, value]) => value != null && value !== '')
+        .map(([key, value]) => ({
+          field: key,
+          value: typeof value === 'string' ? value : JSON.stringify(value)
+        }));
 
-          if (!existingKey) {
-            acc.push({
-              field: key,
-              value: typeof value === 'string' ? value : JSON.stringify(value)
-            });
+      // Formata a data de processamento se existir
+      const processedFields = fields.map(field => {
+        if (field.field === 'data_processamento') {
+          try {
+            const date = new Date(field.value);
+            field.value = date.toLocaleString('pt-BR');
+          } catch (e) {
+            console.error('Erro ao formatar data:', e);
           }
-          return acc;
-        }, [] as { field: string; value: string }[]);
+        }
+        return field;
+      });
 
-      console.log('Processed fields:', fields);
-      return fields;
+      console.log('Campos processados:', processedFields);
+      return processedFields;
     } catch (error) {
-      console.error('Error processing data:', error);
+      console.error('Erro ao processar dados:', error);
       return [];
     }
   };
 
-  const sortFields = (fields: { field: string; value: string }[]) => {
-    return fields.sort((a, b) => {
-      const getOrder = (field: string) => {
-        if (field.startsWith('locador')) return 1;
-        if (field.startsWith('locatario') || field.startsWith('locataria')) return 2;
-        if (field.startsWith('fiador')) return 3;
-        return 4;
-      };
-
-      return getOrder(a.field) - getOrder(b.field);
-    });
-  };
-
-  const validFields = sortFields(getValidFields());
-  console.log('Final valid fields:', validFields);
+  const validFields = getValidFields();
 
   return (
     <Card className="shadow-lg">
