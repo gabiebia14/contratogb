@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 import {
@@ -23,6 +22,8 @@ serve(async (req) => {
     const { documentType, base64Image, maritalStatus, sharedAddress } = await req.json();
     
     console.log('Processing document with type:', documentType);
+    console.log('Received marital status:', maritalStatus);
+    console.log('Received shared address:', sharedAddress);
 
     const apiKey = Deno.env.get('GEMINI_API_KEY');
     if (!apiKey) {
@@ -61,7 +62,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Dados da imagem inválidos'
+          error: 'Base64 image data is required'
         }),
         { 
           status: 400,
@@ -93,9 +94,14 @@ serve(async (req) => {
         ]
       });
 
-      const response = await result.response;
+      if (!result.response) {
+        throw new Error('No response from Gemini API');
+      }
+
+      const response = result.response;
       const text = response.text();
-      console.log('Gemini Response:', text);
+      
+      console.log('Raw response from Gemini:', text);
 
       // Try to parse the response as JSON
       try {
@@ -135,12 +141,13 @@ serve(async (req) => {
         );
       }
     } catch (geminiError) {
-      console.error('Error from Gemini API:', geminiError);
+      console.error('Detailed Gemini error:', geminiError);
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Erro ao processar imagem com Gemini API',
-          details: geminiError.message
+          error: 'Error processing with Gemini API',
+          details: geminiError.message,
+          stack: geminiError.stack
         }),
         { 
           status: 500,
