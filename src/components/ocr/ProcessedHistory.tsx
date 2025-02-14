@@ -1,20 +1,33 @@
-
 import React, { useState } from 'react';
-import { Clock, Edit2, Save, X } from 'lucide-react';
+import { Clock, Edit2, Save, X, Trash2 } from 'lucide-react';
 import { format, isValid, parseISO } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { fieldTranslations } from './ExtractedDataDisplay';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface ProcessedHistoryProps {
   processedDocuments: any[];
+  onDelete?: (docId: string) => void;
 }
 
-const ProcessedHistory = ({ processedDocuments }: ProcessedHistoryProps) => {
+const ProcessedHistory = ({ processedDocuments, onDelete }: ProcessedHistoryProps) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editedData, setEditedData] = useState<Record<string, string>>({});
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState<string | null>(null);
 
   if (!processedDocuments.length) return null;
 
@@ -29,17 +42,16 @@ const ProcessedHistory = ({ processedDocuments }: ProcessedHistoryProps) => {
     if (!extractedData || typeof extractedData !== 'object') return [];
     
     try {
-      // Handle both string and object formats
       const jsonData = typeof extractedData === 'string' ? JSON.parse(extractedData) : extractedData;
       
       return Object.entries(jsonData)
         .filter(([_, value]) => value !== null && value !== '')
         .map(([key, value]) => ({
           field: key,
-          value: String(value) // Ensure value is converted to string
+          value: String(value)
         }));
     } catch (error) {
-      console.error('Error parsing data:', error);
+      console.error('Erro ao processar dados:', error);
       return [];
     }
   };
@@ -55,13 +67,46 @@ const ProcessedHistory = ({ processedDocuments }: ProcessedHistoryProps) => {
 
   const handleSave = async (docId: string) => {
     try {
-      console.log('Saving edited data:', editedData);
+      const { data, error } = await supabase
+        .from('processed_documents')
+        .update({ extracted_data: editedData })
+        .eq('id', docId);
+
+      if (error) throw error;
+
       toast.success('Dados atualizados com sucesso!');
       setEditingId(null);
       setEditedData({});
     } catch (error) {
-      console.error('Error saving data:', error);
+      console.error('Erro ao salvar dados:', error);
       toast.error('Erro ao salvar as alterações');
+    }
+  };
+
+  const handleDelete = async (docId: string) => {
+    setDocumentToDelete(docId);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!documentToDelete) return;
+
+    try {
+      const { error } = await supabase
+        .from('processed_documents')
+        .delete()
+        .eq('id', documentToDelete);
+
+      if (error) throw error;
+
+      toast.success('Documento excluído com sucesso!');
+      onDelete?.(documentToDelete);
+    } catch (error) {
+      console.error('Erro ao excluir documento:', error);
+      toast.error('Erro ao excluir o documento');
+    } finally {
+      setDeleteDialogOpen(false);
+      setDocumentToDelete(null);
     }
   };
 
@@ -83,32 +128,44 @@ const ProcessedHistory = ({ processedDocuments }: ProcessedHistoryProps) => {
             <CardTitle className="text-sm font-medium">
               {formatDate(doc.processed_at)}
             </CardTitle>
-            {editingId !== doc.id ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleEdit(doc.id, doc.extracted_data)}
-              >
-                <Edit2 className="h-4 w-4" />
-              </Button>
-            ) : (
-              <div className="flex gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleSave(doc.id)}
-                >
-                  <Save className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleCancel}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
+            <div className="flex gap-2">
+              {editingId !== doc.id ? (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleEdit(doc.id, doc.extracted_data)}
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDelete(doc.id)}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleSave(doc.id)}
+                  >
+                    <Save className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCancel}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="pt-2">
             {getValidFields(doc.extracted_data).map((item, index) => (
@@ -133,6 +190,23 @@ const ProcessedHistory = ({ processedDocuments }: ProcessedHistoryProps) => {
           </CardContent>
         </Card>
       ))}
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este documento? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-500 hover:bg-red-700">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
