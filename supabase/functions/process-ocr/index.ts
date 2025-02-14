@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 import {
@@ -11,8 +12,12 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { 
+      status: 200, 
+      headers: corsHeaders 
+    });
   }
 
   try {
@@ -20,101 +25,43 @@ serve(async (req) => {
     
     console.log('Processing document with type:', documentType);
 
-    const apiKey = Deno.env.get('GEMINI_API_KEY') ?? '';
+    const apiKey = Deno.env.get('GEMINI_API_KEY');
+    if (!apiKey) {
+      throw new Error('GEMINI_API_KEY não configurada');
+    }
+
     const genAI = new GoogleGenerativeAI(apiKey);
     const fileManager = new GoogleAIFileManager(apiKey);
     
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash-exp",
-      systemInstruction: `Você é um assistente especialista na extração e organização de dados para a geração automatizada de contratos. Sua função é utilizar técnicas avançadas de OCR para processar documentos ou imagens carregadas, identificar as informações relevantes e organizá-las em parâmetros dinâmicos. Todas as informações e configurações serão definidas manualmente pelo usuário no dashboard.
+      model: "gemini-2.0-pro-vision",
+      systemInstruction: `Você é um assistente especialista na extração e organização de dados para a geração automatizada de contratos. Sua função é utilizar técnicas avançadas de OCR para processar documentos ou imagens carregadas, identificar as informações relevantes e organizá-las em parâmetros dinâmicos.
 
-Fluxo de Trabalho
-1. Configurações do Documento:
-No dashboard, o usuário configurará os seguintes campos para cada documento carregado:
-
-Parte do Documento
-Opções disponíveis:
-
-Locatário
-Locatária
-Locador
-Locadora
-Fiador
-Fiadora
-Tipo de Documento
-Opções disponíveis:
-Documentos Pessoais
-Comprovante de Endereço
-
-2. Extração de Dados Baseada no Tipo de Documento
-A extração de dados será limitada conforme o tipo de documento selecionado pelo usuário:
-
-2.1. Se for Documentos Pessoais:
-Extraia os seguintes parâmetros:
-Nome Completo ({nome_completo})
-RG ({rg})
-CPF ({cpf})
-Data de Nascimento ({data_nascimento})
-IMPORTANTE: Não extraia quaisquer informações de endereço, como logradouro, bairro, cidade, CEP ou estado (mesmo que constem no documento RG/CNH). Apenas ignore esses dados.
-
-2.2. Se for Comprovante de Endereço:
-Extraia os seguintes parâmetros:
-Endereço ({endereco})
-Bairro ({bairro})
-CEP ({cep})
-Cidade ({cidade})
-Estado ({estado})
-
-3. Parâmetros Dinâmicos
-Os dados extraídos devem ser organizados nos seguintes parâmetros:
-LOCADOR(A):
-Nome do Locador(a): {locador_nome}
-Nacionalidade: {locador_nacionalidade}
-Estado Civil: {locador_estado_civil}
-Profissão: {locador_profissao}
-RG: {locador_rg}
-CPF: {locador_cpf}
-Endereço: {locador_endereco}
-Bairro: {locador_bairro}
-CEP: {locador_cep}
-Cidade: {locador_cidade}
-Estado: {locador_estado}
-
-LOCATÁRIO(A):
-Nome: {locatario_nome} ou {locataria_nome}
-Nacionalidade: {locatario_nacionalidade} ou {locataria_nacionalidade}
-Estado Civil: {locatario_estado_civil} ou {locataria_estado_civil}
-Profissão: {locatario_profissao} ou {locataria_profissao}
-RG: {locatario_rg} ou {locataria_rg}
-CPF: {locatario_cpf} ou {locataria_cpf}
-Endereço: {locatario_endereco} ou {locataria_endereco}
-Bairro: {locatario_bairro} ou {locataria_bairro}
-CEP: {locatario_cep} ou {locataria_cep}
-Cidade: {locatario_cidade} ou {locataria_cidade}
-Estado: {locatario_estado} ou {locataria_estado}
-Telefone: {locatario_telefone} ou {locataria_telefone}
-
-FIADOR(A):
-Nome: {fiador_nome} ou {fiadora_nome}
-Nacionalidade: {fiador_nacionalidade} ou {fiadora_nacionalidade}
-Estado Civil: {fiador_estado_civil} ou {fiadora_estado_civil}
-Profissão: {fiador_profissao} ou {fiadora_profissao}
-RG: {fiador_rg} ou {fiadora_rg}
-CPF: {fiador_cpf} ou {fiadora_cpf}
-Endereço: {fiador_endereco} ou {fiadora_endereco}
-Bairro: {fiador_bairro} ou {fiadora_bairro}
-CEP: {fiador_cep} ou {fiadora_cep}
-Cidade: {fiador_cidade} ou {fiadora_cidade}
-Estado: {fiador_estado} ou {fiadora_estado}
-Telefone: {fiador_telefone} ou {fiadora_telefone}`,
+      Fluxo de Trabalho:
+      Ao processar documentos, sempre retorne um objeto JSON com os seguintes campos (apenas os que forem encontrados):
+      
+      Para documentos pessoais (RG, CPF, CNH):
+      - nome_completo
+      - rg
+      - cpf
+      - data_nascimento
+      
+      Para comprovantes de endereço:
+      - endereco
+      - bairro
+      - cep
+      - cidade
+      - estado
+      
+      IMPORTANTE: Retorne APENAS os dados encontrados na imagem, não invente ou adicione campos vazios.
+      Retorne SEMPRE um objeto JSON válido.`,
     });
 
     const generationConfig = {
-      temperature: 1,
-      topP: 0.95,
-      topK: 40,
-      maxOutputTokens: 8192,
-      responseMimeType: "text/plain",
+      temperature: 0.1,
+      topP: 0.1,
+      topK: 1,
+      maxOutputTokens: 4096,
     };
 
     console.log('Processing document with Gemini API...');
@@ -133,7 +80,7 @@ Telefone: {fiador_telefone} ou {fiadora_telefone}`,
               fileUri: base64Data,
             },
           },
-          { text: `Escolha: ${documentType}\n` },
+          { text: `Por favor, extraia os dados deste documento para o papel de ${documentType}.` },
         ],
       }],
       generationConfig,
@@ -145,26 +92,56 @@ Telefone: {fiador_telefone} ou {fiadora_telefone}`,
 
     // Process the extracted data
     try {
-      const extractedData = JSON.parse(text.replace(/```json\s*([\s\S]*?)\s*```/g, '$1').trim());
+      const extractedText = text.replace(/```json\s*([\s\S]*?)\s*```/g, '$1').trim();
+      console.log('Extracted text:', extractedText);
+      
+      const extractedData = JSON.parse(extractedText);
+      console.log('Parsed data:', extractedData);
+
       return new Response(
-        JSON.stringify({ success: true, data: extractedData }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ 
+          success: true, 
+          data: extractedData 
+        }),
+        { 
+          status: 200,
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          } 
+        }
       );
     } catch (parseError) {
       console.error('Error parsing JSON response:', parseError);
-      throw new Error('Failed to parse Gemini response as JSON');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Erro ao processar resposta do modelo',
+          details: parseError.message
+        }),
+        { 
+          status: 400,
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          } 
+        }
+      );
     }
   } catch (error) {
     console.error('Error processing document:', error);
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message,
-        details: 'An error occurred while processing the document. Please try again.'
+        error: 'Erro ao processar documento',
+        details: error.message
       }),
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
-        status: 500 
+        status: 500,
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        } 
       }
     );
   }
