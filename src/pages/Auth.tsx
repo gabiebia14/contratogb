@@ -15,18 +15,47 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage('');
     try {
       setLoading(true);
-      const { error } = await supabase.auth.signUp({
+      
+      // Validar email e senha
+      if (!email || !password) {
+        toast.error('Por favor, preencha todos os campos');
+        return;
+      }
+
+      if (password.length < 6) {
+        toast.error('A senha deve ter pelo menos 6 caracteres');
+        return;
+      }
+
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo: window.location.origin + '/auth'
+        }
       });
-      if (error) throw error;
+
+      if (error) {
+        if (error.message.includes('email already')) {
+          toast.error('Este email já está cadastrado. Por favor, faça login.');
+        } else {
+          toast.error(error.message);
+        }
+        return;
+      }
+
       toast.success('Cadastro realizado com sucesso! Verifique seu email.');
+      console.log('Signup successful:', data);
+      
     } catch (error: any) {
+      console.error('Signup error:', error);
       toast.error(error.message);
     } finally {
       setLoading(false);
@@ -35,17 +64,28 @@ const Auth = () => {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage('');
     try {
       setLoading(true);
-      const { error } = await supabase.auth.signInWithPassword({
+
+      // Validar email e senha
+      if (!email || !password) {
+        toast.error('Por favor, preencha todos os campos');
+        return;
+      }
+
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
       if (error) {
+        console.error('Login error:', error);
+        
         if (error.message.includes('Email not confirmed')) {
-          toast.error('Email não confirmado. Por favor, verifique sua caixa de entrada e confirme seu email.');
+          toast.error('Email não confirmado. Por favor, verifique sua caixa de entrada.');
           
+          // Reenviar email de confirmação
           const { error: resendError } = await supabase.auth.resend({
             type: 'signup',
             email,
@@ -54,11 +94,20 @@ const Auth = () => {
           if (!resendError) {
             toast.info('Um novo email de confirmação foi enviado.');
           }
-        } else {
-          throw error;
+          return;
         }
+        
+        if (error.message.includes('Invalid login credentials')) {
+          toast.error('Email ou senha incorretos');
+          return;
+        }
+
+        toast.error('Erro ao fazer login. Por favor, tente novamente.');
         return;
       }
+      
+      // Login bem sucedido
+      console.log('Login successful:', data);
       
       // Determine which dashboard to redirect to based on the previous path
       const path = location.pathname;
@@ -72,8 +121,10 @@ const Auth = () => {
         // Default to juridico if no specific path
         navigate('/juridico');
       }
+      
     } catch (error: any) {
-      toast.error(error.message);
+      console.error('Login error:', error);
+      toast.error('Erro ao fazer login. Por favor, tente novamente.');
     } finally {
       setLoading(false);
     }
