@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -8,10 +9,8 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Tratamento de CORS
   if (req.method === 'OPTIONS') {
     return new Response(null, { 
-      status: 200, 
       headers: corsHeaders 
     });
   }
@@ -31,8 +30,8 @@ serve(async (req) => {
           error: 'GEMINI_API_KEY não configurada'
         }),
         { 
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500
         }
       );
     }
@@ -42,8 +41,8 @@ serve(async (req) => {
     const model = genAI.getGenerativeModel({
       model: "gemini-pro-vision",
       generationConfig: {
-        temperature: 0.1,
-        topP: 0.1,
+        temperature: 0,
+        topP: 1,
         topK: 1,
         maxOutputTokens: 4096,
       }
@@ -62,35 +61,39 @@ serve(async (req) => {
           error: 'Dados da imagem em base64 são obrigatórios'
         }),
         { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400
         }
       );
     }
 
     try {
-      // Prompt específico baseado no tipo de documento
       const prompt = documentType === 'comprovante_endereco' 
         ? `Extraia do comprovante de endereço as seguintes informações em formato JSON:
            endereco, bairro, cep, cidade, estado.
            Retorne apenas os campos encontrados, em formato JSON puro sem markdown.`
         : `Extraia do documento pessoal as seguintes informações em formato JSON:
-           ${documentType}_nome,
+           ${documentType}_nome (nome completo),
            ${documentType}_nacionalidade,
            ${documentType}_estado_civil,
            ${documentType}_profissao,
-           ${documentType}_rg,
-           ${documentType}_cpf,
-           ${documentType}_endereco,
+           ${documentType}_rg (apenas números e pontuação se houver),
+           ${documentType}_cpf (apenas números e pontuação se houver),
+           ${documentType}_endereco (endereço completo),
            ${documentType}_bairro,
            ${documentType}_cep,
            ${documentType}_cidade,
-           ${documentType}_estado,
+           ${documentType}_estado (sigla do estado),
            ${documentType}_telefone.
-           Retorne apenas os campos encontrados, em formato JSON puro sem markdown.
-           Se encontrar mais de um RG ou CPF, inclua todos.
-           Mantenha o prefixo "${documentType}_" em todos os campos.
-           Procure por datas no formato DD/MM/YYYY.`;
+           
+           Instruções específicas:
+           1. Mantenha o prefixo "${documentType}_" em todos os campos
+           2. Retorne apenas campos que foram encontrados com certeza
+           3. Para RG e CPF, retorne apenas os números e pontuação, sem texto adicional
+           4. Para estado, use a sigla (ex: SP, RJ)
+           5. Retorne em formato JSON puro sem markdown
+           6. Não invente ou deduza informações, apenas extraia o que está visível
+           7. Mantenha a formatação original de RG e CPF se houver (pontos e traços)`;
 
       const result = await model.generateContent({
         contents: [
@@ -119,7 +122,6 @@ serve(async (req) => {
       console.log('Resposta bruta do Gemini:', text);
 
       try {
-        // Remove blocos de código markdown se presentes
         const cleanText = text.replace(/```json\s*([\s\S]*?)\s*```/g, '$1')
                              .replace(/```\s*([\s\S]*?)\s*```/g, '$1')
                              .trim();
@@ -129,8 +131,9 @@ serve(async (req) => {
         const extractedData = JSON.parse(cleanText);
         console.log('Dados parseados:', extractedData);
 
-        // Adiciona data e hora atual
-        extractedData.data_processamento = new Date().toISOString();
+        // Adiciona data e hora atual em formato específico
+        const now = new Date();
+        extractedData.data_processamento = now.toISOString();
 
         return new Response(
           JSON.stringify({ 
@@ -138,8 +141,8 @@ serve(async (req) => {
             data: extractedData 
           }),
           { 
-            status: 200,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200
           }
         );
       } catch (parseError) {
@@ -152,8 +155,8 @@ serve(async (req) => {
             rawResponse: text
           }),
           { 
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400
           }
         );
       }
@@ -167,8 +170,8 @@ serve(async (req) => {
           stack: geminiError.stack
         }),
         { 
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500
         }
       );
     }
@@ -181,21 +184,9 @@ serve(async (req) => {
         details: error.message
       }),
       { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500
       }
     );
   }
 });
-      JSON.stringify({ 
-        success: false, 
-        error: 'Erro ao processar documento',
-        details: error.message
-      }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
-  }
-});Z
