@@ -8,6 +8,15 @@ interface ExtractedDataDisplayProps {
 }
 
 export const fieldTranslations: Record<string, string> = {
+  nome_completo: 'Nome Completo',
+  rg: 'RG',
+  cpf: 'CPF',
+  data_nascimento: 'Data de Nascimento',
+  endereco: 'Endereço',
+  bairro: 'Bairro',
+  cep: 'CEP',
+  cidade: 'Cidade',
+  estado: 'Estado',
   locador_nome: 'Nome do Locador',
   locador_nacionalidade: 'Nacionalidade do Locador',
   locador_estado_civil: 'Estado Civil do Locador',
@@ -19,18 +28,18 @@ export const fieldTranslations: Record<string, string> = {
   locador_cep: 'CEP do Locador',
   locador_cidade: 'Cidade do Locador',
   locador_estado: 'Estado do Locador',
-  locataria_nome: 'Nome do Locatário',
-  locataria_nacionalidade: 'Nacionalidade do Locatário',
-  locataria_estado_civil: 'Estado Civil do Locatário',
-  locataria_profissao: 'Profissão do Locatário',
-  locataria_rg: 'RG do Locatário',
-  locataria_cpf: 'CPF do Locatário',
-  locataria_endereco: 'Endereço do Locatário',
-  locataria_bairro: 'Bairro do Locatário',
-  locataria_cep: 'CEP do Locatário',
-  locataria_cidade: 'Cidade do Locatário',
-  locataria_estado: 'Estado do Locatário',
-  locataria_telefone: 'Telefone do Locatário',
+  locataria_nome: 'Nome da Locatária',
+  locataria_nacionalidade: 'Nacionalidade da Locatária',
+  locataria_estado_civil: 'Estado Civil da Locatária',
+  locataria_profissao: 'Profissão da Locatária',
+  locataria_rg: 'RG da Locatária',
+  locataria_cpf: 'CPF da Locatária',
+  locataria_endereco: 'Endereço da Locatária',
+  locataria_bairro: 'Bairro da Locatária',
+  locataria_cep: 'CEP da Locatária',
+  locataria_cidade: 'Cidade da Locatária',
+  locataria_estado: 'Estado da Locatária',
+  locataria_telefone: 'Telefone da Locatária',
   locatario_nome: 'Nome do Locatário',
   locatario_nacionalidade: 'Nacionalidade do Locatário',
   locatario_estado_civil: 'Estado Civil do Locatário',
@@ -43,6 +52,18 @@ export const fieldTranslations: Record<string, string> = {
   locatario_cidade: 'Cidade do Locatário',
   locatario_estado: 'Estado do Locatário',
   locatario_telefone: 'Telefone do Locatário',
+  fiadora_nome: 'Nome da Fiadora',
+  fiadora_nacionalidade: 'Nacionalidade da Fiadora',
+  fiadora_estado_civil: 'Estado Civil da Fiadora',
+  fiadora_profissao: 'Profissão da Fiadora',
+  fiadora_rg: 'RG da Fiadora',
+  fiadora_cpf: 'CPF da Fiadora',
+  fiadora_endereco: 'Endereço da Fiadora',
+  fiadora_bairro: 'Bairro da Fiadora',
+  fiadora_cep: 'CEP da Fiadora',
+  fiadora_cidade: 'Cidade da Fiadora',
+  fiadora_estado: 'Estado da Fiadora',
+  fiadora_telefone: 'Telefone da Fiadora',
   fiador_nome: 'Nome do Fiador',
   fiador_nacionalidade: 'Nacionalidade do Fiador',
   fiador_estado_civil: 'Estado Civil do Fiador',
@@ -64,15 +85,13 @@ const ExtractedDataDisplay = ({ data }: ExtractedDataDisplayProps) => {
   }
 
   const getValidFields = () => {
-    // Find the field containing our data
-    const extractedField = data[0]; // Pegamos o primeiro item pois sabemos que é onde estão os dados
+    const extractedField = data[0];
     if (!extractedField?.value) {
       console.log('No value found in extracted field:', extractedField);
       return [];
     }
     
     try {
-      // Handle both string and object formats
       let parsedData = extractedField.value;
       if (typeof parsedData === 'string') {
         parsedData = JSON.parse(parsedData);
@@ -85,12 +104,25 @@ const ExtractedDataDisplay = ({ data }: ExtractedDataDisplayProps) => {
         return [];
       }
 
+      // Remove campos duplicados baseados no tipo de locatário/locatária
       const fields = Object.entries(parsedData)
-        .filter(([_, value]) => value != null && value !== '')
-        .map(([key, value]) => ({
-          field: key,
-          value: typeof value === 'string' ? value : JSON.stringify(value)
-        }));
+        .filter(([key, value]) => value != null && value !== '')
+        .reduce((acc, [key, value]) => {
+          // Se já existe um campo equivalente para locatário/locatária, não adicione
+          const baseField = key.replace(/(locatario|locataria)_/, '');
+          const existingKey = acc.find(item => 
+            item.field.endsWith(`_${baseField}`) && 
+            item.field !== key
+          );
+
+          if (!existingKey) {
+            acc.push({
+              field: key,
+              value: typeof value === 'string' ? value : JSON.stringify(value)
+            });
+          }
+          return acc;
+        }, [] as { field: string; value: string }[]);
 
       console.log('Processed fields:', fields);
       return fields;
