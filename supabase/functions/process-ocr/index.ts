@@ -1,7 +1,10 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import {
+  GoogleGenerativeAI,
+} from "@google/generative-ai";
+
+console.log('Versão da função: 1.0.1'); // Altere este número a cada deploy
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,8 +12,10 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { 
+      status: 200, 
       headers: corsHeaders 
     });
   }
@@ -18,9 +23,9 @@ serve(async (req) => {
   try {
     const { documentType, base64Image, maritalStatus, sharedAddress } = await req.json();
     
-    console.log('Processando documento do tipo:', documentType);
-    console.log('Estado civil recebido:', maritalStatus);
-    console.log('Endereço compartilhado:', sharedAddress);
+    console.log('Processing document with type:', documentType);
+    console.log('Received marital status:', maritalStatus);
+    console.log('Received shared address:', sharedAddress);
 
     const apiKey = Deno.env.get('GEMINI_API_KEY');
     if (!apiKey) {
@@ -30,8 +35,8 @@ serve(async (req) => {
           error: 'GEMINI_API_KEY não configurada'
         }),
         { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 500
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
     }
@@ -41,15 +46,16 @@ serve(async (req) => {
     const model = genAI.getGenerativeModel({
       model: "gemini-pro-vision",
       generationConfig: {
-        temperature: 0,
-        topP: 1,
+        temperature: 0.1,
+        topP: 0.1,
         topK: 1,
         maxOutputTokens: 4096,
       }
     });
 
-    console.log('Processando documento com API Gemini...');
+    console.log('Processing document with Gemini API...');
     
+    // Remove the data:image/[type];base64, prefix if it exists
     const base64Data = base64Image.includes('base64,') 
       ? base64Image.split('base64,')[1] 
       : base64Image;
@@ -58,42 +64,23 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Dados da imagem em base64 são obrigatórios'
+          error: 'Base64 image data is required'
         }),
         { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
     }
 
     try {
+      // Create the prompt based on document type
       const prompt = documentType === 'comprovante_endereco' 
-        ? `Extraia do comprovante de endereço as seguintes informações em formato JSON:
-           endereco, bairro, cep, cidade, estado.
-           Retorne apenas os campos encontrados, em formato JSON puro sem markdown.`
-        : `Extraia do documento pessoal as seguintes informações em formato JSON:
-           ${documentType}_nome (nome completo),
-           ${documentType}_nacionalidade,
-           ${documentType}_estado_civil,
-           ${documentType}_profissao,
-           ${documentType}_rg (apenas números e pontuação se houver),
-           ${documentType}_cpf (apenas números e pontuação se houver),
-           ${documentType}_endereco (endereço completo),
-           ${documentType}_bairro,
-           ${documentType}_cep,
-           ${documentType}_cidade,
-           ${documentType}_estado (sigla do estado),
-           ${documentType}_telefone.
-           
-           Instruções específicas:
-           1. Mantenha o prefixo "${documentType}_" em todos os campos
-           2. Retorne apenas campos que foram encontrados com certeza
-           3. Para RG e CPF, retorne apenas os números e pontuação, sem texto adicional
-           4. Para estado, use a sigla (ex: SP, RJ)
-           5. Retorne em formato JSON puro sem markdown
-           6. Não invente ou deduza informações, apenas extraia o que está visível
-           7. Mantenha a formatação original de RG e CPF se houver (pontos e traços)`;
+        ? 'Extraia do comprovante de endereço as seguintes informações em formato JSON: endereco, bairro, cep, cidade, estado. Retorne apenas os campos que encontrar, em formato JSON puro sem markdown.'
+        : `Extraia do documento pessoal as seguintes informações em formato JSON: 
+           nome_completo, rg, cpf, data_nascimento, nacionalidade, estado_civil, profissao, telefone. 
+           Retorne apenas os campos que encontrar, em formato JSON puro sem markdown.
+           Se encontrar um nome, mas não tiver certeza se é nome_completo, retorne como nome_completo mesmo assim.`;
 
       const result = await model.generateContent({
         contents: [
@@ -113,27 +100,25 @@ serve(async (req) => {
       });
 
       if (!result.response) {
-        throw new Error('Sem resposta da API Gemini');
+        throw new Error('No response from Gemini API');
       }
 
       const response = result.response;
       const text = response.text();
       
-      console.log('Resposta bruta do Gemini:', text);
+      console.log('Raw response from Gemini:', text);
 
+      // Try to parse the response as JSON
       try {
+        // Remove any markdown code blocks if present and clean up the text
         const cleanText = text.replace(/```json\s*([\s\S]*?)\s*```/g, '$1')
                              .replace(/```\s*([\s\S]*?)\s*```/g, '$1')
                              .trim();
         
-        console.log('Texto limpo:', cleanText);
+        console.log('Cleaned text:', cleanText);
         
         const extractedData = JSON.parse(cleanText);
-        console.log('Dados parseados:', extractedData);
-
-        // Adiciona data e hora atual em formato específico
-        const now = new Date();
-        extractedData.data_processamento = now.toISOString();
+        console.log('Parsed data:', extractedData);
 
         return new Response(
           JSON.stringify({ 
@@ -141,12 +126,12 @@ serve(async (req) => {
             data: extractedData 
           }),
           { 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 200
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           }
         );
       } catch (parseError) {
-        console.error('Erro ao processar JSON:', parseError);
+        console.error('Error parsing JSON response:', parseError);
         return new Response(
           JSON.stringify({ 
             success: false, 
@@ -155,28 +140,28 @@ serve(async (req) => {
             rawResponse: text
           }),
           { 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 400
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           }
         );
       }
     } catch (geminiError) {
-      console.error('Erro detalhado do Gemini:', geminiError);
+      console.error('Detailed Gemini error:', geminiError);
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Erro ao processar com API Gemini',
+          error: 'Error processing with Gemini API',
           details: geminiError.message,
           stack: geminiError.stack
         }),
         { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 500
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
     }
   } catch (error) {
-    console.error('Erro ao processar documento:', error);
+    console.error('Error processing document:', error);
     return new Response(
       JSON.stringify({ 
         success: false, 
@@ -184,8 +169,8 @@ serve(async (req) => {
         details: error.message
       }),
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
   }
