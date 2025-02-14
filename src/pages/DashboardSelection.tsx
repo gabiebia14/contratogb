@@ -1,3 +1,4 @@
+
 import { useNavigate } from "react-router-dom";
 import { Building2, Scale, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,19 +12,19 @@ export default function DashboardSelection() {
       title: "Painel Jurídico",
       description: "Gestão de contratos e documentos legais",
       icon: Scale,
-      path: "/juridico/auth", // Caminho atualizado
+      path: "/auth",
     },
     {
       title: "Painel do Proprietário",
       description: "Gestão de imóveis e inquilinos",
       icon: Building2,
-      path: "/proprietario/auth", // Caminho atualizado
+      path: "/auth",
     },
     {
       title: "Painel de Administração",
       description: "Gestão administrativa e financeira",
       icon: ShieldCheck,
-      path: "/admin/auth", // Caminho atualizado
+      path: "/auth",
     },
   ];
 
