@@ -11,51 +11,45 @@ export type Database = {
     Tables: {
       contract_templates: {
         Row: {
-          category: string | null
+          category: string
           content: string
-          created_at: string | null
-          description: string | null
+          created_at: string
           id: string
           is_active: boolean | null
-          layout_version: number | null
           name: string
-          preview_url: string | null
-          tags: string[] | null
+          original_filename: string | null
+          processed_content: string | null
+          status: string | null
           template_variables: Json | null
-          updated_at: string | null
-          user_id: string | null
+          updated_at: string
           version: number | null
         }
         Insert: {
-          category?: string | null
+          category?: string
           content: string
-          created_at?: string | null
-          description?: string | null
+          created_at?: string
           id?: string
           is_active?: boolean | null
-          layout_version?: number | null
           name: string
-          preview_url?: string | null
-          tags?: string[] | null
+          original_filename?: string | null
+          processed_content?: string | null
+          status?: string | null
           template_variables?: Json | null
-          updated_at?: string | null
-          user_id?: string | null
+          updated_at?: string
           version?: number | null
         }
         Update: {
-          category?: string | null
+          category?: string
           content?: string
-          created_at?: string | null
-          description?: string | null
+          created_at?: string
           id?: string
           is_active?: boolean | null
-          layout_version?: number | null
           name?: string
-          preview_url?: string | null
-          tags?: string[] | null
+          original_filename?: string | null
+          processed_content?: string | null
+          status?: string | null
           template_variables?: Json | null
-          updated_at?: string | null
-          user_id?: string | null
+          updated_at?: string
           version?: number | null
         }
         Relationships: []
