@@ -4,17 +4,20 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import mammoth from 'https://esm.sh/mammoth@1.6.0'
 import * as pdfjs from 'https://cdn.skypack.dev/pdfjs-dist@3.11.174/build/pdf.min.js'
 
+// Definir headers CORS mais permissivos
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS'
+  'Access-Control-Allow-Headers': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Credentials': 'true',
+  'Access-Control-Max-Age': '86400'
 }
 
-serve(async (req) => {
-  // Handle CORS preflight requests
+serve(async (req: Request) => {
+  // Sempre responder ao preflight com sucesso
   if (req.method === 'OPTIONS') {
     return new Response(null, {
-      status: 204,
+      status: 200,
       headers: corsHeaders
     })
   }
