@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { useContractTemplates } from '@/hooks/useContractTemplates';
@@ -57,20 +56,40 @@ export default function ContractTemplates() {
       }));
     }
 
-    // Processar o conteúdo do arquivo
-    const formData = new FormData();
-    formData.append('file', file);
-    
+    // Processar o conteúdo do arquivo usando fetch diretamente
     try {
-      const { data, error } = await supabase.functions.invoke('process-document', {
-        body: formData
-      });
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Você precisa estar autenticado para fazer upload de arquivos');
+        return;
+      }
 
-      if (error) throw error;
+      const response = await fetch(
+        'https://gzamgeekhujhorkggjnl.supabase.co/functions/v1/process-document',
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao processar arquivo');
+      }
+
+      const data = await response.json();
       
       if (data?.content) {
         setRawContent(data.content);
         setShowAnalysisDialog(true);
+      } else {
+        throw new Error('Nenhum conteúdo processado');
       }
     } catch (error) {
       console.error('Error processing file:', error);
