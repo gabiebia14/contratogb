@@ -2,27 +2,42 @@
 import { useState } from 'react';
 import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, SidebarMenu, 
   SidebarMenuItem, SidebarMenuButton, SidebarGroup, SidebarGroupContent } from "@/components/ui/sidebar";
-import { Bell, Menu, MessageSquare } from 'lucide-react';
-import { Link, Outlet, useLocation } from "react-router-dom";
+import { Bell, Menu, MessageSquare, FileText, Plus, Settings, FolderOpen } from 'lucide-react';
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { supabase } from '@/integrations/supabase/client';
 
 export default function DashboardLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [userImage, setUserImage] = useState<string | null>(null);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      navigate('/auth');
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+    }
+  };
+
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="flex-1 min-w-0 overflow-auto">
-        <button 
-          className="mobile-toggle"
+        <Button 
+          variant="outline"
+          className="fixed top-4 left-4 z-[60] lg:hidden"
           onClick={toggleMobileMenu}
-          aria-label="Toggle menu"
+          size="icon"
         >
-          <Menu className="w-6 h-6" />
-        </button>
+          <Menu className="h-4 w-4" />
+        </Button>
 
         <div className={`sidebar-container ${isMobileMenuOpen ? 'open' : ''}`}>
           <Sidebar className="flex border-r bg-background h-full" variant="sidebar">
@@ -37,7 +52,7 @@ export default function DashboardLayout() {
                   <SidebarMenu>
                     <SidebarMenuItem>
                       <SidebarMenuButton asChild isActive={location.pathname === '/juridico'}>
-                        <Link to="">
+                        <Link to="/juridico">
                           <Menu className="w-4 h-4" />
                           <span>Dashboard</span>
                         </Link>
@@ -45,28 +60,31 @@ export default function DashboardLayout() {
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                       <SidebarMenuButton asChild isActive={location.pathname === '/juridico/contracts'}>
-                        <Link to="contracts">
+                        <Link to="/juridico/contracts">
+                          <FileText className="w-4 h-4" />
                           <span>Contratos</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                       <SidebarMenuButton asChild isActive={location.pathname === '/juridico/new-contract'}>
-                        <Link to="new-contract">
+                        <Link to="/juridico/new-contract">
+                          <Plus className="w-4 h-4" />
                           <span>Novo Contrato</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                       <SidebarMenuButton asChild isActive={location.pathname === '/juridico/templates'}>
-                        <Link to="templates">
+                        <Link to="/juridico/templates">
+                          <FolderOpen className="w-4 h-4" />
                           <span>Modelos de Contratos</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                       <SidebarMenuButton asChild isActive={location.pathname === '/juridico/ai'}>
-                        <Link to="ai">
+                        <Link to="/juridico/ai">
                           <MessageSquare className="w-4 h-4" />
                           <span>IA</span>
                         </Link>
@@ -74,14 +92,16 @@ export default function DashboardLayout() {
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                       <SidebarMenuButton asChild isActive={location.pathname === '/juridico/documentos'}>
-                        <Link to="documentos">
+                        <Link to="/juridico/documentos">
+                          <FileText className="w-4 h-4" />
                           <span>Documentos</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                       <SidebarMenuButton asChild isActive={location.pathname === '/juridico/settings'}>
-                        <Link to="settings">
+                        <Link to="/juridico/settings">
+                          <Settings className="w-4 h-4" />
                           <span>Configurações</span>
                         </Link>
                       </SidebarMenuButton>
@@ -94,9 +114,9 @@ export default function DashboardLayout() {
                   <div className="bg-indigo-800 rounded-lg p-4 mx-2 mb-4">
                     <h3 className="font-medium mb-2 text-white">Tutorial</h3>
                     <p className="text-sm text-gray-300 mb-4">Aprenda a gerenciar contratos</p>
-                    <button className="bg-cyan-400 text-white px-4 py-2 rounded-lg text-sm w-full hover:bg-cyan-500 transition-colors">
+                    <Button className="w-full bg-cyan-400 hover:bg-cyan-500" onClick={() => navigate('/juridico/tutorial')}>
                       Começar
-                    </button>
+                    </Button>
                   </div>
                 </SidebarGroupContent>
               </SidebarGroup>
@@ -108,12 +128,19 @@ export default function DashboardLayout() {
           <div className="p-4 md:p-8">
             <div className="flex justify-end items-center mb-4 md:mb-8">
               <div className="flex items-center gap-4">
-                <Bell className="text-gray-400 cursor-pointer hover:text-gray-600 transition-colors" />
-                <img 
-                  src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" 
-                  alt="Profile" 
-                  className="w-8 h-8 rounded-full"
-                />
+                <Button variant="ghost" size="icon">
+                  <Bell className="h-5 w-5 text-gray-500" />
+                </Button>
+                <Avatar>
+                  <AvatarImage 
+                    src={userImage || "/placeholder.svg"}
+                    alt="Foto do perfil"
+                  />
+                  <AvatarFallback>US</AvatarFallback>
+                </Avatar>
+                <Button variant="ghost" size="sm" onClick={handleLogout}>
+                  Sair
+                </Button>
               </div>
             </div>
             <div className="w-full max-w-7xl mx-auto">
