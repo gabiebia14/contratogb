@@ -29,6 +29,8 @@ serve(async (req) => {
       throw new Error('GEMINI_API_KEY não configurada');
     }
 
+    console.log('Iniciando análise do contrato...');
+
     const genAI = new GoogleGenerativeAI(apiKey);
     
     const model = genAI.getGenerativeModel({
@@ -103,19 +105,32 @@ serve(async (req) => {
     const response = result.response;
     const text = response.text();
     
-    console.log('Resposta do Gemini:', text);
+    console.log('Resposta do Gemini recebida, tamanho:', text.length);
 
     try {
       // Remove blocos de código e limpa o texto
-      const cleanText = text.replace(/```json\s*([\s\S]*?)\s*```/g, '$1')
-                           .replace(/```\s*([\s\S]*?)\s*```/g, '$1')
-                           .trim();
+      const cleanText = text
+        .replace(/```json\s*([\s\S]*?)\s*```/g, '$1')
+        .replace(/```\s*([\s\S]*?)\s*```/g, '$1')
+        .trim();
       
       console.log('Texto limpo:', cleanText);
-      
-      const parsedResponse = JSON.parse(cleanText);
 
-      console.log('Resposta final:', parsedResponse);
+      let parsedResponse;
+      try {
+        parsedResponse = JSON.parse(cleanText);
+        console.log('JSON parseado com sucesso');
+      } catch (parseError) {
+        console.error('Erro ao fazer parse do JSON:', parseError);
+        console.log('Texto que falhou o parse:', cleanText);
+        throw new Error('Resposta do modelo não está em formato JSON válido');
+      }
+
+      // Validar estrutura da resposta
+      if (!parsedResponse.text || !parsedResponse.variables) {
+        console.error('Resposta inválida:', parsedResponse);
+        throw new Error('Resposta do modelo não contém os campos necessários');
+      }
 
       return new Response(
         JSON.stringify(parsedResponse),
@@ -126,13 +141,13 @@ serve(async (req) => {
       );
     } catch (parseError) {
       console.error('Erro ao processar resposta:', parseError);
-      throw new Error('Erro ao processar resposta do modelo');
+      throw new Error(`Erro ao processar resposta do modelo: ${parseError.message}`);
     }
   } catch (error) {
-    console.error('Erro:', error);
+    console.error('Erro na função:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message 
+        error: error instanceof Error ? error.message : 'Erro desconhecido' 
       }),
       { 
         status: 500,
