@@ -7,19 +7,47 @@ import * as pdfjs from 'https://cdn.skypack.dev/pdfjs-dist@3.11.174/build/pdf.mi
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS'
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders
+    })
   }
 
   try {
-    const formData = await req.formData()
-    const file = formData.get('file')
+    // Verificar método
+    if (req.method !== 'POST') {
+      throw new Error('Método não permitido')
+    }
 
+    // Verificar content type
+    const contentType = req.headers.get('content-type')
+    if (!contentType || !contentType.includes('multipart/form-data')) {
+      throw new Error('Content-Type deve ser multipart/form-data')
+    }
+
+    // Processar form data
+    let formData
+    try {
+      formData = await req.formData()
+    } catch (formError) {
+      console.error('Erro ao processar FormData:', formError)
+      throw new Error('Erro ao processar dados do formulário')
+    }
+
+    const file = formData.get('file')
     if (!file || !(file instanceof File)) {
-      throw new Error('Nenhum arquivo enviado')
+      throw new Error('Arquivo não encontrado no formulário')
+    }
+
+    // Validar tamanho do arquivo (máximo 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      throw new Error('Arquivo muito grande. Máximo 10MB permitido.')
     }
 
     let content = ''
@@ -64,27 +92,32 @@ serve(async (req) => {
       throw new Error('Nenhum texto extraído do arquivo')
     }
 
+    // Retorna o conteúdo processado
     return new Response(
       JSON.stringify({ content }),
       {
         headers: {
           ...corsHeaders,
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        status: 200,
-      },
+        status: 200
+      }
     )
+
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Erro ao processar arquivo:', error)
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({
+        error: error instanceof Error ? error.message : 'Erro desconhecido ao processar arquivo'
+      }),
       {
         headers: {
           ...corsHeaders,
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        status: 400,
-      },
+        status: 400
+      }
     )
   }
 })
