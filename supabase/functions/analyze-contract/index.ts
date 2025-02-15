@@ -34,10 +34,10 @@ serve(async (req) => {
     const genAI = new GoogleGenerativeAI(apiKey);
     
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash-exp",
+      model: "gemini-1.5-flash", // Atualizado para o modelo correto
       generationConfig: {
-        temperature: 1,
-        topP: 0.95,
+        temperature: 0.7,
+        topP: 0.8,
         topK: 40,
         maxOutputTokens: 8192,
       }
@@ -107,8 +107,8 @@ serve(async (req) => {
         },
       ],
       generationConfig: {
-        temperature: 1,
-        topP: 0.95,
+        temperature: 0.7,
+        topP: 0.8,
         topK: 40,
         maxOutputTokens: 8192,
       },
@@ -165,3 +165,4 @@ serve(async (req) => {
     );
   }
 });
+
