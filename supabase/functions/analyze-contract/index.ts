@@ -36,51 +36,43 @@ serve(async (req) => {
     const model = genAI.getGenerativeModel({
       model: "gemini-1.5-flash",
       generationConfig: {
-        temperature: 0.1, // Reduced temperature for more deterministic output
-        topP: 0.1,       // Reduced top_p for more focused output
-        topK: 1,         // Reduced top_k for more consistent output
+        temperature: 0,     // Set to 0 for most deterministic output
+        topP: 1,           // Maximum sampling
+        topK: 1,           // Most likely token
         maxOutputTokens: 8192,
       }
     });
 
     const prompt = `
-      Você é um assistente especialista em automação de contratos. Analise o contrato fornecido
-      e substitua todas as ocorrências de informações pessoais pelos parâmetros dinâmicos correspondentes.
+      Você é um assistente especialista em analisar contratos.
+      Substitua todas as informações pessoais no contrato pelos parâmetros especificados.
       
-      Você DEVE retornar APENAS um objeto JSON válido no seguinte formato, sem qualquer texto adicional:
+      INSTRUÇÕES:
+      1. Analise o contrato.
+      2. Substitua informações pessoais pelos parâmetros correspondentes.
+      3. Retorne um objeto JSON com o texto modificado e as variáveis encontradas.
+
+      EXEMPLO DE RESPOSTA:
       {
-        "text": "texto do contrato com os parâmetros substituídos",
+        "text": "CONTRATO DE LOCAÇÃO\\n\\nLOCADOR: {locador_nome}, {locador_nacionalidade}...",
         "variables": {
-          "nome_do_parametro": "descrição do campo"
+          "locador_nome": "Nome do locador",
+          "locador_cpf": "CPF do locador"
         }
       }
 
-      Substitua informações como:
-      - Nomes próprios -> {locador_nome}, {locatario_nome}, {fiador_nome}
-      - CPFs -> {locador_cpf}, {locatario_cpf}, {fiador_cpf}
-      - Endereços -> {locador_endereco}, {locatario_endereco}, {fiador_endereco}
+      PARÂMETROS DISPONÍVEIS:
+      - LOCADOR: {locador_nome}, {locador_cpf}, {locador_rg}
+      - LOCATÁRIO: {locatario_nome}, {locatario_cpf}, {locatario_rg}
+      - FIADOR: {fiador_nome}, {fiador_cpf}, {fiador_rg}
 
-      Parâmetros disponíveis:
-      LOCADOR: {locador_nome}, {locador_nacionalidade}, {locador_estado_civil}, {locador_profissao}, 
-               {locador_rg}, {locador_cpf}, {locador_endereco}, {locador_bairro}, {locador_cep}, 
-               {locador_cidade}, {locador_estado}
+      REGRAS:
+      1. Retorne apenas JSON válido
+      2. Use apenas aspas duplas
+      3. Escape caracteres especiais
+      4. Preserve quebras de linha com \\n
 
-      LOCATÁRIO: {locatario_nome}, {locatario_nacionalidade}, {locatario_estado_civil}, 
-                 {locatario_profissao}, {locatario_rg}, {locatario_cpf}, {locatario_endereco}, 
-                 {locatario_bairro}, {locatario_cep}, {locatario_cidade}, {locatario_estado}, 
-                 {locatario_telefone}, {locatario_email}
-
-      FIADOR: {fiador_nome}, {fiador_nacionalidade}, {fiador_estado_civil}, {fiador_profissao}, 
-              {fiador_rg}, {fiador_cpf}, {fiador_endereco}, {fiador_bairro}, {fiador_cep}, 
-              {fiador_cidade}, {fiador_estado}, {fiador_telefone}
-
-      IMPORTANTE: 
-      1. Retorne APENAS o objeto JSON, sem texto adicional ou formatação markdown
-      2. Não use aspas simples no JSON, apenas aspas duplas
-      3. Escape caracteres especiais corretamente
-      4. Verifique se o JSON é válido antes de retornar
-
-      Contrato para análise:
+      CONTRATO:
       ${content}
     `;
 
@@ -90,35 +82,39 @@ serve(async (req) => {
     const response = result.response;
     const text = response.text();
     
-    console.log('Resposta do Gemini recebida, tamanho:', text.length);
+    console.log('Resposta recebida do Gemini');
 
     try {
-      // Remove qualquer formatação markdown ou texto adicional
+      // Limpar a resposta
       const cleanText = text
         .replace(/```json\s*([\s\S]*?)\s*```/g, '$1')
         .replace(/```\s*([\s\S]*?)\s*```/g, '$1')
-        .replace(/^[\s\S]*?(\{)/m, '{') // Remove qualquer texto antes do primeiro {
-        .replace(/\}[\s\S]*$/m, '}')    // Remove qualquer texto depois do último }
+        .replace(/^[\s\S]*?(\{)/m, '{')
+        .replace(/\}[\s\S]*$/m, '}')
         .trim();
       
-      console.log('Texto limpo:', cleanText);
+      console.log('Tentando fazer parse do JSON:', cleanText);
 
-      let parsedResponse;
-      try {
-        parsedResponse = JSON.parse(cleanText);
-        console.log('JSON parseado com sucesso');
-      } catch (parseError) {
-        console.error('Erro ao fazer parse do JSON:', parseError);
-        console.log('Texto que falhou o parse:', cleanText);
-        throw new Error('Resposta do modelo não está em formato JSON válido. Erro: ' + parseError.message);
+      const parsedResponse = JSON.parse(cleanText);
+
+      // Validação estrita da estrutura
+      if (typeof parsedResponse !== 'object' || parsedResponse === null) {
+        throw new Error('Resposta não é um objeto JSON válido');
       }
 
-      // Validar estrutura da resposta
-      if (!parsedResponse.text || typeof parsedResponse.text !== 'string') {
-        throw new Error('Campo "text" ausente ou inválido na resposta');
+      if (typeof parsedResponse.text !== 'string' || parsedResponse.text.trim() === '') {
+        throw new Error('Campo "text" inválido ou vazio');
       }
-      if (!parsedResponse.variables || typeof parsedResponse.variables !== 'object') {
-        throw new Error('Campo "variables" ausente ou inválido na resposta');
+
+      if (typeof parsedResponse.variables !== 'object' || parsedResponse.variables === null) {
+        throw new Error('Campo "variables" inválido');
+      }
+
+      // Validar que todas as variáveis são strings
+      for (const [key, value] of Object.entries(parsedResponse.variables)) {
+        if (typeof value !== 'string') {
+          throw new Error(`Variável "${key}" não é uma string`);
+        }
       }
 
       return new Response(
