@@ -1,4 +1,3 @@
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -22,6 +21,16 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { useContractTemplates } from "@/hooks/useContractTemplates";
 import { useOCR } from "@/hooks/useOCR";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { 
+  Card, 
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle 
+} from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
 
 const formSchema = z.object({
   title: z.string().min(2, {
@@ -39,8 +48,6 @@ export default function NewContract() {
   const { toast } = useToast();
   const { templates, loading: templatesLoading } = useContractTemplates();
   const { processedDocuments, loading: documentsLoading } = useOCR();
-  
-  console.log('Todos os documentos:', processedDocuments);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -52,48 +59,89 @@ export default function NewContract() {
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
+    const selectedDoc = processedDocuments.find(doc => doc.id === values.documentId);
+    if (!selectedDoc) {
+      toast({
+        title: "Erro ao gerar contrato",
+        description: "Documento não encontrado",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    console.log("Gerando contrato com:", {
+      ...values,
+      documentData: selectedDoc.extracted_data
+    });
+
     toast({
       title: "Contrato criado com sucesso!",
       description: "O contrato foi gerado e está pronto para revisão.",
     });
   }
 
-  const getValidFields = (extractedData: any) => {
-    if (!extractedData || typeof extractedData !== 'object') return [];
-    
+  const formatDate = (dateString: string) => {
     try {
-      const jsonData = typeof extractedData === 'string' ? JSON.parse(extractedData) : extractedData;
-      console.log('Dados extraídos processados:', jsonData);
-      return Object.entries(jsonData)
-        .filter(([_, value]) => value !== null && value !== '')
-        .map(([key, value]) => ({
-          field: key,
-          value: String(value)
-        }));
-    } catch (error) {
-      console.error('Error parsing data:', error);
-      return [];
+      return format(new Date(dateString), "dd/MM/yyyy HH:mm", { locale: ptBR });
+    } catch {
+      return "Data não disponível";
     }
   };
 
-  // Filter documents using the same logic as ProcessedHistory
-  const validDocuments = processedDocuments.filter((doc) => {
-    const fields = getValidFields(doc.extracted_data);
-    console.log('Campos do documento:', doc.id, fields);
-    const hasValidName = fields.some(({ field, value }) => 
-      (field === 'nome_completo' || field === 'nome') && value
-    );
-    console.log('Documento tem nome válido:', doc.id, hasValidName);
-    return hasValidName;
+  const getDocumentDetails = (doc: any) => {
+    try {
+      const data = typeof doc.extracted_data === 'string' 
+        ? JSON.parse(doc.extracted_data) 
+        : doc.extracted_data;
+
+      const getField = (prefixes: string[], field: string) => {
+        for (const prefix of prefixes) {
+          const value = data[`${prefix}_${field}`];
+          if (value) return value;
+        }
+        return null;
+      };
+
+      const nome = getField(['locatario', 'locataria', 'locador', 'locadora'], 'nome') 
+        || getField(['locatario', 'locataria', 'locador', 'locadora'], 'nome_completo');
+      const cpf = getField(['locatario', 'locataria', 'locador', 'locadora'], 'cpf');
+      const rg = getField(['locatario', 'locataria', 'locador', 'locadora'], 'rg');
+
+      return {
+        nome: nome || 'Nome não encontrado',
+        cpf: cpf || 'CPF não encontrado',
+        rg: rg || 'RG não encontrado',
+        data: formatDate(doc.processed_at)
+      };
+    } catch (error) {
+      console.error('Erro ao processar detalhes do documento:', error);
+      return {
+        nome: 'Erro ao carregar dados',
+        cpf: '-',
+        rg: '-',
+        data: '-'
+      };
+    }
+  };
+
+  const validDocuments = processedDocuments.filter(doc => {
+    try {
+      const details = getDocumentDetails(doc);
+      return details.nome !== 'Nome não encontrado';
+    } catch {
+      return false;
+    }
   });
 
-  console.log('Documentos válidos:', validDocuments);
-
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">Novo Contrato</h1>
-      <div className="bg-white p-6 rounded-lg shadow">
+    <Card className="max-w-4xl mx-auto">
+      <CardHeader>
+        <CardTitle>Novo Contrato</CardTitle>
+        <CardDescription>
+          Preencha os dados abaixo para gerar um novo contrato
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
@@ -103,7 +151,7 @@ export default function NewContract() {
                 <FormItem>
                   <FormLabel>Título do Contrato</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ex: Contrato de Prestação de Serviços" {...field} />
+                    <Input placeholder="Ex: Contrato de Locação - João Silva" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -116,18 +164,28 @@ export default function NewContract() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Modelo de Contrato</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={templatesLoading}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione um modelo de contrato" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {templates.map((template) => (
-                        <SelectItem key={template.id} value={String(template.id)}>
-                          {template.name}
-                        </SelectItem>
-                      ))}
+                      {templatesLoading ? (
+                        <div className="flex items-center justify-center p-4">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        </div>
+                      ) : templates.length === 0 ? (
+                        <div className="p-4 text-center text-sm text-gray-500">
+                          Nenhum modelo disponível
+                        </div>
+                      ) : (
+                        templates.map((template) => (
+                          <SelectItem key={template.id} value={String(template.id)}>
+                            {template.name}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -141,24 +199,40 @@ export default function NewContract() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Documento</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={documentsLoading}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione um documento" />
+                        <SelectValue placeholder="Selecione um documento processado" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
-                      {validDocuments.map((doc) => {
-                        const fields = getValidFields(doc.extracted_data);
-                        const nameField = fields.find(f => 
-                          f.field === 'nome_completo' || f.field === 'nome'
-                        );
-                        return (
-                          <SelectItem key={doc.id} value={String(doc.id)}>
-                            {nameField?.value || 'Documento sem nome'}
-                          </SelectItem>
-                        );
-                      })}
+                    <SelectContent className="max-h-[300px]">
+                      {documentsLoading ? (
+                        <div className="flex items-center justify-center p-4">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        </div>
+                      ) : validDocuments.length === 0 ? (
+                        <div className="p-4 text-center text-sm text-gray-500">
+                          Nenhum documento processado disponível.
+                          <br />
+                          Processe um documento na seção "Documentos" primeiro.
+                        </div>
+                      ) : (
+                        validDocuments.map((doc) => {
+                          const details = getDocumentDetails(doc);
+                          return (
+                            <SelectItem key={doc.id} value={doc.id}>
+                              <div className="flex flex-col gap-1">
+                                <div className="font-medium">{details.nome}</div>
+                                <div className="text-xs text-gray-500">
+                                  CPF: {details.cpf} | RG: {details.rg}
+                                  <br />
+                                  Processado em: {details.data}
+                                </div>
+                              </div>
+                            </SelectItem>
+                          );
+                        })
+                      )}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -166,12 +240,31 @@ export default function NewContract() {
               )}
             />
 
-            <div className="flex justify-end">
-              <Button type="submit" disabled={templatesLoading || documentsLoading}>Gerar Contrato</Button>
+            <div className="flex justify-end gap-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => window.history.back()}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                type="submit"
+                disabled={templatesLoading || documentsLoading}
+              >
+                {templatesLoading || documentsLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Carregando...
+                  </>
+                ) : (
+                  'Gerar Contrato'
+                )}
+              </Button>
             </div>
           </form>
         </Form>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
