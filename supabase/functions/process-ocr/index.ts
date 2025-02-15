@@ -5,7 +5,7 @@ import {
   GoogleGenerativeAI,
 } from "https://esm.sh/@google/generative-ai@0.1.3";
 
-console.log('Versão da função: 1.0.1'); // Altere este número a cada deploy
+console.log('Versão da função: 1.0.2'); // Alterei a versão para refletir a mudança
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -45,7 +45,7 @@ serve(async (req) => {
     const genAI = new GoogleGenerativeAI(apiKey);
     
     const model = genAI.getGenerativeModel({
-      model: "gemini-pro-vision",
+      model: "gemini-1.5-flash", // Atualizado para o novo modelo
       generationConfig: {
         temperature: 0.1,
         topP: 0.1,
