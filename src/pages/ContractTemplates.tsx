@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { useContractTemplates } from '@/hooks/useContractTemplates';
@@ -56,35 +57,38 @@ export default function ContractTemplates() {
       }));
     }
 
-    // Processar o conteúdo do arquivo usando fetch diretamente
+    // Processar o conteúdo do arquivo usando o cliente Supabase
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         toast.error('Você precisa estar autenticado para fazer upload de arquivos');
         return;
       }
 
-      const response = await fetch(
-        'https://gzamgeekhujhorkggjnl.supabase.co/functions/v1/process-document',
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: formData,
-        }
-      );
+      // Converter o arquivo para base64
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => {
+          const base64 = reader.result as string;
+          resolve(base64.split(',')[1]); // Remove o prefixo data:application/...
+        };
+        reader.onerror = reject;
+      });
+      reader.readAsDataURL(file);
+      const base64Data = await base64Promise;
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao processar arquivo');
+      const { data, error } = await supabase.functions.invoke('process-document', {
+        body: {
+          fileName: file.name,
+          fileType: file.type,
+          fileContent: base64Data
+        }
+      });
+
+      if (error) {
+        throw error;
       }
 
-      const data = await response.json();
-      
       if (data?.content) {
         setRawContent(data.content);
         setShowAnalysisDialog(true);
