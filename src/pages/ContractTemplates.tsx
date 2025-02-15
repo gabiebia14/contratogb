@@ -82,7 +82,7 @@ export default function ContractTemplates() {
       await addTemplate(
         newTemplate.name,
         finalContent,
-        newTemplate.category
+        {} // Passando um objeto vazio como variáveis iniciais
       );
       
       // Reset form
@@ -104,7 +104,7 @@ export default function ContractTemplates() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Modelos de Contrato</h1>
         <Button onClick={() => setShowNewForm(true)}>
-          <Plus className="w-4 h-4 mr-2" />
+          <Plus className="w-4 w-4 mr-2" />
           Novo Modelo
         </Button>
       </div>

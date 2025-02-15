@@ -1,8 +1,7 @@
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import mammoth from 'https://esm.sh/mammoth@1.6.0'
-import { parse } from 'https://deno.land/x/pdfparser@v1.0.1/mod.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,7 +9,6 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -25,15 +23,13 @@ serve(async (req) => {
 
     let content = ''
 
-    // Processar arquivo baseado no tipo
-    if (file.type.includes('pdf')) {
-      const pdfBuffer = await file.arrayBuffer()
-      const pdfData = await parse(new Uint8Array(pdfBuffer))
-      content = pdfData.pages.map(page => page.text).join('\n')
-    } else if (file.type.includes('word') || file.type.includes('openxmlformats')) {
+    // Por enquanto, vamos focar apenas em arquivos Word
+    if (file.type.includes('word') || file.type.includes('openxmlformats')) {
       const buffer = await file.arrayBuffer()
       const result = await mammoth.extractRawText({ arrayBuffer: buffer })
       content = result.value
+    } else if (file.type.includes('pdf')) {
+      throw new Error('Suporte a PDF em desenvolvimento')
     } else {
       throw new Error('Formato de arquivo não suportado')
     }
