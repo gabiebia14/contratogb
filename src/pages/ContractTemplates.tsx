@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { useContractTemplates } from '@/hooks/useContractTemplates';
@@ -27,6 +28,10 @@ export default function ContractTemplates() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [showAnalysisDialog, setShowAnalysisDialog] = useState(false);
   const [rawContent, setRawContent] = useState<string>('');
+  const [processedContent, setProcessedContent] = useState<{
+    text: string;
+    variables: Record<string, string>;
+  } | null>(null);
   const { templates, loading, addTemplate } = useContractTemplates();
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -85,6 +90,22 @@ export default function ContractTemplates() {
 
       if (data?.content) {
         setRawContent(data.content);
+        
+        // Analyze the content with Gemini
+        const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-contract', {
+          body: { content: data.content }
+        });
+
+        if (analysisError) throw analysisError;
+
+        if (analysisData) {
+          setProcessedContent(analysisData);
+          setNewTemplate(prev => ({
+            ...prev,
+            content: analysisData.text
+          }));
+        }
+        
         setShowAnalysisDialog(true);
       } else {
         throw new Error('Nenhum conteúdo processado');
@@ -103,7 +124,8 @@ export default function ContractTemplates() {
 
       if (error) throw error;
 
-      if (data?.text) {
+      if (data) {
+        setProcessedContent(data);
         setNewTemplate(prev => ({
           ...prev,
           content: data.text
@@ -137,7 +159,7 @@ export default function ContractTemplates() {
       await addTemplate(
         newTemplate.name,
         newTemplate.content || rawContent,
-        {} // Passando um objeto vazio como variáveis iniciais
+        processedContent?.variables || {}
       );
       
       // Reset form
@@ -149,6 +171,7 @@ export default function ContractTemplates() {
       setSelectedFile(null);
       setShowNewForm(false);
       setRawContent('');
+      setProcessedContent(null);
       
       toast.success('Modelo de contrato adicionado com sucesso!');
     } catch (error) {
@@ -162,7 +185,7 @@ export default function ContractTemplates() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Modelos de Contrato</h1>
         <Button onClick={() => setShowNewForm(true)}>
-          <Plus className="w-4 w-4 mr-2" />
+          <Plus className="w-4 h-4 mr-2" />
           Novo Modelo
         </Button>
       </div>
@@ -210,15 +233,29 @@ export default function ContractTemplates() {
 
             <div>
               <label className="block text-sm font-medium mb-1">
-                Conteúdo do Modelo {rawContent ? '(processado)' : '(opcional se arquivo for enviado)'}
+                Conteúdo do Modelo {processedContent ? '(processado pelo Gemini)' : '(opcional se arquivo for enviado)'}
               </label>
               <textarea
-                value={newTemplate.content || rawContent}
+                value={processedContent?.text || newTemplate.content || rawContent}
                 onChange={(e) => setNewTemplate({ ...newTemplate, content: e.target.value })}
                 className="w-full min-h-[200px] p-2 border rounded"
                 placeholder="Cole o texto do contrato aqui..."
               />
             </div>
+
+            {processedContent?.variables && Object.keys(processedContent.variables).length > 0 && (
+              <div>
+                <label className="block text-sm font-medium mb-2">Variáveis Identificadas:</label>
+                <div className="grid grid-cols-2 gap-2 p-4 bg-gray-50 rounded-lg">
+                  {Object.entries(processedContent.variables).map(([key, description]) => (
+                    <div key={key} className="text-sm">
+                      <span className="font-mono text-blue-600">{`{${key}}`}</span>
+                      <span className="text-gray-600 ml-2">{description}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <Button type="submit" disabled={loading}>
               {loading ? (
@@ -251,6 +288,20 @@ export default function ContractTemplates() {
                 <div className="bg-gray-50 p-4 rounded-lg max-h-[300px] overflow-y-auto whitespace-pre-wrap text-sm">
                   {template.content}
                 </div>
+
+                {template.template_variables && Object.keys(template.template_variables).length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="font-medium mb-2">Variáveis do Modelo:</h4>
+                    <div className="grid grid-cols-2 gap-2 p-4 bg-gray-50 rounded-lg">
+                      {Object.entries(template.template_variables).map(([key, description]) => (
+                        <div key={key} className="text-sm">
+                          <span className="font-mono text-blue-600">{`{${key}}`}</span>
+                          <span className="text-gray-600 ml-2">{description}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </Card>
