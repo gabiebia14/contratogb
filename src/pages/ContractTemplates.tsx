@@ -7,6 +7,16 @@ import { Input } from '@/components/ui/input';
 import { Plus, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function ContractTemplates() {
   const [showNewForm, setShowNewForm] = useState(true);
@@ -16,6 +26,8 @@ export default function ContractTemplates() {
     category: 'Geral'
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [showAnalysisDialog, setShowAnalysisDialog] = useState(false);
+  const [rawContent, setRawContent] = useState<string>('');
   const { templates, loading, addTemplate } = useContractTemplates();
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -44,6 +56,51 @@ export default function ContractTemplates() {
         name: file.name.replace(/\.[^/.]+$/, '') // Remove a extensão
       }));
     }
+
+    // Processar o conteúdo do arquivo
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('process-document', {
+        body: formData
+      });
+
+      if (error) throw error;
+      
+      if (data?.content) {
+        setRawContent(data.content);
+        setShowAnalysisDialog(true);
+      }
+    } catch (error) {
+      console.error('Error processing file:', error);
+      toast.error('Erro ao processar arquivo: ' + (error as Error).message);
+    }
+  };
+
+  const analyzeContractWithGemini = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('analyze-contract', {
+        body: { content: rawContent }
+      });
+
+      if (error) throw error;
+
+      if (data?.text) {
+        setNewTemplate(prev => ({
+          ...prev,
+          content: data.text
+        }));
+        toast.success('Parâmetros adicionados com sucesso!');
+      } else {
+        throw new Error('Nenhum conteúdo processado');
+      }
+    } catch (error) {
+      console.error('Error analyzing contract:', error);
+      toast.error('Erro ao analisar contrato: ' + (error as Error).message);
+    } finally {
+      setShowAnalysisDialog(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -60,31 +117,9 @@ export default function ContractTemplates() {
     }
 
     try {
-      let finalContent = newTemplate.content;
-
-      if (selectedFile) {
-        // Se houver arquivo selecionado, enviar para processamento
-        const formData = new FormData();
-        formData.append('file', selectedFile);
-        
-        const { data, error } = await supabase.functions.invoke('process-document', {
-          body: formData
-        });
-
-        if (error) {
-          throw new Error('Erro ao processar arquivo: ' + error.message);
-        }
-
-        if (!data?.content) {
-          throw new Error('Nenhum conteúdo extraído do arquivo');
-        }
-
-        finalContent = data.content;
-      }
-
       await addTemplate(
         newTemplate.name,
-        finalContent,
+        newTemplate.content || rawContent,
         {} // Passando um objeto vazio como variáveis iniciais
       );
       
@@ -96,6 +131,7 @@ export default function ContractTemplates() {
       });
       setSelectedFile(null);
       setShowNewForm(false);
+      setRawContent('');
       
       toast.success('Modelo de contrato adicionado com sucesso!');
     } catch (error) {
@@ -157,10 +193,10 @@ export default function ContractTemplates() {
 
             <div>
               <label className="block text-sm font-medium mb-1">
-                Conteúdo do Modelo (opcional se arquivo for enviado)
+                Conteúdo do Modelo {rawContent ? '(processado)' : '(opcional se arquivo for enviado)'}
               </label>
               <textarea
-                value={newTemplate.content}
+                value={newTemplate.content || rawContent}
                 onChange={(e) => setNewTemplate({ ...newTemplate, content: e.target.value })}
                 className="w-full min-h-[200px] p-2 border rounded"
                 placeholder="Cole o texto do contrato aqui..."
@@ -192,6 +228,25 @@ export default function ContractTemplates() {
           </Card>
         ))}
       </div>
+
+      <AlertDialog open={showAnalysisDialog} onOpenChange={setShowAnalysisDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Análise Automática</AlertDialogTitle>
+            <AlertDialogDescription>
+              Gostaria de adicionar automaticamente os parâmetros nas cláusulas deste contrato?
+              O sistema irá analisar o texto e sugerir variáveis para campos como nomes,
+              documentos, endereços e valores.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Não, manter como está</AlertDialogCancel>
+            <AlertDialogAction onClick={analyzeContractWithGemini}>
+              Sim, adicionar parâmetros
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
