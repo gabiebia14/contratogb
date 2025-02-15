@@ -217,14 +217,25 @@ export default function ContractTemplates() {
         </Card>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4">
         {templates.map((template) => (
           <Card key={template.id} className="p-4">
-            <h3 className="font-medium">{template.name}</h3>
-            <p className="text-sm text-gray-500">Categoria: {template.category}</p>
-            <p className="text-sm text-gray-500">
-              Última modificação: {new Date(template.updated_at).toLocaleDateString()}
-            </p>
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-medium text-lg">{template.name}</h3>
+                <p className="text-sm text-gray-500">Categoria: {template.category}</p>
+                <p className="text-sm text-gray-500">
+                  Última modificação: {new Date(template.updated_at).toLocaleDateString()}
+                </p>
+              </div>
+              
+              <div className="border-t pt-4">
+                <h4 className="font-medium mb-2">Conteúdo do Modelo:</h4>
+                <div className="bg-gray-50 p-4 rounded-lg max-h-[300px] overflow-y-auto whitespace-pre-wrap text-sm">
+                  {template.content}
+                </div>
+              </div>
+            </div>
           </Card>
         ))}
       </div>
