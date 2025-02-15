@@ -12,6 +12,7 @@ import Documents from '@/pages/Documents';
 import Dashboard from '@/pages/Index';
 import Landing from '@/pages/Landing';
 import DashboardSelection from '@/pages/DashboardSelection';
+import AI from '@/pages/AI';
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ function App() {
             <Route path="templates" element={<ContractTemplates />} />
             <Route path="new-contract" element={<NewContract />} />
             <Route path="documentos" element={<Documents />} />
+            <Route path="ai" element={<AI />} />
           </Route>
 
           {/* Placeholder routes for other dashboards */}

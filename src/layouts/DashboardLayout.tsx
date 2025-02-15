@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, SidebarMenu, 
   SidebarMenuItem, SidebarMenuButton, SidebarGroup, SidebarGroupContent } from "@/components/ui/sidebar";
-import { Bell, Menu } from 'lucide-react';
+import { Bell, Menu, MessageSquare } from 'lucide-react';
 import { Link, Outlet, useLocation } from "react-router-dom";
 
 export default function DashboardLayout() {
@@ -16,7 +16,6 @@ export default function DashboardLayout() {
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="flex-1 min-w-0 overflow-auto">
-        {/* Botão Mobile */}
         <button 
           className="mobile-toggle"
           onClick={toggleMobileMenu}
@@ -25,7 +24,6 @@ export default function DashboardLayout() {
           <Menu className="w-6 h-6" />
         </button>
 
-        {/* Sidebar com classe condicional para mobile */}
         <div className={`sidebar-container ${isMobileMenuOpen ? 'open' : ''}`}>
           <Sidebar className="flex border-r bg-background h-full" variant="sidebar">
             <SidebarHeader className="p-4">
@@ -67,6 +65,14 @@ export default function DashboardLayout() {
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
+                      <SidebarMenuButton asChild isActive={location.pathname === '/juridico/ai'}>
+                        <Link to="ai">
+                          <MessageSquare className="w-4 h-4" />
+                          <span>IA</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
                       <SidebarMenuButton asChild isActive={location.pathname === '/juridico/documentos'}>
                         <Link to="documentos">
                           <span>Documentos</span>
@@ -98,7 +104,6 @@ export default function DashboardLayout() {
           </Sidebar>
         </div>
 
-        {/* Conteúdo principal */}
         <main className="main-content bg-gray-50">
           <div className="p-4 md:p-8">
             <div className="flex justify-end items-center mb-4 md:mb-8">
