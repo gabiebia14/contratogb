@@ -36,66 +36,51 @@ serve(async (req) => {
     const model = genAI.getGenerativeModel({
       model: "gemini-1.5-flash",
       generationConfig: {
-        temperature: 0.7,
-        topP: 0.8,
-        topK: 40,
+        temperature: 0.1, // Reduced temperature for more deterministic output
+        topP: 0.1,       // Reduced top_p for more focused output
+        topK: 1,         // Reduced top_k for more consistent output
         maxOutputTokens: 8192,
       }
     });
 
     const prompt = `
-      Você é um assistente especialista em automação de contratos. Sua tarefa é analisar o contrato fornecido
-      e substituir todas as ocorrências de informações pessoais pelos parâmetros dinâmicos correspondentes.
-
-      Por exemplo:
-      - "João da Silva" -> {locatario_nome}
-      - "123.456.789-00" -> {locatario_cpf}
-      - "Rua das Flores, 123" -> {locatario_endereco}
-
-      Use os seguintes parâmetros:
-
-      LOCADOR:
-      {locador_nome}, {locador_nacionalidade}, {locador_estado_civil}, {locador_profissao}, {locador_rg},
-      {locador_cpf}, {locador_endereco}, {locador_bairro}, {locador_cep}, {locador_cidade}, {locador_estado}
-
-      LOCATÁRIO(A):
-      {locatario_nome} ou {locataria_nome}
-      {locatario_nacionalidade} ou {locataria_nacionalidade}
-      {locatario_estado_civil} ou {locataria_estado_civil}
-      {locatario_profissao} ou {locataria_profissao}
-      {locatario_rg} ou {locataria_rg}
-      {locatario_cpf} ou {locataria_cpf}
-      {locatario_endereco} ou {locataria_endereco}
-      {locatario_bairro} ou {locataria_bairro}
-      {locatario_cep} ou {locataria_cep}
-      {locatario_cidade} ou {locataria_cidade}
-      {locatario_estado} ou {locataria_estado}
-      {locatario_telefone} ou {locataria_telefone}
-      {locatario_email} ou {locataria_email}
-
-      FIADOR(A):
-      {fiador_nome} ou {fiadora_nome}
-      {fiador_nacionalidade} ou {fiadora_nacionalidade}
-      {fiador_estado_civil} ou {fiadora_estado_civil}
-      {fiador_profissao} ou {fiadora_profissao}
-      {fiador_rg} ou {fiadora_rg}
-      {fiador_cpf} ou {fiadora_cpf}
-      {fiador_endereco} ou {fiadora_endereco}
-      {fiador_bairro} ou {fiadora_bairro}
-      {fiador_cep} ou {fiadora_cep}
-      {fiador_cidade} ou {fiadora_cidade}
-      {fiador_estado} ou {fiadora_estado}
-      {fiador_telefone} ou {fiadora_telefone}
-
-      Retorne apenas um objeto JSON com:
+      Você é um assistente especialista em automação de contratos. Analise o contrato fornecido
+      e substitua todas as ocorrências de informações pessoais pelos parâmetros dinâmicos correspondentes.
+      
+      Você DEVE retornar APENAS um objeto JSON válido no seguinte formato, sem qualquer texto adicional:
       {
-        "text": "o texto do contrato com os parâmetros substituídos",
+        "text": "texto do contrato com os parâmetros substituídos",
         "variables": {
           "nome_do_parametro": "descrição do campo"
         }
       }
 
-      Analise o seguinte contrato:
+      Substitua informações como:
+      - Nomes próprios -> {locador_nome}, {locatario_nome}, {fiador_nome}
+      - CPFs -> {locador_cpf}, {locatario_cpf}, {fiador_cpf}
+      - Endereços -> {locador_endereco}, {locatario_endereco}, {fiador_endereco}
+
+      Parâmetros disponíveis:
+      LOCADOR: {locador_nome}, {locador_nacionalidade}, {locador_estado_civil}, {locador_profissao}, 
+               {locador_rg}, {locador_cpf}, {locador_endereco}, {locador_bairro}, {locador_cep}, 
+               {locador_cidade}, {locador_estado}
+
+      LOCATÁRIO: {locatario_nome}, {locatario_nacionalidade}, {locatario_estado_civil}, 
+                 {locatario_profissao}, {locatario_rg}, {locatario_cpf}, {locatario_endereco}, 
+                 {locatario_bairro}, {locatario_cep}, {locatario_cidade}, {locatario_estado}, 
+                 {locatario_telefone}, {locatario_email}
+
+      FIADOR: {fiador_nome}, {fiador_nacionalidade}, {fiador_estado_civil}, {fiador_profissao}, 
+              {fiador_rg}, {fiador_cpf}, {fiador_endereco}, {fiador_bairro}, {fiador_cep}, 
+              {fiador_cidade}, {fiador_estado}, {fiador_telefone}
+
+      IMPORTANTE: 
+      1. Retorne APENAS o objeto JSON, sem texto adicional ou formatação markdown
+      2. Não use aspas simples no JSON, apenas aspas duplas
+      3. Escape caracteres especiais corretamente
+      4. Verifique se o JSON é válido antes de retornar
+
+      Contrato para análise:
       ${content}
     `;
 
@@ -108,10 +93,12 @@ serve(async (req) => {
     console.log('Resposta do Gemini recebida, tamanho:', text.length);
 
     try {
-      // Remove blocos de código e limpa o texto
+      // Remove qualquer formatação markdown ou texto adicional
       const cleanText = text
         .replace(/```json\s*([\s\S]*?)\s*```/g, '$1')
         .replace(/```\s*([\s\S]*?)\s*```/g, '$1')
+        .replace(/^[\s\S]*?(\{)/m, '{') // Remove qualquer texto antes do primeiro {
+        .replace(/\}[\s\S]*$/m, '}')    // Remove qualquer texto depois do último }
         .trim();
       
       console.log('Texto limpo:', cleanText);
@@ -123,13 +110,15 @@ serve(async (req) => {
       } catch (parseError) {
         console.error('Erro ao fazer parse do JSON:', parseError);
         console.log('Texto que falhou o parse:', cleanText);
-        throw new Error('Resposta do modelo não está em formato JSON válido');
+        throw new Error('Resposta do modelo não está em formato JSON válido. Erro: ' + parseError.message);
       }
 
       // Validar estrutura da resposta
-      if (!parsedResponse.text || !parsedResponse.variables) {
-        console.error('Resposta inválida:', parsedResponse);
-        throw new Error('Resposta do modelo não contém os campos necessários');
+      if (!parsedResponse.text || typeof parsedResponse.text !== 'string') {
+        throw new Error('Campo "text" ausente ou inválido na resposta');
+      }
+      if (!parsedResponse.variables || typeof parsedResponse.variables !== 'object') {
+        throw new Error('Campo "variables" ausente ou inválido na resposta');
       }
 
       return new Response(
