@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import * as mammoth from 'npm:mammoth@1.6.0'
+import * as pdfjs from 'npm:pdfjs-dist@4.0.379/build/pdf.mjs'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -45,7 +46,32 @@ serve(async (req) => {
         content = result.value
       } catch (extractError) {
         console.error('Mammoth extraction error:', extractError)
-        throw new Error(`Error extracting text: ${extractError.message}`)
+        throw new Error(`Error extracting text from DOCX: ${extractError.message}`)
+      }
+    } else if (fileType === 'application/pdf') {
+      console.log('Processing PDF file...')
+      try {
+        // Load the PDF document
+        const loadingTask = pdfjs.getDocument({ data: binaryData })
+        const pdf = await loadingTask.promise
+        console.log('PDF loaded successfully, pages:', pdf.numPages)
+
+        // Extract text from all pages
+        const textContent = []
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i)
+          const text = await page.getTextContent()
+          const pageText = text.items
+            .map((item: any) => item.str)
+            .join(' ')
+          textContent.push(pageText)
+        }
+        
+        content = textContent.join('\n\n')
+        console.log('PDF text extraction successful')
+      } catch (pdfError) {
+        console.error('PDF extraction error:', pdfError)
+        throw new Error(`Error extracting text from PDF: ${pdfError.message}`)
       }
     } else {
       throw new Error('Unsupported file type: ' + fileType)
