@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Upload } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function ContractTemplates() {
   const [showNewForm, setShowNewForm] = useState(true);
@@ -66,16 +67,18 @@ export default function ContractTemplates() {
         const formData = new FormData();
         formData.append('file', selectedFile);
         
-        const response = await fetch('/api/process-document', {
-          method: 'POST',
+        const { data, error } = await supabase.functions.invoke('process-document', {
           body: formData
         });
 
-        if (!response.ok) {
-          throw new Error('Erro ao processar arquivo');
+        if (error) {
+          throw new Error('Erro ao processar arquivo: ' + error.message);
         }
 
-        const data = await response.json();
+        if (!data?.content) {
+          throw new Error('Nenhum conteúdo extraído do arquivo');
+        }
+
         finalContent = data.content;
       }
 
@@ -93,9 +96,11 @@ export default function ContractTemplates() {
       });
       setSelectedFile(null);
       setShowNewForm(false);
+      
+      toast.success('Modelo de contrato adicionado com sucesso!');
     } catch (error) {
       console.error('Error adding template:', error);
-      toast.error('Erro ao adicionar modelo de contrato');
+      toast.error('Erro ao adicionar modelo de contrato: ' + (error as Error).message);
     }
   };
 
