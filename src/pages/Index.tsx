@@ -13,7 +13,7 @@ function Dashboard() {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Link to="/new-contract">
+        <Link to="/juridico/new-contract">
           <Card className="p-6 hover:bg-gray-50 transition-colors cursor-pointer">
             <div className="flex items-center gap-4">
               <div className="bg-indigo-100 p-3 rounded-lg">
@@ -27,7 +27,7 @@ function Dashboard() {
           </Card>
         </Link>
 
-        <Link to="/documentos">
+        <Link to="/juridico/documentos">
           <Card className="p-6 hover:bg-gray-50 transition-colors cursor-pointer">
             <div className="flex items-center gap-4">
               <div className="bg-cyan-100 p-3 rounded-lg">
@@ -58,7 +58,7 @@ function Dashboard() {
                   <p className="font-medium">Contrato de Locação #{contract}</p>
                   <p className="text-sm text-gray-500">Vence em {contract * 5} dias</p>
                 </div>
-                <Link to={`/contracts/${contract}`} className="text-indigo-600 text-sm hover:text-indigo-800">
+                <Link to={`/juridico/contracts/${contract}`} className="text-indigo-600 text-sm hover:text-indigo-800">
                   Ver detalhes
                 </Link>
               </div>
@@ -80,7 +80,7 @@ function Dashboard() {
                   <p className="font-medium">Contrato de Serviço #{contract}</p>
                   <p className="text-sm text-gray-500">Criado há {contract} dias</p>
                 </div>
-                <Link to={`/contracts/${contract}`} className="text-indigo-600 text-sm hover:text-indigo-800">
+                <Link to={`/juridico/contracts/${contract}`} className="text-indigo-600 text-sm hover:text-indigo-800">
                   Continuar
                 </Link>
               </div>
