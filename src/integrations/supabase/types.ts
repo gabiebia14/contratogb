@@ -17,7 +17,9 @@ export type Database = {
           description: string | null
           id: string
           is_active: boolean | null
+          layout_version: number | null
           name: string
+          preview_url: string | null
           tags: string[] | null
           template_variables: Json | null
           updated_at: string | null
@@ -31,7 +33,9 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean | null
+          layout_version?: number | null
           name: string
+          preview_url?: string | null
           tags?: string[] | null
           template_variables?: Json | null
           updated_at?: string | null
@@ -45,7 +49,9 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean | null
+          layout_version?: number | null
           name?: string
+          preview_url?: string | null
           tags?: string[] | null
           template_variables?: Json | null
           updated_at?: string | null
@@ -60,42 +66,51 @@ export type Database = {
           created_at: string | null
           document_id: string | null
           file_path: string | null
+          generated_at: string | null
           id: string
           metadata: Json | null
-          status: string | null
+          preview_url: string | null
+          status: Database["public"]["Enums"]["contract_status"] | null
           template_id: string | null
           title: string
           updated_at: string | null
           user_id: string | null
           variables: Json | null
+          version: number | null
         }
         Insert: {
           content: string
           created_at?: string | null
           document_id?: string | null
           file_path?: string | null
+          generated_at?: string | null
           id?: string
           metadata?: Json | null
-          status?: string | null
+          preview_url?: string | null
+          status?: Database["public"]["Enums"]["contract_status"] | null
           template_id?: string | null
           title: string
           updated_at?: string | null
           user_id?: string | null
           variables?: Json | null
+          version?: number | null
         }
         Update: {
           content?: string
           created_at?: string | null
           document_id?: string | null
           file_path?: string | null
+          generated_at?: string | null
           id?: string
           metadata?: Json | null
-          status?: string | null
+          preview_url?: string | null
+          status?: Database["public"]["Enums"]["contract_status"] | null
           template_id?: string | null
           title?: string
           updated_at?: string | null
           user_id?: string | null
           variables?: Json | null
+          version?: number | null
         }
         Relationships: [
           {
@@ -202,6 +217,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      contract_status: "draft" | "pending" | "active" | "expired" | "cancelled"
       document_role_enum:
         | "locador"
         | "locadora"
