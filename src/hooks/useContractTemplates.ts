@@ -25,12 +25,16 @@ export const useContractTemplates = () => {
     }
   });
 
-  const addTemplate = async (name: string, content: string, category: string) => {
+  const addTemplate = async (name: string, content: string, variables: Record<string, string>) => {
     setLoading(true);
     try {
       const { error } = await supabase
         .from('contract_templates')
-        .insert([{ name, content, category }]);
+        .insert([{ 
+          name, 
+          content, 
+          template_variables: variables 
+        }]);
 
       if (error) throw error;
 
