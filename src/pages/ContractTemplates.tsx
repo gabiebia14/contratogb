@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { useContractTemplates } from '@/hooks/useContractTemplates';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus } from 'lucide-react';
+import { Plus, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ContractTemplates() {
@@ -14,20 +14,74 @@ export default function ContractTemplates() {
     content: '',
     category: 'Geral'
   });
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const { templates, loading, addTemplate } = useContractTemplates();
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Verificar tipo de arquivo
+    const fileType = file.type;
+    if (!fileType.includes('pdf') && !fileType.includes('word') && !fileType.includes('openxmlformats')) {
+      toast.error('Apenas arquivos PDF ou Word são permitidos');
+      return;
+    }
+
+    // Verificar tamanho (máximo 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('O arquivo deve ter no máximo 10MB');
+      return;
+    }
+
+    setSelectedFile(file);
+
+    // Atualizar o nome do template com o nome do arquivo se estiver vazio
+    if (!newTemplate.name) {
+      setNewTemplate(prev => ({
+        ...prev,
+        name: file.name.replace(/\.[^/.]+$/, '') // Remove a extensão
+      }));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!newTemplate.name || !newTemplate.content) {
-      toast.error('Preencha todos os campos obrigatórios');
+    if (!newTemplate.name) {
+      toast.error('Digite um nome para o modelo');
+      return;
+    }
+
+    if (!selectedFile && !newTemplate.content) {
+      toast.error('Adicione um arquivo ou digite o conteúdo do modelo');
       return;
     }
 
     try {
+      let finalContent = newTemplate.content;
+
+      if (selectedFile) {
+        // Se houver arquivo selecionado, enviar para processamento
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        
+        const response = await fetch('/api/process-document', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          throw new Error('Erro ao processar arquivo');
+        }
+
+        const data = await response.json();
+        finalContent = data.content;
+      }
+
       await addTemplate(
         newTemplate.name,
-        newTemplate.content,
+        finalContent,
         newTemplate.category
       );
       
@@ -37,6 +91,7 @@ export default function ContractTemplates() {
         content: '',
         category: 'Geral'
       });
+      setSelectedFile(null);
       setShowNewForm(false);
     } catch (error) {
       console.error('Error adding template:', error);
@@ -76,7 +131,29 @@ export default function ContractTemplates() {
             </div>
             
             <div>
-              <label className="block text-sm font-medium mb-1">Conteúdo do Modelo</label>
+              <label className="block text-sm font-medium mb-1">Upload de Arquivo</label>
+              <div className="flex items-center space-x-2">
+                <Input
+                  type="file"
+                  accept=".doc,.docx,.pdf"
+                  onChange={handleFileChange}
+                  className="flex-1"
+                />
+                {selectedFile && (
+                  <div className="text-sm text-gray-500">
+                    {selectedFile.name}
+                  </div>
+                )}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Suporta arquivos Word (.doc, .docx) e PDF. Máximo 10MB.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Conteúdo do Modelo (opcional se arquivo for enviado)
+              </label>
               <textarea
                 value={newTemplate.content}
                 onChange={(e) => setNewTemplate({ ...newTemplate, content: e.target.value })}
@@ -86,7 +163,14 @@ export default function ContractTemplates() {
             </div>
 
             <Button type="submit" disabled={loading}>
-              {loading ? 'Processando...' : 'Adicionar Modelo'}
+              {loading ? (
+                <>Processando...</>
+              ) : (
+                <>
+                  <Upload className="w-4 h-4 mr-2" />
+                  Adicionar Modelo
+                </>
+              )}
             </Button>
           </form>
         </Card>
