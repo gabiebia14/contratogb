@@ -4,12 +4,13 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 import mammoth from 'https://esm.sh/mammoth@1.6.0'
 import * as pdfjs from 'https://cdn.skypack.dev/pdfjs-dist@3.11.174/build/pdf.min.js'
 
-console.log("Edge Function Version: 1.0.2");
+console.log("Edge Function Version: 1.0.3");
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS'
+  'Access-Control-Allow-Headers': '*',
+  'Access-Control-Allow-Methods': '*',
+  'Access-Control-Max-Age': '86400'
 }
 
 serve(async (req: Request) => {
@@ -19,17 +20,22 @@ serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     console.log("Handling OPTIONS request");
     return new Response(null, {
-      status: 200,
-      headers: corsHeaders
-    })
+      status: 204,
+      headers: {
+        ...corsHeaders,
+        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+      }
+    });
   }
 
   try {
     console.log("Processing request body");
     let body;
     try {
-      body = await req.json();
-      console.log("Request body parsed successfully");
+      const text = await req.text();
+      console.log("Raw request body:", text);
+      body = JSON.parse(text);
+      console.log("Parsed JSON successfully:", body);
     } catch (e) {
       console.error("Error parsing request body:", e);
       throw new Error('Invalid JSON in request body');
