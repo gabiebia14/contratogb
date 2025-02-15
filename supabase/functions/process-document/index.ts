@@ -2,7 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import mammoth from 'https://esm.sh/mammoth@1.6.0'
-import { PDFDocument } from 'https://cdn.skypack.dev/pdf-lib@1.17.1'
+import * as pdfjs from 'https://cdn.skypack.dev/pdfjs-dist@3.11.174/build/pdf.min.js'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -30,19 +30,31 @@ serve(async (req) => {
       content = result.value
     } else if (file.type.includes('pdf')) {
       try {
-        const pdfDoc = await PDFDocument.load(buffer)
-        const pages = pdfDoc.getPages()
-        const texts = []
-        
-        for (const page of pages) {
+        // Inicializa o worker do PDF.js
+        pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdn.skypack.dev/pdfjs-dist@3.11.174/build/pdf.worker.min.js'
+
+        // Carrega o documento PDF
+        const pdf = await pdfjs.getDocument({ data: buffer }).promise
+        const numPages = pdf.numPages
+        const textContent = []
+
+        // Extrai o texto de cada página
+        for (let i = 1; i <= numPages; i++) {
+          const page = await pdf.getPage(i)
           const text = await page.getTextContent()
-          texts.push(text)
+          const pageText = text.items
+            .map(item => 'str' in item ? item.str : '')
+            .join(' ')
+          textContent.push(pageText)
         }
-        
-        content = texts.join('\n')
+
+        content = textContent.join('\n')
+
+        // Limpa o worker do PDF.js
+        await pdf.destroy()
       } catch (pdfError) {
-        console.error('Erro ao processar PDF:', pdfError)
-        throw new Error('Erro ao processar arquivo PDF. Por favor, tente converter para Word.')
+        console.error('Erro detalhado ao processar PDF:', pdfError)
+        throw new Error('Erro ao processar arquivo PDF: ' + pdfError.message)
       }
     } else {
       throw new Error('Formato de arquivo não suportado. Use PDF ou Word.')
