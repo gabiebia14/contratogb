@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { useContractTemplates } from '@/hooks/useContractTemplates';
@@ -57,35 +56,30 @@ export default function ContractTemplates() {
       }));
     }
 
-    // Processar o conteúdo do arquivo usando o cliente Supabase
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error('Você precisa estar autenticado para fazer upload de arquivos');
-        return;
-      }
-
-      // Converter o arquivo para base64
       const reader = new FileReader();
       const base64Promise = new Promise<string>((resolve, reject) => {
         reader.onload = () => {
           const base64 = reader.result as string;
-          resolve(base64.split(',')[1]); // Remove o prefixo data:application/...
+          const base64Data = base64.split(',')[1]; // Remove o prefixo data:application/...
+          resolve(base64Data);
         };
         reader.onerror = reject;
       });
+      
       reader.readAsDataURL(file);
       const base64Data = await base64Promise;
 
       const { data, error } = await supabase.functions.invoke('process-document', {
-        body: {
+        body: JSON.stringify({
           fileName: file.name,
           fileType: file.type,
           fileContent: base64Data
-        }
+        })
       });
 
       if (error) {
+        console.error('Error details:', error);
         throw error;
       }
 

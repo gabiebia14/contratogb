@@ -4,7 +4,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 import mammoth from 'https://esm.sh/mammoth@1.6.0'
 import * as pdfjs from 'https://cdn.skypack.dev/pdfjs-dist@3.11.174/build/pdf.min.js'
 
-console.log("Edge Function Version: 1.0.1");
+console.log("Edge Function Version: 1.0.2");
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -26,8 +26,14 @@ serve(async (req: Request) => {
 
   try {
     console.log("Processing request body");
-    const body = await req.json();
-    console.log("Request body type:", typeof body);
+    let body;
+    try {
+      body = await req.json();
+      console.log("Request body parsed successfully");
+    } catch (e) {
+      console.error("Error parsing request body:", e);
+      throw new Error('Invalid JSON in request body');
+    }
     
     const { fileName, fileType, fileContent } = body;
     
@@ -38,9 +44,14 @@ serve(async (req: Request) => {
 
     console.log("Processing file:", fileName, "Type:", fileType);
 
-    // Convert base64 to buffer
-    const buffer = Uint8Array.from(atob(fileContent), c => c.charCodeAt(0)).buffer;
-    console.log("Buffer size:", buffer.byteLength);
+    let buffer;
+    try {
+      buffer = Uint8Array.from(atob(fileContent), c => c.charCodeAt(0)).buffer;
+      console.log("Buffer created successfully, size:", buffer.byteLength);
+    } catch (e) {
+      console.error("Error creating buffer from base64:", e);
+      throw new Error('Error decoding base64 content');
+    }
 
     let content = '';
 
