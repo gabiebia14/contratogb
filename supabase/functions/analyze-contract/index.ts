@@ -79,8 +79,8 @@ serve(async (req) => {
       - {fiador_endereco} or {fiadora_endereco}
       - {fiador_bairro} or {fiadora_bairro}
       - {fiador_cep} or {fiadora_cep}
-      - {fiador_cidade} or {fiadora_cidade}
-      - {fiador_estado} or {fiadora_estado}
+      - {fiador_cidade} or {fiador_cidade}
+      - {fiador_estado} or {fiador_estado}
       - {fiador_telefone} or {fiadora_telefone}
       - {fiador_email} or {fiadora_email}
       
