@@ -16,23 +16,47 @@ serve(async (req) => {
   }
 
   try {
-    const { fileContent, fileType } = await req.json()
+    const { fileName, fileType, fileContent } = await req.json()
 
     if (!fileContent) {
       throw new Error('No file content provided')
     }
 
-    const binaryData = Uint8Array.from(atob(fileContent), c => c.charCodeAt(0))
+    console.log('Received file:', fileName, 'Type:', fileType)
+    console.log('Content length:', fileContent.length)
+
+    // Remove data URL prefix if present
+    const base64Content = fileContent.includes('base64,') 
+      ? fileContent.split('base64,')[1] 
+      : fileContent
+
+    const binaryData = Uint8Array.from(atob(base64Content), c => c.charCodeAt(0))
+    console.log('Binary data length:', binaryData.length)
 
     let content = ''
     
     if (fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-      const result = await mammoth.extractRawText({ arrayBuffer: binaryData.buffer })
-      content = result.value
+      console.log('Processing DOCX file...')
+      try {
+        const result = await mammoth.extractRawText({ 
+          buffer: binaryData.buffer 
+        })
+        console.log('Extraction successful')
+        content = result.value
+      } catch (extractError) {
+        console.error('Mammoth extraction error:', extractError)
+        throw new Error(`Error extracting text: ${extractError.message}`)
+      }
     } else {
-      throw new Error('Unsupported file type')
+      throw new Error('Unsupported file type: ' + fileType)
     }
 
+    if (!content) {
+      throw new Error('No content extracted from file')
+    }
+
+    console.log('Extracted content length:', content.length)
+    
     return new Response(
       JSON.stringify({ content }),
       {
