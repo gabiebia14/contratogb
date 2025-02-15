@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -105,18 +104,44 @@ const ContractTemplateEditor = ({
       }
 
       if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-        const arrayBuffer = await file.arrayBuffer();
-        const result = await mammoth.convertToHtml({ arrayBuffer });
-        const content = result.value;
+        const reader = new FileReader();
         
-        setRawContent(content);
-        editor?.commands.setContent(content);
-        
-        setShowAnalysisDialog(true);
+        reader.onload = async () => {
+          try {
+            const base64Data = (reader.result as string).split(',')[1];
+            
+            const { data, error } = await supabase.functions.invoke('process-document', {
+              body: {
+                fileName: file.name,
+                fileType: file.type,
+                fileContent: base64Data
+              }
+            });
+
+            if (error) throw error;
+
+            if (data?.content) {
+              setRawContent(data.content);
+              editor?.commands.setContent(data.content);
+              setShowAnalysisDialog(true);
+            } else {
+              throw new Error('No content received from document processing');
+            }
+          } catch (error) {
+            console.error('Error processing document:', error);
+            toast.error('Error processing document');
+          }
+        };
+
+        reader.onerror = () => {
+          toast.error('Error reading file');
+        };
+
+        reader.readAsDataURL(file);
       }
     } catch (error) {
-      console.error('Erro ao importar documento:', error);
-      toast.error('Erro ao importar documento');
+      console.error('Error uploading document:', error);
+      toast.error('Error uploading document');
     }
   };
 
