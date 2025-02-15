@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { ExtractedField, DocumentRole, DocumentType, MaritalStatus } from '@/types/ocr';
@@ -83,12 +84,10 @@ export const useOCR = () => {
     try {
       const file = selectedFiles[0];
       
-      // Validar tamanho do arquivo
-      if (file.size > 10 * 1024 * 1024) { // 10MB
+      if (file.size > 10 * 1024 * 1024) {
         throw new Error('O arquivo deve ter no máximo 10MB');
       }
 
-      // Validar tipo do arquivo
       if (!['image/jpeg', 'image/png', 'application/pdf'].includes(file.type)) {
         throw new Error('Formato de arquivo não suportado. Use JPEG, PNG ou PDF');
       }
@@ -97,7 +96,6 @@ export const useOCR = () => {
       const sanitizedFileName = sanitizeFileName(file.name);
       const finalFileName = `${timestamp}_${sanitizedFileName}`;
       
-      // Converter arquivo para base64 com tratamento de erro
       let base64;
       try {
         base64 = await new Promise((resolve, reject) => {
@@ -112,7 +110,6 @@ export const useOCR = () => {
 
       console.log('Iniciando upload do arquivo...');
       
-      // Upload file to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('ocr_documents')
         .upload(finalFileName, file, {
@@ -128,7 +125,6 @@ export const useOCR = () => {
 
       console.log('Arquivo enviado com sucesso:', uploadData);
 
-      // Process with Edge Function
       const { data: processedData, error } = await supabase.functions.invoke('process-ocr', {
         body: {
           documentType: options.documentType,
@@ -146,16 +142,13 @@ export const useOCR = () => {
 
       console.log('Dados brutos recebidos da Edge Function:', processedData);
 
-      // Certifique-se de que temos dados válidos
       if (!processedData?.data) {
         throw new Error('Nenhum dado foi extraído do documento');
       }
 
-      // Format extracted data for database
       const extractedDataObject = processedData.data;
       console.log('Dados extraídos formatados para o banco:', extractedDataObject);
 
-      // Save to processed_documents table
       const { data: documentData, error: dbError } = await supabase
         .from('processed_documents')
         .insert({
@@ -178,7 +171,6 @@ export const useOCR = () => {
         throw dbError;
       }
 
-      // Format extracted data for display
       const fields: ExtractedField[] = [{
         field: 'extracted_data',
         value: extractedDataObject,
@@ -188,7 +180,6 @@ export const useOCR = () => {
       console.log('Dados formatados para exibição:', fields);
       setExtractedData(fields);
       
-      // Update the processed documents list
       await fetchProcessedDocuments();
       
       toast.success('Documento processado com sucesso!');
@@ -206,6 +197,7 @@ export const useOCR = () => {
     loading,
     extractedData,
     processedDocuments,
+    setProcessedDocuments, // Added this line to expose the setter
     handleFilesSelected,
     processFiles
   };
