@@ -1,4 +1,3 @@
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -76,7 +75,6 @@ export default function NewContract() {
         description: "O contrato foi gerado e está pronto para revisão.",
       });
 
-      // Navegar para a página correta dentro do dashboard jurídico
       navigate(`/juridico/contracts/${contract.id}`);
     } catch (error) {
       console.error('Erro ao gerar contrato:', error);
@@ -102,24 +100,18 @@ export default function NewContract() {
         ? JSON.parse(doc.extracted_data) 
         : doc.extracted_data;
 
-      const getField = (prefixes: string[], field: string) => {
-        for (const prefix of prefixes) {
-          const value = data[`${prefix}_${field}`];
-          if (value) return value;
-        }
-        return null;
-      };
+      const role = doc.document_role || '';
+      const baseField = role.includes('a') ? role : role.replace(/r$/, 'r');
 
-      const nome = getField(['locatario', 'locataria', 'locador', 'locadora'], 'nome') 
-        || getField(['locatario', 'locataria', 'locador', 'locadora'], 'nome_completo');
-      const cpf = getField(['locatario', 'locataria', 'locador', 'locadora'], 'cpf');
-      const rg = getField(['locatario', 'locataria', 'locador', 'locadora'], 'rg');
+      const nome = data[`${baseField}_nome`] || data[`${baseField}_nome_completo`] || data.nome_completo;
+      const cpf = data[`${baseField}_cpf`] || data.cpf;
+      const rg = data[`${baseField}_rg`] || data.rg;
 
       return {
         nome: nome || 'Nome não encontrado',
         cpf: cpf || 'CPF não encontrado',
         rg: rg || 'RG não encontrado',
-        data: formatDate(doc.processed_at)
+        data: formatDate(doc.processed_at || doc.created_at)
       };
     } catch (error) {
       console.error('Erro ao processar detalhes do documento:', error);
@@ -132,14 +124,23 @@ export default function NewContract() {
     }
   };
 
-  const validDocuments = processedDocuments.filter(doc => {
-    try {
-      const details = getDocumentDetails(doc);
-      return details.nome !== 'Nome não encontrado';
-    } catch {
-      return false;
-    }
-  });
+  const validDocuments = processedDocuments
+    .filter(doc => {
+      if (!doc.extracted_data) return false;
+      try {
+        const details = getDocumentDetails(doc);
+        return details.nome !== 'Nome não encontrado' && 
+               details.nome !== 'Erro ao carregar dados' &&
+               doc.status === 'completed';
+      } catch {
+        return false;
+      }
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.processed_at || a.created_at).getTime();
+      const dateB = new Date(b.processed_at || b.created_at).getTime();
+      return dateB - dateA;
+    });
 
   return (
     <Card className="max-w-4xl mx-auto">
