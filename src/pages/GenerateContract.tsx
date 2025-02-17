@@ -205,11 +205,32 @@ export default function GenerateContract() {
                             <SelectValue placeholder="Selecione o documento" />
                           </SelectTrigger>
                           <SelectContent>
-                            {documents.map((doc) => (
-                              <SelectItem key={doc.id} value={doc.id}>
-                                {doc.file_name}
-                              </SelectItem>
-                            ))}
+                            {documents.map((doc) => {
+                              let displayName = doc.file_name;
+                              try {
+                                const extractedData = typeof doc.extracted_data === 'string' 
+                                  ? JSON.parse(doc.extracted_data)
+                                  : doc.extracted_data;
+                                
+                                const name = extractedData.nome_completo || 
+                                           extractedData.locador_nome ||
+                                           extractedData.locatario_nome ||
+                                           extractedData.locataria_nome ||
+                                           extractedData.fiador_nome;
+                                
+                                if (name) {
+                                  displayName = name;
+                                }
+                              } catch (error) {
+                                console.error('Erro ao processar dados extraídos:', error);
+                              }
+
+                              return (
+                                <SelectItem key={doc.id} value={doc.id}>
+                                  {displayName}
+                                </SelectItem>
+                              );
+                            })}
                           </SelectContent>
                         </Select>
                       </div>
