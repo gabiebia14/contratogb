@@ -8,13 +8,13 @@ import Auth from '@/pages/Auth';
 import ContractsPage from '@/components/ContractsPage';
 import ContractViewer from '@/pages/ContractViewer';
 import ContractTemplates from '@/pages/ContractTemplates';
-import NewContract from '@/pages/NewContract';
 import Documents from '@/pages/Documents';
 import Dashboard from '@/pages/Index';
 import Landing from '@/pages/Landing';
 import DashboardSelection from '@/pages/DashboardSelection';
 import AI from '@/pages/AI';
 import Library from '@/pages/Library';
+import GenerateContract from '@/pages/GenerateContract';
 
 const queryClient = new QueryClient();
 
@@ -33,7 +33,7 @@ function App() {
             <Route path="contracts" element={<ContractsPage />} />
             <Route path="contracts/:id" element={<ContractViewer />} />
             <Route path="templates" element={<ContractTemplates />} />
-            <Route path="new-contract" element={<NewContract />} />
+            <Route path="gerar-contrato" element={<GenerateContract />} />
             <Route path="documentos" element={<Documents />} />
             <Route path="ai" element={<AI />} />
             <Route path="library" element={<Library />} />
