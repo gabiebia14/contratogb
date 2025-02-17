@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -11,6 +10,7 @@ import { useContractGeneration } from '@/hooks/useContractGeneration';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, X } from 'lucide-react';
+import ExtractedDataDisplay from '@/components/ocr/ExtractedDataDisplay';
 
 interface ContractParty {
   role: string;
@@ -55,6 +55,24 @@ export default function GenerateContract() {
     setContractParties(newParties);
   };
 
+  const getDocumentData = (documentId: string) => {
+    const document = documents.find(doc => doc.id === documentId);
+    if (!document?.extracted_data) return null;
+    return [{
+      field: 'extracted_data',
+      value: document.extracted_data
+    }];
+  };
+
+  const availableRoles = [
+    { value: 'locador', label: 'Locador' },
+    { value: 'locadora', label: 'Locadora' },
+    { value: 'locatario', label: 'Locatário' },
+    { value: 'locataria', label: 'Locatária' },
+    { value: 'fiador', label: 'Fiador' },
+    { value: 'fiadora', label: 'Fiadora' },
+  ];
+
   const handleGenerate = async () => {
     if (!selectedTemplate || contractParties.length === 0) {
       toast.error('Selecione um template e adicione as partes do contrato');
@@ -76,15 +94,6 @@ export default function GenerateContract() {
       toast.error('Erro ao gerar contrato');
     }
   };
-
-  const availableRoles = [
-    { value: 'locador', label: 'Locador' },
-    { value: 'locadora', label: 'Locadora' },
-    { value: 'locatario', label: 'Locatário' },
-    { value: 'locataria', label: 'Locatária' },
-    { value: 'fiador', label: 'Fiador' },
-    { value: 'fiadora', label: 'Fiadora' },
-  ];
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -163,53 +172,61 @@ export default function GenerateContract() {
             ) : (
               <>
                 {contractParties.map((party, index) => (
-                  <div key={index} className="flex gap-4 items-start">
-                    <div className="flex-1 space-y-2">
-                      <Label>Parte do Contrato</Label>
-                      <Select
-                        value={party.role}
-                        onValueChange={(value) => handlePartyChange(index, 'role', value)}
+                  <div key={index} className="space-y-4">
+                    <div className="flex gap-4 items-start">
+                      <div className="flex-1 space-y-2">
+                        <Label>Parte do Contrato</Label>
+                        <Select
+                          value={party.role}
+                          onValueChange={(value) => handlePartyChange(index, 'role', value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o tipo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableRoles.map((role) => (
+                              <SelectItem key={role.value} value={role.value}>
+                                {role.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="flex-1 space-y-2">
+                        <Label>Documento</Label>
+                        <Select
+                          value={party.documentId}
+                          onValueChange={(value) => handlePartyChange(index, 'documentId', value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o documento" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {documents.map((doc) => (
+                              <SelectItem key={doc.id} value={doc.id}>
+                                {doc.file_name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="mt-8"
+                        onClick={() => handleRemoveParty(index)}
                       >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o tipo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableRoles.map((role) => (
-                            <SelectItem key={role.value} value={role.value}>
-                              {role.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="flex-1 space-y-2">
-                      <Label>Documento</Label>
-                      <Select
-                        value={party.documentId}
-                        onValueChange={(value) => handlePartyChange(index, 'documentId', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o documento" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {documents.map((doc) => (
-                            <SelectItem key={doc.id} value={doc.id}>
-                              {doc.file_name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        <X className="h-4 w-4" />
+                      </Button>
                     </div>
 
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="mt-8"
-                      onClick={() => handleRemoveParty(index)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+                    {party.documentId && (
+                      <div className="pl-4 border-l-2 border-primary/20">
+                        <ExtractedDataDisplay data={getDocumentData(party.documentId) || []} />
+                      </div>
+                    )}
                   </div>
                 ))}
 
