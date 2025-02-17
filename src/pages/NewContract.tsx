@@ -72,9 +72,24 @@ export default function NewContract() {
 
       toast({
         title: "Contrato criado com sucesso!",
-        description: "O contrato foi gerado e está pronto para revisão.",
+        description: (
+          <div className="flex flex-col gap-2">
+            <p>O contrato foi gerado e está pronto para revisão.</p>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => navigate(`/juridico/contracts/${contract.id}`)}
+                className="text-blue-500 hover:text-blue-700 underline"
+              >
+                Visualizar Contrato
+              </button>
+            </div>
+          </div>
+        ),
+        duration: 5000,
       });
 
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
       navigate(`/juridico/contracts/${contract.id}`);
     } catch (error) {
       console.error('Erro ao gerar contrato:', error);
