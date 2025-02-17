@@ -16,10 +16,12 @@ serve(async (req) => {
   }
 
   try {
-    const { content } = await req.json();
+    const formData = await req.formData();
+    const file = formData.get('file') as File | null;
+    const content = formData.get('content') as string;
     
-    if (!content) {
-      throw new Error('Conteúdo é obrigatório');
+    if (!content && !file) {
+      throw new Error('Conteúdo ou arquivo é obrigatório');
     }
 
     const apiKey = Deno.env.get('GEMINI_API_KEY');
@@ -32,50 +34,30 @@ serve(async (req) => {
     const model = genAI.getGenerativeModel({
       model: "gemini-pro",
       generationConfig: {
-        temperature: 0.9,
+        temperature: 1,
         topP: 0.95,
         topK: 40,
         maxOutputTokens: 8192,
       }
     });
 
-    const result = await model.generateContent([
-      {
-        text: `Analise o seguinte contrato e retorne um JSON com:
-        {
-          "text": "texto do contrato com os parâmetros substituídos",
-          "variables": {
-            "nome_variavel": "Descrição do campo"
-          }
-        }
+    let prompt = content;
+    if (file) {
+      // TODO: Implement file handling when Gemini's file API is available
+      prompt = `Analisando o arquivo: ${file.name}\n${content}`;
+    }
 
-        Contrato:
-        ${content}`
-      }
-    ]);
-
+    const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
     
-    try {
-      // Remove blocos de código e limpa o texto
-      const cleanText = text.replace(/```json\s*([\s\S]*?)\s*```/g, '$1')
-                           .replace(/```\s*([\s\S]*?)\s*```/g, '$1')
-                           .trim();
-      
-      const parsedResponse = JSON.parse(cleanText);
-
-      return new Response(
-        JSON.stringify(parsedResponse),
-        { 
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    } catch (parseError) {
-      console.error('Erro ao processar resposta:', parseError);
-      throw new Error('Erro ao processar resposta do modelo');
-    }
+    return new Response(
+      JSON.stringify({ text }),
+      { 
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
   } catch (error) {
     console.error('Erro:', error);
     return new Response(
