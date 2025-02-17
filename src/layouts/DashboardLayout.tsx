@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, SidebarMenu, 
   SidebarMenuItem, SidebarMenuButton, SidebarGroup, SidebarGroupContent } from "@/components/ui/sidebar";
-import { Layout, Menu as MenuIcon, FileText, Plus, Settings, FolderOpen, MessageSquare } from 'lucide-react';
+import { Layout, Menu as MenuIcon, FileText, Plus, Settings, FolderOpen, MessageSquare, Book } from 'lucide-react';
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,6 @@ export default function DashboardLayout() {
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Fecha o menu móvel quando mudar de rota
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
@@ -34,6 +33,7 @@ export default function DashboardLayout() {
     { path: '/juridico/templates', icon: FolderOpen, label: 'Modelos de Contratos' },
     { path: '/juridico/ai', icon: MessageSquare, label: 'IA' },
     { path: '/juridico/documentos', icon: FileText, label: 'Documentos' },
+    { path: '/juridico/library', icon: Book, label: 'Biblioteca' },
     { path: '/juridico/settings', icon: Settings, label: 'Configurações' },
   ];
 

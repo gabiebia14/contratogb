@@ -123,6 +123,51 @@ export type Database = {
           },
         ]
       }
+      library_books: {
+        Row: {
+          author: string | null
+          cover_image: string | null
+          created_at: string
+          description: string | null
+          file_path: string
+          file_size: number | null
+          id: string
+          last_page: number | null
+          title: string
+          total_pages: number | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          author?: string | null
+          cover_image?: string | null
+          created_at?: string
+          description?: string | null
+          file_path: string
+          file_size?: number | null
+          id?: string
+          last_page?: number | null
+          title: string
+          total_pages?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          author?: string | null
+          cover_image?: string | null
+          created_at?: string
+          description?: string | null
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          last_page?: number | null
+          title?: string
+          total_pages?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       processed_documents: {
         Row: {
           created_at: string | null
