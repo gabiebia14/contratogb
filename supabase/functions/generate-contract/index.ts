@@ -15,47 +15,73 @@ serve(async (req) => {
   try {
     const { templateId, documentId, title, content } = await req.json()
 
+    // Validações básicas
+    if (!templateId || !documentId || !title || !content) {
+      throw new Error('Dados incompletos para geração do contrato')
+    }
+
+    console.log('Dados recebidos:', { templateId, documentId, title, contentLength: content.length });
+
     // Criar cliente Supabase usando variáveis de ambiente
-    const supabaseClient = createClient(
+    const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    console.log('Iniciando inserção do contrato no banco...');
+    console.log('Iniciando inserção do contrato...');
 
-    // Criar o contrato no banco de dados
-    const { data: insertedContract, error: insertError } = await supabaseClient
+    // Primeiro, verificamos se o template e o documento existem
+    const [templateCheck, documentCheck] = await Promise.all([
+      supabaseAdmin.from('contract_templates').select('id').eq('id', templateId).single(),
+      supabaseAdmin.from('processed_documents').select('id').eq('id', documentId).single()
+    ]);
+
+    if (templateCheck.error || !templateCheck.data) {
+      throw new Error('Template não encontrado');
+    }
+
+    if (documentCheck.error || !documentCheck.data) {
+      throw new Error('Documento não encontrado');
+    }
+
+    // Criar o contrato usando uma transação para garantir a consistência
+    const { data: contract, error: insertError } = await supabaseAdmin
       .from('contracts')
       .insert({
         title,
+        content,
         template_id: templateId,
         document_id: documentId,
-        content,
         status: 'draft',
         generated_at: new Date().toISOString(),
+        version: 1,
+        variables: {},
+        metadata: {
+          source: 'generate-contract-function',
+          timestamp: new Date().toISOString()
+        }
       })
-      .select()
-      .single()
-
-    if (insertError) {
-      console.error('Error creating contract:', insertError)
-      throw insertError
-    }
-
-    if (!insertedContract) {
-      throw new Error('Contrato não foi criado corretamente')
-    }
-
-    console.log('Contrato inserido, verificando persistência...');
-
-    // Aguarda um momento para garantir a persistência
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    // Verifica se o contrato foi realmente salvo
-    const { data: verifiedContract, error: verifyError } = await supabaseClient
-      .from('contracts')
       .select('*')
-      .eq('id', insertedContract.id)
+      .single();
+
+    if (insertError || !contract) {
+      console.error('Erro ao inserir contrato:', insertError);
+      throw new Error(`Erro ao salvar contrato: ${insertError?.message || 'Erro desconhecido'}`);
+    }
+
+    console.log('Contrato inserido com ID:', contract.id);
+
+    // Aguarda um momento e então verifica se o contrato foi realmente salvo
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    const { data: verifiedContract, error: verifyError } = await supabaseAdmin
+      .from('contracts')
+      .select(`
+        *,
+        template:contract_templates(name),
+        document:processed_documents(file_name)
+      `)
+      .eq('id', contract.id)
       .single();
 
     if (verifyError || !verifiedContract) {
@@ -67,21 +93,27 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({
+        success: true,
+        message: 'Contrato gerado com sucesso',
         contract: verifiedContract
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
-      },
+      }
     )
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Erro na função generate-contract:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({
+        success: false,
+        message: error.message || 'Erro interno do servidor',
+        error: error.toString()
+      }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
-      },
+      }
     )
   }
 })
