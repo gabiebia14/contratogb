@@ -89,8 +89,7 @@ export default function GenerateContract() {
     }
 
     try {
-      const mainDocumentId = contractParties[0].documentId;
-      const contract = await generateContract(selectedTemplate, mainDocumentId, 'Novo Contrato');
+      const contract = await generateContract(selectedTemplate, contractParties, 'Novo Contrato');
       toast.success('Contrato gerado com sucesso!');
       navigate(`/juridico/contracts/${contract.id}`);
     } catch (error) {

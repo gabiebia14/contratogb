@@ -3,6 +3,11 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
+interface ContractParty {
+  role: string;
+  documentId: string;
+}
+
 export const useContractGeneration = () => {
   const [loading, setLoading] = useState(false);
 
@@ -22,7 +27,7 @@ export const useContractGeneration = () => {
     return processedContent;
   };
 
-  const generateContract = async (templateId: string, documentId: string, title: string) => {
+  const generateContract = async (templateId: string, parties: ContractParty[], title: string) => {
     setLoading(true);
     try {
       // Busca o template
@@ -36,80 +41,83 @@ export const useContractGeneration = () => {
         throw new Error('Template não encontrado');
       }
 
-      // Busca o documento e seus dados extraídos
-      const { data: document } = await supabase
+      // Busca todos os documentos selecionados
+      const { data: documents } = await supabase
         .from('processed_documents')
-        .select('extracted_data')
-        .eq('id', documentId)
-        .single();
+        .select('extracted_data, id')
+        .in('id', parties.map(p => p.documentId));
 
-      if (!document) {
-        throw new Error('Documento não encontrado');
+      if (!documents || documents.length === 0) {
+        throw new Error('Documentos não encontrados');
       }
 
-      // Processa os dados extraídos
-      const rawData = typeof document.extracted_data === 'string'
-        ? JSON.parse(document.extracted_data)
-        : document.extracted_data;
-
-      // Normaliza os dados para garantir que temos todas as variáveis possíveis
-      const variables = {
-        // Dados básicos
-        nome_completo: rawData.nome_completo || '',
-        cpf: rawData.cpf || '',
-        rg: rawData.rg || '',
-        nacionalidade: rawData.nacionalidade || '',
-        estado_civil: rawData.estado_civil || '',
-        profissao: rawData.profissao || '',
-        
-        // Dados de locador
-        locador_nome: rawData.locador_nome || rawData.nome_completo || '',
-        locador_cpf: rawData.locador_cpf || rawData.cpf || '',
-        locador_rg: rawData.locador_rg || rawData.rg || '',
-        locador_nacionalidade: rawData.locador_nacionalidade || rawData.nacionalidade || '',
-        locador_estado_civil: rawData.locador_estado_civil || rawData.estado_civil || '',
-        locador_profissao: rawData.locador_profissao || rawData.profissao || '',
-        locador_endereco: rawData.locador_endereco || rawData.endereco || '',
-        locador_bairro: rawData.locador_bairro || '',
-        locador_cidade: rawData.locador_cidade || '',
-        locador_estado: rawData.locador_estado || '',
-        locador_cep: rawData.locador_cep || '',
-        
-        // Dados de locatário
-        locatario_nome: rawData.locatario_nome || '',
-        locatario_cpf: rawData.locatario_cpf || '',
-        locatario_rg: rawData.locatario_rg || '',
-        locatario_nacionalidade: rawData.locatario_nacionalidade || '',
-        locatario_estado_civil: rawData.locatario_estado_civil || '',
-        locatario_profissao: rawData.locatario_profissao || '',
-        locatario_endereco: rawData.locatario_endereco || '',
-        locatario_bairro: rawData.locatario_bairro || '',
-        locatario_cidade: rawData.locatario_cidade || '',
-        locatario_estado: rawData.locatario_estado || '',
-        locatario_cep: rawData.locatario_cep || '',
-
-        // Dados de fiador
-        fiador_nome: rawData.fiador_nome || '',
-        fiador_cpf: rawData.fiador_cpf || '',
-        fiador_rg: rawData.fiador_rg || '',
-        fiador_nacionalidade: rawData.fiador_nacionalidade || '',
-        fiador_estado_civil: rawData.fiador_estado_civil || '',
-        fiador_profissao: rawData.fiador_profissao || '',
-        fiador_endereco: rawData.fiador_endereco || '',
-        fiador_bairro: rawData.fiador_bairro || '',
-        fiador_cidade: rawData.fiador_cidade || '',
-        fiador_estado: rawData.fiador_estado || '',
-        fiador_cep: rawData.fiador_cep || '',
-        
-        // Dados de pessoa jurídica
-        cnpj: rawData.cnpj || '',
-        razao_social: rawData.razao_social || '',
-        
-        // Outros campos comuns
-        email: rawData.email || '',
-        telefone: rawData.telefone || '',
-        ...rawData // Inclui quaisquer outros campos que possam existir
+      // Inicializa o objeto de variáveis com valores vazios
+      let variables: Record<string, string> = {
+        // Dados básicos padrão vazios
+        nome_completo: '', cpf: '', rg: '', nacionalidade: '', estado_civil: '', profissao: '',
+        // Locador
+        locador_nome: '', locador_cpf: '', locador_rg: '', locador_nacionalidade: '',
+        locador_estado_civil: '', locador_profissao: '', locador_endereco: '',
+        locador_bairro: '', locador_cidade: '', locador_estado: '', locador_cep: '',
+        // Locatário
+        locatario_nome: '', locatario_cpf: '', locatario_rg: '', locatario_nacionalidade: '',
+        locatario_estado_civil: '', locatario_profissao: '', locatario_endereco: '',
+        locatario_bairro: '', locatario_cidade: '', locatario_estado: '', locatario_cep: '',
+        // Fiador
+        fiador_nome: '', fiador_cpf: '', fiador_rg: '', fiador_nacionalidade: '',
+        fiador_estado_civil: '', fiador_profissao: '', fiador_endereco: '',
+        fiador_bairro: '', fiador_cidade: '', fiador_estado: '', fiador_cep: '',
+        // Outros
+        cnpj: '', razao_social: '', email: '', telefone: ''
       };
+
+      // Processa cada documento baseado em seu papel no contrato
+      parties.forEach(party => {
+        const document = documents.find(d => d.id === party.documentId);
+        if (!document) return;
+
+        const rawData = typeof document.extracted_data === 'string'
+          ? JSON.parse(document.extracted_data)
+          : document.extracted_data;
+
+        // Define o prefixo baseado no papel (role) do documento
+        let prefix = '';
+        if (party.role.startsWith('locador')) prefix = 'locador_';
+        else if (party.role.startsWith('locatario')) prefix = 'locatario_';
+        else if (party.role.startsWith('fiador')) prefix = 'fiador_';
+
+        // Se temos um prefixo, copiamos os dados com o prefixo correto
+        if (prefix) {
+          const fieldsToMap = ['nome', 'cpf', 'rg', 'nacionalidade', 'estado_civil', 'profissao', 
+                             'endereco', 'bairro', 'cidade', 'estado', 'cep'];
+          
+          fieldsToMap.forEach(field => {
+            // Tenta primeiro buscar o campo já com prefixo
+            const prefixedValue = rawData[`${prefix}${field}`];
+            if (prefixedValue) {
+              variables[`${prefix}${field}`] = String(prefixedValue);
+            } 
+            // Se não encontrar, tenta buscar o campo sem prefixo
+            else if (rawData[field]) {
+              variables[`${prefix}${field}`] = String(rawData[field]);
+            }
+            // Se encontrar o campo no formato nome_completo, usa para o campo nome
+            else if (field === 'nome' && rawData.nome_completo) {
+              variables[`${prefix}${field}`] = String(rawData.nome_completo);
+            }
+          });
+        }
+
+        // Também mantém os dados básicos do primeiro documento
+        if (parties.indexOf(party) === 0) {
+          variables.nome_completo = rawData.nome_completo || '';
+          variables.cpf = rawData.cpf || '';
+          variables.rg = rawData.rg || '';
+          variables.nacionalidade = rawData.nacionalidade || '';
+          variables.estado_civil = rawData.estado_civil || '';
+          variables.profissao = rawData.profissao || '';
+        }
+      });
 
       console.log('Template original:', template.content);
       console.log('Variáveis para substituição:', variables);
@@ -126,12 +134,13 @@ export const useContractGeneration = () => {
           title,
           content: processedContent,
           template_id: templateId,
-          document_id: documentId,
+          document_id: parties[0].documentId, // Mantém o primeiro documento como principal
           variables: variables,
           status: 'draft',
           metadata: {
             source: 'web-interface',
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            parties: parties // Armazena todas as partes nos metadados
           }
         })
         .select()
