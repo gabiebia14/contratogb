@@ -86,9 +86,9 @@ export default function Library() {
         return;
       }
       
-      // Upload do arquivo PDF
+      // Upload do arquivo PDF em uma pasta específica do usuário
       const fileExt = file.name.split('.').pop();
-      const filePath = `${crypto.randomUUID()}.${fileExt}`;
+      const filePath = `${session.user.id}/${crypto.randomUUID()}.${fileExt}`;
       
       const { error: uploadError } = await supabase.storage
         .from('library_pdfs')
