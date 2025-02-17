@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Send, Upload } from 'lucide-react';
 import { toast } from 'sonner';
-import { useContractGemini } from '@/hooks/useContractGemini';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -21,7 +21,6 @@ export default function AI() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const { processContract } = useContractGemini();
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -42,43 +41,40 @@ export default function AI() {
     try {
       setLoading(true);
 
-      let prompt = input;
+      let formData = new FormData();
       if (selectedFile) {
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-          const fileContent = e.target?.result as string;
-          prompt = `${fileContent}\n\n${input}`;
-          
-          try {
-            const response = await processContract(prompt);
-            
-            setMessages(prev => [
-              ...prev,
-              { role: 'user', content: `Arquivo: ${selectedFile.name}\n${input}` },
-              { role: 'assistant', content: response }
-            ]);
-            
-            setSelectedFile(null);
-            setInput('');
-          } catch (error) {
-            console.error('Erro ao processar arquivo:', error);
-            toast.error('Erro ao processar arquivo');
-          }
-        };
-        
-        if (selectedFile.type === 'application/pdf') {
-          reader.readAsDataURL(selectedFile);
-        } else {
-          reader.readAsText(selectedFile);
-        }
-      } else {
-        const response = await processContract(prompt);
-        setMessages(prev => [
-          ...prev,
-          { role: 'user', content: input },
-          { role: 'assistant', content: response }
-        ]);
-        setInput('');
+        formData.append('file', selectedFile);
+      }
+      formData.append('content', input.trim());
+
+      const { data, error } = await supabase.functions.invoke('process-contract', {
+        body: formData
+      });
+
+      if (error) throw error;
+
+      if (selectedFile) {
+        setMessages(prev => [...prev, { 
+          role: 'user', 
+          content: `Arquivo enviado: ${selectedFile.name}` 
+        }]);
+        setSelectedFile(null);
+      }
+
+      if (input.trim()) {
+        setMessages(prev => [...prev, { 
+          role: 'user', 
+          content: input.trim() 
+        }]);
+      }
+
+      setInput('');
+
+      if (data) {
+        setMessages(prev => [...prev, { 
+          role: 'assistant', 
+          content: typeof data.text === 'string' ? data.text : JSON.stringify(data, null, 2)
+        }]);
       }
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
