@@ -31,6 +31,11 @@ export const useContractGeneration = () => {
       const template = templateResult.data;
       const document = documentResult.data;
 
+      // Verificar se o template tem conteúdo
+      if (!template.content) {
+        throw new Error('Template não possui conteúdo');
+      }
+
       // Preparar os dados extraídos do documento
       let documentData = {};
       try {
@@ -45,8 +50,11 @@ export const useContractGeneration = () => {
         return;
       }
 
+      // Decodificar o conteúdo do template que está em base64
+      const templateContent = atob(template.content);
+      
       // Criar uma nova instância do Docxtemplater com o template
-      const zip = new PizZip(template.content);
+      const zip = new PizZip(templateContent);
       const doc = new Docxtemplater(zip, {
         paragraphLoop: true,
         linebreaks: true
@@ -72,7 +80,7 @@ export const useContractGeneration = () => {
 
       // Gerar o conteúdo processado
       const processedContent = doc.getZip().generate({
-        type: 'string',
+        type: 'base64',
         mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
       });
 
