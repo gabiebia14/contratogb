@@ -89,6 +89,7 @@ export default function Library() {
         return;
       }
       
+      // Upload the PDF file
       const fileExt = file.name.split('.').pop();
       const filePath = `${session.user.id}/${crypto.randomUUID()}.${fileExt}`;
       
@@ -98,7 +99,22 @@ export default function Library() {
 
       if (uploadError) throw uploadError;
 
-      // Criar registro do livro
+      // Process the PDF to get the first page as an image
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const { error: functionError, data: functionData } = await supabase.functions.invoke('extract-pdf-cover', {
+        body: formData,
+      });
+
+      if (functionError) throw functionError;
+
+      let coverImagePath = '/placeholder.svg';
+      if (functionData?.coverImageUrl) {
+        coverImagePath = functionData.coverImageUrl;
+      }
+
+      // Create book record
       const { error: insertError } = await supabase
         .from('library_books')
         .insert({
@@ -106,7 +122,7 @@ export default function Library() {
           file_path: filePath,
           file_size: file.size,
           user_id: session.user.id,
-          cover_image: '/placeholder.svg' // Usar imagem placeholder por enquanto
+          cover_image: coverImagePath
         });
 
       if (insertError) throw insertError;
@@ -162,9 +178,9 @@ export default function Library() {
           />
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="flex items-center gap-2">
+              <Button className="flex items-center gap-2" disabled={uploadingBook}>
                 <PlusCircle className="h-5 w-5" />
-                Adicionar Livro
+                {uploadingBook ? 'Adicionando...' : 'Adicionar Livro'}
               </Button>
             </DialogTrigger>
             <DialogContent>
