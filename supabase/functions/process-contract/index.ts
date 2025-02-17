@@ -36,6 +36,23 @@ pelas cláusulas seguintes e pelas condições descritas no presente.
 
 Analise o documento fornecido e substitua os dados pessoais encontrados pelos parâmetros correspondentes acima. Mantenha a estrutura exata do texto, apenas substituindo as informações por variáveis.`;
 
+async function generateWithRetry(model: any, prompt: string, maxRetries = 3) {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      console.log(`Tentativa ${i + 1} de ${maxRetries}`);
+      const result = await model.generateContent(prompt);
+      return await result.response;
+    } catch (error) {
+      console.error(`Erro na tentativa ${i + 1}:`, error);
+      if (i === maxRetries - 1) throw error; // Throw on last retry
+      if (error.toString().includes('429')) {
+        // Wait longer between each retry
+        await new Promise(resolve => setTimeout(resolve, (i + 1) * 2000));
+      }
+    }
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { 
@@ -73,12 +90,14 @@ serve(async (req) => {
     let prompt = '';
     if (file) {
       const fileContent = await file.text();
+      // Limit content size to avoid token limits
+      const truncatedContent = fileContent.slice(0, 30000);
       prompt = `${systemPrompt}
 
 Analise o seguinte documento:
 Nome do arquivo: ${file.name}
 Conteúdo do arquivo:
-${fileContent}
+${truncatedContent}
 
 Por favor, identifique a seção de Partes Contratantes e substitua os dados pelos parâmetros dinâmicos conforme o modelo fornecido.`;
     } else {
@@ -91,8 +110,7 @@ Por favor, identifique a seção de Partes Contratantes e substitua os dados pel
     }
 
     console.log('Enviando requisição para o Gemini API...');
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
+    const response = await generateWithRetry(model, prompt);
     const text = response.text();
     console.log('Resposta recebida do Gemini API');
 
