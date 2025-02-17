@@ -12,8 +12,8 @@ export const useContractGemini = () => {
       if (error) throw error;
 
       if (data && typeof data.text === 'string') {
-        // Remove code blocks if present
-        const cleanText = data.text.replace(/```(?:.*\n)?([\s\S]*?)```/g, '$1').trim();
+        // Remove code blocks if present - fixed the regex syntax
+        const cleanText = data.text.replace(/```(?:.*\n)?([\\s\\S]*?)```/g, '$1').trim();
         return cleanText;
       }
 
