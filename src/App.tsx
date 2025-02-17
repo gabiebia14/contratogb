@@ -6,6 +6,7 @@ import DashboardLayout from '@/layouts/DashboardLayout';
 import NotFound from '@/pages/NotFound';
 import Auth from '@/pages/Auth';
 import ContractsPage from '@/components/ContractsPage';
+import ContractViewer from '@/pages/ContractViewer';
 import ContractTemplates from '@/pages/ContractTemplates';
 import NewContract from '@/pages/NewContract';
 import Documents from '@/pages/Documents';
@@ -29,6 +30,7 @@ function App() {
           <Route path="/juridico" element={<DashboardLayout />}>
             <Route index element={<Dashboard />} />
             <Route path="contracts" element={<ContractsPage />} />
+            <Route path="contracts/:id" element={<ContractViewer />} />
             <Route path="templates" element={<ContractTemplates />} />
             <Route path="new-contract" element={<NewContract />} />
             <Route path="documentos" element={<Documents />} />
