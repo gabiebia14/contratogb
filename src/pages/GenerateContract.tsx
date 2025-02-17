@@ -8,13 +8,11 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useContractGeneration } from '@/hooks/useContractGeneration';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { useContractGemini } from '@/hooks/useContractGemini';
 
 export default function GenerateContract() {
   const navigate = useNavigate();
   const { templates, isLoading: templatesLoading } = useContractTemplates();
   const { loading, generateContract } = useContractGeneration();
-  const { processContract } = useContractGemini();
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [selectedDocument, setSelectedDocument] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
@@ -25,9 +23,8 @@ export default function GenerateContract() {
     const template = templates?.find(t => t.id === templateId);
     if (template?.content) {
       try {
-        const processedContent = await processContract(template.content);
-        setPreviewContent(processedContent);
         setShowPreview(true);
+        setPreviewContent(template.content);
       } catch (error) {
         console.error('Erro ao processar template:', error);
         toast.error('Erro ao processar template');
@@ -125,7 +122,7 @@ export default function GenerateContract() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label>Documentos Processados</Label>
-              {/* Implementar seleção de documentos aqui */}
+              {/* Aqui você pode adicionar a lista de documentos processados */}
             </div>
 
             <Button

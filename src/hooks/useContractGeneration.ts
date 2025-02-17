@@ -1,36 +1,61 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { fetchTemplate, fetchDocument, generateContract } from '@/services/contractService';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useContractGeneration = () => {
   const [loading, setLoading] = useState(false);
 
-  const generateContractFromTemplate = async (templateId: string, documentId: string, title: string) => {
+  const generateContract = async (templateId: string, documentId: string, title: string) => {
     setLoading(true);
     try {
-      if (!templateId?.trim() || !documentId?.trim()) {
-        throw new Error('ID do template ou documento inválido');
+      const { data: template } = await supabase
+        .from('contract_templates')
+        .select('content')
+        .eq('id', templateId)
+        .single();
+
+      if (!template) {
+        throw new Error('Template não encontrado');
       }
 
-      const template = await fetchTemplate(templateId);
-      const document = await fetchDocument(documentId);
-      const contract = await generateContract(templateId, documentId, title, template, document);
+      const { data: document } = await supabase
+        .from('processed_documents')
+        .select('extracted_data')
+        .eq('id', documentId)
+        .single();
 
-      toast.success('Contrato gerado com sucesso!');
+      if (!document) {
+        throw new Error('Documento não encontrado');
+      }
+
+      const { data: contract, error } = await supabase
+        .from('contracts')
+        .insert({
+          title,
+          content: template.content,
+          template_id: templateId,
+          document_id: documentId,
+          variables: document.extracted_data,
+          status: 'draft',
+          metadata: {
+            source: 'web-interface',
+            timestamp: new Date().toISOString()
+          }
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
       return contract;
-
-    } catch (error: any) {
+    } catch (error) {
       console.error('Erro ao gerar contrato:', error);
-      toast.error('Erro ao gerar contrato: ' + (error.message || 'Erro desconhecido'));
       throw error;
     } finally {
       setLoading(false);
     }
   };
 
-  return {
-    loading,
-    generateContract: generateContractFromTemplate
-  };
+  return { loading, generateContract };
 };
