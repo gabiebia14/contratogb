@@ -89,31 +89,54 @@ export const useContractGeneration = () => {
   const generateContract = async (templateId: string, documentId: string, title: string) => {
     setLoading(true);
     try {
+      // Validar IDs antes de fazer as requisições
+      if (!templateId || templateId.trim() === '') {
+        throw new Error('ID do template é inválido');
+      }
+      
+      if (!documentId || documentId.trim() === '') {
+        throw new Error('ID do documento é inválido');
+      }
+
+      // Buscar o template e o documento
       const [templateResult, documentResult] = await Promise.all([
         supabase
           .from('contract_templates')
           .select('*')
-          .eq('id', templateId)
+          .eq('id', templateId.trim())
           .single(),
         supabase
           .from('processed_documents')
           .select('*')
-          .eq('id', documentId)
+          .eq('id', documentId.trim())
           .single()
       ]);
 
-      if (templateResult.error) throw new Error('Erro ao buscar template');
-      if (documentResult.error) throw new Error('Erro ao buscar documento');
+      if (templateResult.error) {
+        console.error('Erro ao buscar template:', templateResult.error);
+        throw new Error('Erro ao buscar template');
+      }
+      
+      if (documentResult.error) {
+        console.error('Erro ao buscar documento:', documentResult.error);
+        throw new Error('Erro ao buscar documento');
+      }
 
       const template = templateResult.data;
       const document = documentResult.data;
 
+      if (!template || !document) {
+        throw new Error('Template ou documento não encontrado');
+      }
+
+      // Verificar se o template tem conteúdo
       if (!template.content) {
         throw new Error('Template não possui conteúdo');
       }
 
       console.log('Template content length:', template.content.length);
 
+      // Preparar os dados extraídos do documento
       let documentData: ExtractedData = {};
       try {
         const parsedData: ExtractedData = typeof document.extracted_data === 'string' 
@@ -170,8 +193,10 @@ export const useContractGeneration = () => {
       }
 
       try {
+        // Converter o conteúdo base64 em Uint8Array
         const templateContent = base64ToUint8Array(template.content);
         
+        // Criar uma nova instância do Docxtemplater com o template
         const zip = new PizZip(templateContent);
         const doc = new Docxtemplater(zip, {
           paragraphLoop: true,
@@ -181,12 +206,15 @@ export const useContractGeneration = () => {
         
         console.log('Template carregado, aplicando dados...');
         
+        // Configurar o template com os dados
         doc.setData(documentData);
 
         console.log('Renderizando documento...');
         
+        // Renderizar o documento
         doc.render();
 
+        // Gerar o conteúdo processado
         const processedContent = doc.getZip().generate({
           type: 'base64',
           mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
@@ -194,6 +222,7 @@ export const useContractGeneration = () => {
 
         console.log('Documento processado, salvando contrato...');
         
+        // Criar o contrato no banco de dados
         const { data: contract, error } = await supabase.functions.invoke('generate-contract', {
           body: { 
             templateId, 
