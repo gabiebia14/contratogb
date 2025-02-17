@@ -1,3 +1,4 @@
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -31,6 +32,8 @@ import {
   CardTitle 
 } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
+import { useContractGeneration } from "@/hooks/useContractGeneration";
+import { useNavigate } from "react-router-dom";
 
 const formSchema = z.object({
   title: z.string().min(2, {
@@ -46,8 +49,10 @@ const formSchema = z.object({
 
 export default function NewContract() {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { templates, loading: templatesLoading } = useContractTemplates();
   const { processedDocuments, loading: documentsLoading } = useOCR();
+  const { generateContract, loading: generatingContract } = useContractGeneration();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -58,26 +63,29 @@ export default function NewContract() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    const selectedDoc = processedDocuments.find(doc => doc.id === values.documentId);
-    if (!selectedDoc) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      const contract = await generateContract(
+        values.templateId,
+        values.documentId,
+        values.title
+      );
+
+      toast({
+        title: "Contrato criado com sucesso!",
+        description: "O contrato foi gerado e está pronto para revisão.",
+      });
+
+      // Navegar para a página de visualização do contrato
+      navigate(`/contratos/${contract.id}`);
+    } catch (error) {
+      console.error('Erro ao gerar contrato:', error);
       toast({
         title: "Erro ao gerar contrato",
-        description: "Documento não encontrado",
+        description: "Ocorreu um erro ao gerar o contrato. Por favor, tente novamente.",
         variant: "destructive",
       });
-      return;
     }
-
-    console.log("Gerando contrato com:", {
-      ...values,
-      documentData: selectedDoc.extracted_data
-    });
-
-    toast({
-      title: "Contrato criado com sucesso!",
-      description: "O contrato foi gerado e está pronto para revisão.",
-    });
   }
 
   const formatDate = (dateString: string) => {
@@ -250,12 +258,12 @@ export default function NewContract() {
               </Button>
               <Button 
                 type="submit"
-                disabled={templatesLoading || documentsLoading}
+                disabled={templatesLoading || documentsLoading || generatingContract}
               >
-                {templatesLoading || documentsLoading ? (
+                {templatesLoading || documentsLoading || generatingContract ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Carregando...
+                    {generatingContract ? 'Gerando contrato...' : 'Carregando...'}
                   </>
                 ) : (
                   'Gerar Contrato'
