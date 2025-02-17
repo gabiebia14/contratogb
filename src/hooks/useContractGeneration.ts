@@ -46,8 +46,8 @@ export const useContractGeneration = () => {
       // Criar uma nova instância do Docxtemplater
       const doc = new Docxtemplater();
       
-      // Configurar o template com os dados
-      doc.loadData(documentData);
+      // Configurar o template com os dados usando setData (método correto)
+      doc.setData(documentData);
       doc.render();
 
       // Gerar o conteúdo processado
