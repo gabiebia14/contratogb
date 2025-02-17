@@ -1,8 +1,7 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import Docxtemplater from 'docxtemplater';
-import PizZip from 'pizzip';
 
 interface ExtractedData {
   locatario_nome?: string;
@@ -46,30 +45,6 @@ interface ExtractedData {
   locadora_estado?: string;
 }
 
-function base64ToUint8Array(base64: string) {
-  if (!base64) {
-    throw new Error('Conteúdo base64 vazio');
-  }
-
-  const cleanBase64 = base64.replace(/^data:.*;base64,/, '').trim();
-  
-  try {
-    const binaryString = atob(cleanBase64);
-    
-    const len = binaryString.length;
-    const bytes = new Uint8Array(len);
-    
-    for (let i = 0; i < len; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
-    }
-    
-    return bytes;
-  } catch (error) {
-    console.error('Erro ao decodificar base64:', error);
-    throw new Error('Erro ao decodificar o template: formato inválido');
-  }
-}
-
 export const useContractGeneration = () => {
   const [loading, setLoading] = useState(false);
 
@@ -80,6 +55,7 @@ export const useContractGeneration = () => {
         throw new Error('ID do template ou documento inválido');
       }
 
+      // Buscar o template e o documento
       const { data: template, error: templateError } = await supabase
         .from('contract_templates')
         .select('*')
@@ -110,10 +86,12 @@ export const useContractGeneration = () => {
         throw new Error('Documento não possui dados extraídos');
       }
 
+      // Preparar os dados do documento
       const parsedData = typeof document.extracted_data === 'string' 
         ? JSON.parse(document.extracted_data) 
         : document.extracted_data;
 
+      // Criar objeto com os dados para o template
       const templateData = {
         locatario_nome: parsedData.locatario_nome || '',
         locatario_nacionalidade: parsedData.locatario_nacionalidade || '',
@@ -157,28 +135,22 @@ export const useContractGeneration = () => {
       };
 
       try {
-        const templateBuffer = base64ToUint8Array(template.content);
+        // Pegar o conteúdo do template como texto
+        let processedContent = template.content;
 
-        const zip = new PizZip(templateBuffer);
-        
-        const doc = new Docxtemplater();
-        doc.loadZip(zip);
-        
-        doc.setData(templateData);
-        
-        doc.render();
-        
-        const output = doc.getZip().generate({
-          type: 'base64',
-          mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        // Substituir todas as variáveis no texto
+        Object.entries(templateData).forEach(([key, value]) => {
+          const regex = new RegExp(`{{${key}}}`, 'g');
+          processedContent = processedContent.replace(regex, value || '');
         });
 
+        // Salvar o contrato gerado
         const { data: contract, error } = await supabase.functions.invoke('generate-contract', {
           body: { 
             templateId, 
             documentId, 
             title,
-            content: output
+            content: processedContent
           }
         });
 
