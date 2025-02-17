@@ -59,11 +59,22 @@ export default function GenerateContract() {
   const getDocumentData = (documentId: string): ExtractedField[] => {
     const document = documents.find(doc => doc.id === documentId);
     if (!document?.extracted_data) return [];
-    return [{
-      field: 'extracted_data',
-      value: document.extracted_data,
+
+    let extractedData: Record<string, any>;
+    try {
+      extractedData = typeof document.extracted_data === 'string'
+        ? JSON.parse(document.extracted_data)
+        : document.extracted_data;
+    } catch (error) {
+      console.error('Erro ao processar dados extraídos:', error);
+      return [];
+    }
+
+    return Object.entries(extractedData).map(([field, value]) => ({
+      field,
+      value: typeof value === 'object' ? JSON.stringify(value) : String(value),
       confidence: 1
-    }];
+    }));
   };
 
   const handleGenerate = async () => {
@@ -218,7 +229,7 @@ export default function GenerateContract() {
                                            extractedData.locataria_nome ||
                                            extractedData.fiador_nome;
                                 
-                                if (name) {
+                                if (name && typeof name === 'string') {
                                   displayName = name;
                                 }
                               } catch (error) {
