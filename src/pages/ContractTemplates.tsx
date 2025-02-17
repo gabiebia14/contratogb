@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { useContractTemplates } from '@/hooks/useContractTemplates';
@@ -7,6 +8,7 @@ import { Plus, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import Handlebars from 'handlebars';
+import { TemplateVariables } from '@/types/contracts';
 import {
   AlertDialog,
   AlertDialogAction,
