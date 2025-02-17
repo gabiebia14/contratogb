@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { Json } from '@/integrations/supabase/types';
 
 interface ContractParty {
   role: string;
@@ -127,6 +128,12 @@ export const useContractGeneration = () => {
       
       console.log('Conteúdo processado:', processedContent);
 
+      // Converte as parties para um formato compatível com Json
+      const partiesJson = parties.map(party => ({
+        role: party.role,
+        document_id: party.documentId
+      }));
+
       // Cria o contrato com o conteúdo processado
       const { data: contract, error } = await supabase
         .from('contracts')
@@ -135,13 +142,13 @@ export const useContractGeneration = () => {
           content: processedContent,
           template_id: templateId,
           document_id: parties[0].documentId, // Mantém o primeiro documento como principal
-          variables: variables,
+          variables: variables as Json,
           status: 'draft',
           metadata: {
             source: 'web-interface',
             timestamp: new Date().toISOString(),
-            parties: parties // Armazena todas as partes nos metadados
-          }
+            parties: partiesJson
+          } as Json
         })
         .select()
         .single();

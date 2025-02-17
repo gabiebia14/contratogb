@@ -66,7 +66,7 @@ export default function NewContract() {
     try {
       const contract = await generateContract(
         values.templateId,
-        values.documentId,
+        [{ role: 'locador', documentId: values.documentId }],
         values.title
       );
 
