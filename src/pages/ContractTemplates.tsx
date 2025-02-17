@@ -23,16 +23,18 @@ export default function ContractTemplates() {
       // Registrar o template no Handlebars
       const template = Handlebars.compile(content);
       
-      // Extrair variáveis do conteúdo
-      const matches = content.match(/{{([^}]+)}}/g) || [];
-      const variables = matches.reduce((acc, match) => {
-        const key = match.replace(/[{}]/g, '').trim();
-        if (key in acc) return acc;
-        
-        // Descrição padrão baseada na chave
-        acc[key] = `Campo para ${key.replace(/_/g, ' ')}`;
-        return acc;
-      }, {} as Record<string, string>);
+      // Extrair variáveis do conteúdo usando regex
+      const matches = content.match(/{{([^}]+)}}/g);
+      const variables: Record<string, string> = {};
+      
+      if (matches) {
+        matches.forEach(match => {
+          const key = match.replace(/[{}]/g, '').trim();
+          if (!(key in variables)) {
+            variables[key] = `Campo para ${key.replace(/_/g, ' ')}`;
+          }
+        });
+      }
 
       return {
         processedContent: content,
@@ -45,13 +47,14 @@ export default function ContractTemplates() {
     }
   };
 
-  const previewTemplate = (content: string, variables: Partial<TemplateVariables>) => {
+  const previewTemplate = (content: string, variables: Record<string, string>) => {
     try {
       const template = Handlebars.compile(content);
-      const sampleData = Object.entries(variables).reduce((acc, [key, description]) => {
-        acc[key] = `[Exemplo ${key}]`;
-        return acc;
-      }, {} as Record<string, string>);
+      const sampleData: Record<string, string> = {};
+      
+      Object.keys(variables).forEach(key => {
+        sampleData[key] = `[Exemplo ${key}]`;
+      });
       
       return template(sampleData);
     } catch (error) {
@@ -142,8 +145,8 @@ export default function ContractTemplates() {
                 placeholder="Cole o texto do contrato aqui, usando {{variavel}} para campos dinâmicos..."
               />
               <p className="text-xs text-gray-500 mt-1">
-                Use {{nome_variavel}} para campos que devem ser preenchidos dinamicamente.
-                Ex: {{locador_nome}}, {{locatario_cpf}}, etc.
+                Use chaves duplas para campos dinâmicos.
+                Exemplos: {"{{locador_nome}}, {{locatario_cpf}}"}
               </p>
             </div>
 
