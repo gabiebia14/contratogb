@@ -34,7 +34,7 @@ export const useContractTemplates = () => {
     },
   });
 
-  const { mutateAsync: addTemplate, isLoading: isAddingTemplate } = useMutation({
+  const { mutateAsync: addTemplate, isPending } = useMutation({
     mutationFn: async (templateData: { name: string; content: string; variables: Record<string, string> }) => {
       const { data, error } = await supabase
         .from('contract_templates')
@@ -64,6 +64,6 @@ export const useContractTemplates = () => {
     templates,
     isLoading,
     addTemplate,
-    loading: isLoading || isAddingTemplate
+    loading: isLoading || isPending
   };
 };
