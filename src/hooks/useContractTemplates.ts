@@ -1,5 +1,5 @@
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -14,6 +14,8 @@ interface Template {
 }
 
 export const useContractTemplates = () => {
+  const queryClient = useQueryClient();
+
   const { data: templates = [], isLoading } = useQuery({
     queryKey: ['contract-templates'],
     queryFn: async () => {
@@ -32,5 +34,36 @@ export const useContractTemplates = () => {
     },
   });
 
-  return { templates, isLoading };
+  const { mutateAsync: addTemplate, isLoading: isAddingTemplate } = useMutation({
+    mutationFn: async (templateData: { name: string; content: string; variables: Record<string, string> }) => {
+      const { data, error } = await supabase
+        .from('contract_templates')
+        .insert({
+          name: templateData.name,
+          content: templateData.content,
+          template_variables: templateData.variables,
+          category: 'Geral'
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Erro ao adicionar template:', error);
+        toast.error('Erro ao adicionar template');
+        throw error;
+      }
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contract-templates'] });
+    },
+  });
+
+  return {
+    templates,
+    isLoading,
+    addTemplate,
+    loading: isLoading || isAddingTemplate
+  };
 };

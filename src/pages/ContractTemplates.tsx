@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Plus, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import Handlebars from 'handlebars';
-import { TemplateVariables } from '@/types/contracts';
 
 export default function ContractTemplates() {
   const [showNewForm, setShowNewForm] = useState(true);
@@ -80,11 +79,11 @@ export default function ContractTemplates() {
         return;
       }
 
-      await addTemplate(
-        newTemplate.name,
-        processed.processedContent,
-        processed.variables
-      );
+      await addTemplate({
+        name: newTemplate.name,
+        content: processed.processedContent,
+        variables: processed.variables
+      });
       
       setNewTemplate({
         name: '',
