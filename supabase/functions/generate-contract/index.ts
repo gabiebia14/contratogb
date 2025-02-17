@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
-import * as handlebars from 'https://esm.sh/handlebars@4.7.8'
+import Handlebars from 'https://esm.sh/handlebars@4.7.8'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -73,59 +73,63 @@ serve(async (req: Request) => {
 
     console.log('Dados extraídos:', extractedData);
 
-    // Compile template with Handlebars
-    const compiledTemplate = handlebars.compile(template.content);
-    const content = compiledTemplate(extractedData);
+    try {
+      // Compile template with Handlebars
+      const compiledTemplate = Handlebars.compile(template.content);
+      const content = compiledTemplate(extractedData);
+      console.log('Conteúdo do contrato gerado com sucesso');
 
-    console.log('Conteúdo do contrato gerado com sucesso');
-
-    // Get current user
-    const authHeader = req.headers.get('Authorization')?.split('Bearer ')[1];
-    if (!authHeader) {
-      throw new Error('Usuário não autenticado');
-    }
-
-    const { data: { user }, error: userError } = await supabase.auth.getUser(authHeader);
-    if (userError || !user) {
-      console.error('Erro ao obter usuário:', userError);
-      throw new Error('Usuário não encontrado');
-    }
-
-    // Create contract
-    const { data: contract, error: contractError } = await supabase
-      .from('contracts')
-      .insert({
-        title,
-        content,
-        template_id: templateId,
-        document_id: documentId,
-        variables: extractedData,
-        status: 'draft',
-        version: 1,
-        user_id: user.id,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      .select()
-      .single()
-
-    if (contractError) {
-      console.error('Erro ao criar contrato:', contractError);
-      throw contractError;
-    }
-
-    console.log('Contrato criado com sucesso:', contract.id);
-
-    return new Response(
-      JSON.stringify({ contract }),
-      {
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        },
-        status: 200
+      // Get current user
+      const authHeader = req.headers.get('Authorization')?.split('Bearer ')[1];
+      if (!authHeader) {
+        throw new Error('Usuário não autenticado');
       }
-    )
+
+      const { data: { user }, error: userError } = await supabase.auth.getUser(authHeader);
+      if (userError || !user) {
+        console.error('Erro ao obter usuário:', userError);
+        throw new Error('Usuário não encontrado');
+      }
+
+      // Create contract
+      const { data: contract, error: contractError } = await supabase
+        .from('contracts')
+        .insert({
+          title,
+          content,
+          template_id: templateId,
+          document_id: documentId,
+          variables: extractedData,
+          status: 'draft',
+          version: 1,
+          user_id: user.id,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single()
+
+      if (contractError) {
+        console.error('Erro ao criar contrato:', contractError);
+        throw contractError;
+      }
+
+      console.log('Contrato criado com sucesso:', contract.id);
+
+      return new Response(
+        JSON.stringify({ contract }),
+        {
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          },
+          status: 200
+        }
+      )
+    } catch (templateError) {
+      console.error('Erro ao processar template:', templateError);
+      throw new Error(`Erro ao processar template: ${templateError.message}`);
+    }
   } catch (error) {
     console.error('Erro na geração do contrato:', error);
     return new Response(
