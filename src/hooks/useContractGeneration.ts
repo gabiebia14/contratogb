@@ -47,6 +47,25 @@ interface ExtractedData {
   locadora_estado?: string;
 }
 
+// Função auxiliar para decodificar base64 de forma segura
+function base64ToUint8Array(base64: string) {
+  // Remove possíveis cabeçalhos de data URI
+  const cleanBase64 = base64.replace(/^data:.*?;base64,/, '');
+  
+  try {
+    const binaryString = atob(cleanBase64);
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes;
+  } catch (error) {
+    console.error('Erro ao decodificar base64:', error);
+    throw new Error('Erro ao decodificar conteúdo do template');
+  }
+}
+
 export const useContractGeneration = () => {
   const [loading, setLoading] = useState(false);
 
@@ -137,65 +156,65 @@ export const useContractGeneration = () => {
         return;
       }
 
-      // Decodificar o conteúdo do template que está em base64
-      const templateContent = atob(template.content);
-      
-      // Criar uma nova instância do Docxtemplater com o template
-      const zip = new PizZip(templateContent);
-      const doc = new Docxtemplater(zip, {
-        paragraphLoop: true,
-        linebreaks: true,
-        delimiters: { start: '{', end: '}' }  // Alterado para usar apenas { }
-      });
-      
-      console.log('Template carregado, aplicando dados...');
-      
-      // Configurar o template com os dados
-      doc.setData(documentData);
-
-      console.log('Renderizando documento...');
-      
       try {
+        // Converter o conteúdo base64 em Uint8Array
+        const templateContent = base64ToUint8Array(template.content);
+        
+        // Criar uma nova instância do Docxtemplater com o template
+        const zip = new PizZip(templateContent);
+        const doc = new Docxtemplater(zip, {
+          paragraphLoop: true,
+          linebreaks: true,
+          delimiters: { start: '{', end: '}' }
+        });
+        
+        console.log('Template carregado, aplicando dados...');
+        
+        // Configurar o template com os dados
+        doc.setData(documentData);
+
+        console.log('Renderizando documento...');
+        
         // Renderizar o documento
         doc.render();
-      } catch (error) {
-        console.error('Erro ao renderizar documento:', error);
+
+        // Gerar o conteúdo processado
+        const processedContent = doc.getZip().generate({
+          type: 'base64',
+          mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        });
+
+        console.log('Documento processado, salvando contrato...');
+
+        // Criar o contrato no banco de dados
+        const { data: contract, error } = await supabase.functions.invoke('generate-contract', {
+          body: { 
+            templateId, 
+            documentId, 
+            title,
+            content: processedContent
+          }
+        });
+
+        if (error) throw error;
+
+        if (!contract?.contract) {
+          throw new Error('Erro ao gerar contrato');
+        }
+
+        toast.success('Contrato gerado com sucesso!');
+        return contract.contract;
+      } catch (error: any) {
+        console.error('Erro ao processar template:', error);
         if (error.properties && error.properties.errors) {
           console.log('Erros detalhados:', error.properties.errors);
           console.log('Tags não resolvidas:', error.properties.paragraphParts);
         }
-        throw new Error('Erro ao renderizar documento com os dados fornecidos');
+        throw new Error('Erro ao processar template: ' + (error.message || 'Erro desconhecido'));
       }
-
-      // Gerar o conteúdo processado
-      const processedContent = doc.getZip().generate({
-        type: 'base64',
-        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-      });
-
-      console.log('Documento processado, salvando contrato...');
-
-      // Criar o contrato no banco de dados
-      const { data: contract, error } = await supabase.functions.invoke('generate-contract', {
-        body: { 
-          templateId, 
-          documentId, 
-          title,
-          content: processedContent
-        }
-      });
-
-      if (error) throw error;
-
-      if (!contract?.contract) {
-        throw new Error('Erro ao gerar contrato');
-      }
-
-      toast.success('Contrato gerado com sucesso!');
-      return contract.contract;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating contract:', error);
-      toast.error('Erro ao gerar contrato');
+      toast.error('Erro ao gerar contrato: ' + (error.message || 'Erro desconhecido'));
       throw error;
     } finally {
       setLoading(false);
