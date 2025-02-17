@@ -21,6 +21,7 @@ export default function AI() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useState<HTMLInputElement | null>(null);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -32,6 +33,11 @@ export default function AI() {
         toast.error('Por favor, selecione um arquivo PDF ou DOCX');
       }
     }
+  };
+
+  const handleUploadClick = () => {
+    const fileInput = document.getElementById('file-upload') as HTMLInputElement;
+    fileInput?.click();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -123,12 +129,15 @@ export default function AI() {
             className="hidden"
             id="file-upload"
           />
-          <label htmlFor="file-upload">
-            <Button type="button" variant="outline" className="cursor-pointer">
-              <Upload className="w-4 h-4 mr-2" />
-              Upload
-            </Button>
-          </label>
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={handleUploadClick}
+            className="cursor-pointer"
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            Upload
+          </Button>
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
