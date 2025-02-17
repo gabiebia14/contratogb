@@ -48,37 +48,50 @@ interface ExtractedData {
 }
 
 function base64ToUint8Array(base64: string) {
+  console.log('Iniciando conversão base64 para Uint8Array');
+  
   // Remove possíveis cabeçalhos de data URI e espaços em branco
   const cleanBase64 = base64.replace(/^data:.*?;base64,/, '').trim();
+  console.log('Tamanho do base64 limpo:', cleanBase64.length);
   
   if (!cleanBase64) {
     throw new Error('Conteúdo base64 vazio');
   }
 
   try {
-    // Decodifica o base64 diretamente para um array de bytes
-    const binary = window.atob(cleanBase64);
-    const bytes = new Uint8Array(binary.length);
+    // Tenta primeiro usando apenas o atob
+    const binary = atob(cleanBase64);
+    console.log('Conversão inicial bem sucedida, tamanho:', binary.length);
     
-    // Converte cada caractere em seu valor ASCII
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i) & 0xFF; // Garante que pegamos apenas os 8 bits menos significativos
-    }
-    
-    return bytes;
+    // Converte para Uint8Array
+    return new Uint8Array(binary.split('').map(char => char.charCodeAt(0)));
   } catch (error) {
-    console.error('Erro ao decodificar base64:', error);
+    console.error('Erro na primeira tentativa:', error);
     
-    // Tenta uma abordagem alternativa usando TextEncoder
     try {
-      const decoder = new TextDecoder('utf-8');
-      const encoder = new TextEncoder();
-      const decodedBase64 = window.atob(cleanBase64);
-      const decodedText = decoder.decode(encoder.encode(decodedBase64));
-      return encoder.encode(decodedText);
-    } catch (alternativeError) {
-      console.error('Erro na abordagem alternativa:', alternativeError);
-      throw new Error('Erro ao decodificar conteúdo do template: Formato inválido ou caracteres não suportados');
+      // Segunda tentativa: remover caracteres inválidos
+      const sanitizedBase64 = cleanBase64.replace(/[^A-Za-z0-9+/=]/g, '');
+      console.log('Base64 sanitizado, novo tamanho:', sanitizedBase64.length);
+      
+      const binary = atob(sanitizedBase64);
+      console.log('Segunda conversão bem sucedida, tamanho:', binary.length);
+      
+      return new Uint8Array(binary.split('').map(char => char.charCodeAt(0)));
+    } catch (secondError) {
+      console.error('Erro na segunda tentativa:', secondError);
+      
+      try {
+        // Terceira tentativa: usar TextEncoder/TextDecoder
+        const decoder = new TextDecoder('utf-8');
+        const encoder = new TextEncoder();
+        const decodedText = decoder.decode(encoder.encode(cleanBase64));
+        console.log('Texto decodificado com sucesso usando TextEncoder/TextDecoder');
+        
+        return encoder.encode(decodedText);
+      } catch (finalError) {
+        console.error('Erro em todas as tentativas:', finalError);
+        throw new Error('Não foi possível processar o conteúdo do template após múltiplas tentativas');
+      }
     }
   }
 }
@@ -97,6 +110,8 @@ export const useContractGeneration = () => {
       if (!documentId || documentId.trim() === '') {
         throw new Error('ID do documento é inválido');
       }
+
+      console.log('Buscando template e documento...');
 
       // Buscar o template e o documento
       const [templateResult, documentResult] = await Promise.all([
@@ -134,7 +149,7 @@ export const useContractGeneration = () => {
         throw new Error('Template não possui conteúdo');
       }
 
-      console.log('Template content length:', template.content.length);
+      console.log('Template recuperado, tamanho do conteúdo:', template.content.length);
 
       // Preparar os dados extraídos do documento
       let documentData: ExtractedData = {};
@@ -185,7 +200,7 @@ export const useContractGeneration = () => {
           locadora_estado: parsedData.locadora_estado || '',
         };
 
-        console.log('Dados formatados para o template:', documentData);
+        console.log('Dados do documento processados com sucesso');
       } catch (error) {
         console.error('Erro ao processar dados do documento:', error);
         toast.error('Erro ao processar dados do documento');
@@ -193,11 +208,16 @@ export const useContractGeneration = () => {
       }
 
       try {
+        console.log('Iniciando processamento do template...');
+        
         // Converter o conteúdo base64 em Uint8Array
         const templateContent = base64ToUint8Array(template.content);
+        console.log('Template convertido para Uint8Array com sucesso');
         
         // Criar uma nova instância do Docxtemplater com o template
         const zip = new PizZip(templateContent);
+        console.log('PizZip criado com sucesso');
+        
         const doc = new Docxtemplater(zip, {
           paragraphLoop: true,
           linebreaks: true,
