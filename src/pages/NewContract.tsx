@@ -76,8 +76,8 @@ export default function NewContract() {
         description: "O contrato foi gerado e está pronto para revisão.",
       });
 
-      // Navegar para a página de visualização do contrato
-      navigate(`/contratos/${contract.id}`);
+      // Navegar para a página correta dentro do dashboard jurídico
+      navigate(`/juridico/contracts/${contract.id}`);
     } catch (error) {
       console.error('Erro ao gerar contrato:', error);
       toast({
