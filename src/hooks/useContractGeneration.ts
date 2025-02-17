@@ -145,7 +145,7 @@ export const useContractGeneration = () => {
       const doc = new Docxtemplater(zip, {
         paragraphLoop: true,
         linebreaks: true,
-        delimiters: { start: '{{', end: '}}' }
+        delimiters: { start: '{', end: '}' }  // Alterado para usar apenas { }
       });
       
       console.log('Template carregado, aplicando dados...');
