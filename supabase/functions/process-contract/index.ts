@@ -34,17 +34,24 @@ serve(async (req) => {
     const model = genAI.getGenerativeModel({
       model: "gemini-pro",
       generationConfig: {
-        temperature: 1,
-        topP: 0.95,
+        temperature: 0.7,
+        topP: 0.8,
         topK: 40,
         maxOutputTokens: 8192,
       }
     });
 
-    let prompt = content;
+    let prompt = '';
     if (file) {
-      // TODO: Implement file handling when Gemini's file API is available
-      prompt = `Analisando o arquivo: ${file.name}\n${content}`;
+      const fileContent = await file.text();
+      prompt = `Analise o seguinte documento:
+Nome do arquivo: ${file.name}
+Conteúdo do arquivo:
+${fileContent}
+
+${content ? `Considerando o conteúdo acima, responda: ${content}` : 'Por favor, analise este documento e forneça um resumo detalhado, destacando os pontos principais e quaisquer questões importantes que precisem de atenção.'}`;
+    } else {
+      prompt = content;
     }
 
     const result = await model.generateContent(prompt);
@@ -52,7 +59,11 @@ serve(async (req) => {
     const text = response.text();
     
     return new Response(
-      JSON.stringify({ text }),
+      JSON.stringify({ 
+        text,
+        fileProcessed: !!file,
+        fileName: file?.name 
+      }),
       { 
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -62,7 +73,8 @@ serve(async (req) => {
     console.error('Erro:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message 
+        error: error.message,
+        details: error.toString() 
       }),
       { 
         status: 500,
