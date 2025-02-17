@@ -57,12 +57,14 @@ export default function Library() {
       return data as Book[];
     },
     retry: false,
-    onError: (error) => {
-      console.error('Erro ao carregar livros:', error);
-      if (error.message === 'Não autenticado') {
-        navigate('/auth');
-      } else {
-        toast.error('Erro ao carregar os livros');
+    meta: {
+      onError: (error: Error) => {
+        console.error('Erro ao carregar livros:', error);
+        if (error.message === 'Não autenticado') {
+          navigate('/auth');
+        } else {
+          toast.error('Erro ao carregar os livros');
+        }
       }
     }
   });
