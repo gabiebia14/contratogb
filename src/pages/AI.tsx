@@ -51,22 +51,21 @@ export default function AI() {
       setLoading(true);
 
       let formData = new FormData();
+      let fileContent = '';
+      
       if (selectedFile) {
         formData.append('file', selectedFile);
+        fileContent = await selectedFile.text();
       }
-      formData.append('content', input.trim());
 
       const { data, error } = await supabase.functions.invoke('process-contract', {
-        body: formData
+        body: {
+          content: input.trim(),
+          fileContent
+        }
       });
 
-      if (error) {
-        // Check for specific error types
-        if (error.message.includes('429') || error.message.includes('quota')) {
-          throw new Error('O serviço está temporariamente indisponível. Por favor, aguarde alguns minutos e tente novamente.');
-        }
-        throw error;
-      }
+      if (error) throw error;
 
       if (selectedFile) {
         setMessages(prev => [...prev, { 
@@ -93,7 +92,7 @@ export default function AI() {
       }
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
-      toast.error((error as Error).message);
+      toast.error('Erro ao enviar mensagem. Por favor, tente novamente.');
     } finally {
       setLoading(false);
     }

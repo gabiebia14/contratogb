@@ -1,16 +1,21 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { GoogleGenerativeAI } from "npm:@google/generative-ai@^0.2.0";
-import { GoogleAIFileManager } from "npm:@google/generative-ai@^0.2.0/server";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Max-Age': '86400',
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { 
+      status: 200,
+      headers: corsHeaders 
+    });
   }
 
   try {
@@ -20,59 +25,50 @@ serve(async (req) => {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const fileManager = new GoogleAIFileManager(apiKey);
     
     const model = genAI.getGenerativeModel({
       model: "gemini-2.0-flash-thinking-exp-01-21",
-      systemInstruction: `Você é um assistente especialista em automação e edição de modelos de contrato. Sua função é processar modelos carregados, localizar a cláusula de Partes Contratantes, e substituir automaticamente os dados existentes pelos parâmetros dinâmicos previamente definidos.
-
-      Fluxo de Trabalho
-      Identificar a Cláusula de Partes Contratantes:
-      Localize a seção do contrato que contém informações sobre as partes envolvidas, como Locador, Locatária/Locatário, Fiador/Fiadora.
-
-      Substituir pelos Parâmetros Dinâmicos:
-      Substitua os dados fixos encontrados no modelo pelo formato de parâmetros dinâmicos.`,
+      generationConfig: {
+        temperature: 0.7,
+        topP: 0.95,
+        topK: 64,
+        maxOutputTokens: 65536,
+      }
     });
 
-    const generationConfig = {
-      temperature: 0.7,
-      topP: 0.95,
-      topK: 64,
-      maxOutputTokens: 65536,
-      responseMimeType: "text/plain",
-    };
+    let content = '';
+    let fileContent = '';
 
-    const formData = await req.formData();
-    const file = formData.get('file') as File | null;
-    const content = formData.get('content') as string;
+    // Handle both FormData and JSON requests
+    const contentType = req.headers.get('content-type') || '';
+    
+    if (contentType.includes('multipart/form-data')) {
+      const formData = await req.formData();
+      const file = formData.get('file') as File | null;
+      content = formData.get('content') as string || '';
+      
+      if (file) {
+        fileContent = await file.text();
+      }
+    } else {
+      const json = await req.json();
+      content = json.content || '';
+      fileContent = json.fileContent || '';
+    }
 
-    if (!content && !file) {
+    if (!content && !fileContent) {
       throw new Error('Conteúdo ou arquivo é obrigatório');
     }
 
-    const chatSession = model.startChat({
-      generationConfig,
-      history: [],
-    });
-
-    let prompt = '';
-    if (file) {
-      const fileContent = await file.text();
-      prompt = `Analise o seguinte documento:
-Nome do arquivo: ${file.name}
-Conteúdo do arquivo:
-${fileContent}
-
-${content ? `Considerando o conteúdo acima, responda: ${content}` : 'Por favor, analise este documento e substitua os dados das partes pelos parâmetros dinâmicos conforme as instruções do sistema.'}`;
-    } else {
-      prompt = content;
-    }
+    const prompt = fileContent ? 
+      `Analise o seguinte documento:\n${fileContent}\n\n${content ? `Considerando o conteúdo acima, responda: ${content}` : 'Por favor, analise este documento e substitua os dados das partes pelos parâmetros dinâmicos conforme as instruções do sistema.'}` : 
+      content;
 
     console.log('Enviando requisição para o Gemini API...');
-    const result = await chatSession.sendMessage([{ text: prompt }]);
+    const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
-    console.log('Resposta recebida do Gemini API');
+    console.log('Resposta recebida do Gemini API:', text);
 
     // Remove blocos de código se presentes
     const cleanText = text.replace(/```(?:.*\n)?([\s\S]*?)```/g, '$1').trim();
@@ -80,8 +76,7 @@ ${content ? `Considerando o conteúdo acima, responda: ${content}` : 'Por favor,
     return new Response(
       JSON.stringify({ 
         text: cleanText,
-        fileProcessed: !!file,
-        fileName: file?.name 
+        fileProcessed: !!fileContent
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -89,7 +84,7 @@ ${content ? `Considerando o conteúdo acima, responda: ${content}` : 'Por favor,
     );
 
   } catch (error) {
-    console.error('Erro:', error);
+    console.error('Erro detalhado:', error);
     return new Response(
       JSON.stringify({ 
         error: 'Ocorreu um erro ao processar sua solicitação. Por favor, tente novamente.',
