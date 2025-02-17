@@ -73,38 +73,7 @@ export const generateContract = async (
       throw new Error('Erro ao salvar contrato: ID não retornado');
     }
 
-    // Aumenta o tempo de espera para garantir que o contrato foi salvo
-    console.log('Aguardando persistência do contrato...');
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
-    // Tenta buscar o contrato algumas vezes antes de desistir
-    let attempts = 0;
-    let contract = null;
-    while (attempts < 3 && !contract) {
-      console.log(`Tentativa ${attempts + 1} de verificar contrato...`);
-      const { data, error: verifyError } = await supabase
-        .from('contracts')
-        .select('*')
-        .eq('id', result.contract.id)
-        .maybeSingle();
-
-      if (!verifyError && data) {
-        contract = data;
-        break;
-      }
-
-      attempts++;
-      if (attempts < 3) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-    }
-
-    if (!contract) {
-      console.error('Contrato não encontrado após tentativas');
-      throw new Error('Erro ao verificar contrato gerado: contrato não encontrado');
-    }
-
-    console.log('Contrato gerado com sucesso:', contract.id);
+    console.log('Contrato gerado com sucesso:', result.contract.id);
     return result.contract;
   } catch (error: any) {
     console.error('Erro ao processar template:', error);

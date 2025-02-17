@@ -24,7 +24,7 @@ serve(async (req) => {
     console.log('Iniciando inserção do contrato no banco...');
 
     // Criar o contrato no banco de dados
-    const { data: contract, error: insertError } = await supabaseClient
+    const { data: insertedContract, error: insertError } = await supabaseClient
       .from('contracts')
       .insert({
         title,
@@ -42,15 +42,32 @@ serve(async (req) => {
       throw insertError
     }
 
-    if (!contract) {
+    if (!insertedContract) {
       throw new Error('Contrato não foi criado corretamente')
     }
 
-    console.log('Contrato criado com sucesso:', contract.id);
+    console.log('Contrato inserido, verificando persistência...');
+
+    // Aguarda um momento para garantir a persistência
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Verifica se o contrato foi realmente salvo
+    const { data: verifiedContract, error: verifyError } = await supabaseClient
+      .from('contracts')
+      .select('*')
+      .eq('id', insertedContract.id)
+      .single();
+
+    if (verifyError || !verifiedContract) {
+      console.error('Erro ao verificar contrato:', verifyError);
+      throw new Error('Contrato não foi persistido corretamente');
+    }
+
+    console.log('Contrato verificado e persistido com sucesso:', verifiedContract.id);
 
     return new Response(
       JSON.stringify({
-        contract
+        contract: verifiedContract
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
