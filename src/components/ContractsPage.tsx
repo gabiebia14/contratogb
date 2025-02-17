@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { FileText, Download, Search } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';  // Ensure this import is correct
+import { supabase } from '@/integrations/supabase/client';
 
 const ContractsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -9,20 +10,25 @@ const ContractsPage = () => {
 
   useEffect(() => {
     const fetchContracts = async () => {
-      const { data, error } = await supabase.from('contracts').select('*');
+      const { data, error } = await supabase
+        .from('contracts')
+        .select(`
+          *,
+          template:contract_templates(name),
+          document:processed_documents(file_name)
+        `);
       if (error) {
         console.error('Error fetching contracts:', error);
       } else {
-        setContracts(data);
+        setContracts(data || []);
       }
     };
     fetchContracts();
   }, []);
 
   const filteredContracts = contracts.filter(contract => {
-    const matchesSearch = contract.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         contract.client.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'todos' || contract.status.toLowerCase() === statusFilter.toLowerCase();
+    const matchesSearch = contract.title.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'todos' || contract.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -47,9 +53,11 @@ const ContractsPage = () => {
               onChange={(e) => setStatusFilter(e.target.value)}
             >
               <option value="todos">Todos os status</option>
-              <option value="ativo">Ativo</option>
-              <option value="pendente">Pendente</option>
-              <option value="finalizado">Finalizado</option>
+              <option value="draft">Rascunho</option>
+              <option value="active">Ativo</option>
+              <option value="pending">Pendente</option>
+              <option value="expired">Expirado</option>
+              <option value="cancelled">Cancelado</option>
             </select>
             <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
               Novo Contrato
@@ -62,7 +70,7 @@ const ContractsPage = () => {
             <thead className="text-left text-gray-500 text-sm">
               <tr>
                 <th className="pb-4">Nome</th>
-                <th className="pb-4">Cliente</th>
+                <th className="pb-4">Modelo</th>
                 <th className="pb-4">Data</th>
                 <th className="pb-4">Status</th>
                 <th className="pb-4">Ações</th>
@@ -76,18 +84,25 @@ const ContractsPage = () => {
                       <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
                         <FileText className="text-indigo-600" size={16} />
                       </div>
-                      {contract.name}
+                      {contract.title}
                     </div>
                   </td>
-                  <td className="py-4">{contract.client}</td>
-                  <td className="py-4">{contract.date}</td>
+                  <td className="py-4">{contract.template?.name}</td>
+                  <td className="py-4">{new Date(contract.created_at).toLocaleDateString()}</td>
                   <td className="py-4">
                     <span className={`px-2 py-1 rounded-full text-sm ${
-                      contract.status === 'Ativo' ? 'bg-green-100 text-green-600' :
-                      contract.status === 'Pendente' ? 'bg-yellow-100 text-yellow-600' :
+                      contract.status === 'active' ? 'bg-green-100 text-green-600' :
+                      contract.status === 'pending' ? 'bg-yellow-100 text-yellow-600' :
+                      contract.status === 'draft' ? 'bg-gray-100 text-gray-600' :
+                      contract.status === 'expired' ? 'bg-red-100 text-red-600' :
                       'bg-gray-100 text-gray-600'
                     }`}>
-                      {contract.status}
+                      {contract.status === 'active' ? 'Ativo' :
+                       contract.status === 'pending' ? 'Pendente' :
+                       contract.status === 'draft' ? 'Rascunho' :
+                       contract.status === 'expired' ? 'Expirado' :
+                       contract.status === 'cancelled' ? 'Cancelado' : 
+                       contract.status}
                     </span>
                   </td>
                   <td className="py-4">
