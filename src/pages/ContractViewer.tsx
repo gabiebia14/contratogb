@@ -1,12 +1,14 @@
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function ContractViewer() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [contract, setContract] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -22,13 +24,21 @@ export default function ContractViewer() {
             document:processed_documents(file_name)
           `)
           .eq('id', id)
-          .single();
+          .maybeSingle(); // Usando maybeSingle() em vez de single()
 
         if (error) throw error;
+        
+        if (!data) {
+          setError('Contrato não encontrado');
+          toast.error('Contrato não encontrado');
+          return;
+        }
+
         setContract(data);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Erro ao buscar contrato:', err);
         setError('Erro ao carregar o contrato. Por favor, tente novamente mais tarde.');
+        toast.error('Erro ao carregar o contrato');
       } finally {
         setLoading(false);
       }
@@ -51,7 +61,15 @@ export default function ContractViewer() {
     return (
       <Card>
         <CardContent className="pt-6">
-          <div className="text-center text-red-500">{error}</div>
+          <div className="text-center text-red-500">
+            <p>{error}</p>
+            <button
+              onClick={() => navigate('/juridico/contracts')}
+              className="mt-4 text-indigo-600 hover:text-indigo-800"
+            >
+              Voltar para lista de contratos
+            </button>
+          </div>
         </CardContent>
       </Card>
     );
@@ -61,7 +79,15 @@ export default function ContractViewer() {
     return (
       <Card>
         <CardContent className="pt-6">
-          <div className="text-center">Contrato não encontrado</div>
+          <div className="text-center">
+            <p>Contrato não encontrado</p>
+            <button
+              onClick={() => navigate('/juridico/contracts')}
+              className="mt-4 text-indigo-600 hover:text-indigo-800"
+            >
+              Voltar para lista de contratos
+            </button>
+          </div>
         </CardContent>
       </Card>
     );
