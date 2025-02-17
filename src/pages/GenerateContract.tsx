@@ -11,6 +11,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, X } from 'lucide-react';
 import ExtractedDataDisplay from '@/components/ocr/ExtractedDataDisplay';
+import { ExtractedField } from '@/types/ocr';
 
 interface ContractParty {
   role: string;
@@ -55,23 +56,15 @@ export default function GenerateContract() {
     setContractParties(newParties);
   };
 
-  const getDocumentData = (documentId: string) => {
+  const getDocumentData = (documentId: string): ExtractedField[] => {
     const document = documents.find(doc => doc.id === documentId);
-    if (!document?.extracted_data) return null;
+    if (!document?.extracted_data) return [];
     return [{
       field: 'extracted_data',
-      value: document.extracted_data
+      value: document.extracted_data,
+      confidence: 1
     }];
   };
-
-  const availableRoles = [
-    { value: 'locador', label: 'Locador' },
-    { value: 'locadora', label: 'Locadora' },
-    { value: 'locatario', label: 'Locatário' },
-    { value: 'locataria', label: 'Locatária' },
-    { value: 'fiador', label: 'Fiador' },
-    { value: 'fiadora', label: 'Fiadora' },
-  ];
 
   const handleGenerate = async () => {
     if (!selectedTemplate || contractParties.length === 0) {
@@ -85,7 +78,7 @@ export default function GenerateContract() {
     }
 
     try {
-      const mainDocumentId = contractParties[0].documentId; // Usando o primeiro documento como principal
+      const mainDocumentId = contractParties[0].documentId;
       const contract = await generateContract(selectedTemplate, mainDocumentId, 'Novo Contrato');
       toast.success('Contrato gerado com sucesso!');
       navigate(`/juridico/contracts/${contract.id}`);
@@ -94,6 +87,15 @@ export default function GenerateContract() {
       toast.error('Erro ao gerar contrato');
     }
   };
+
+  const availableRoles = [
+    { value: 'locador', label: 'Locador' },
+    { value: 'locadora', label: 'Locadora' },
+    { value: 'locatario', label: 'Locatário' },
+    { value: 'locataria', label: 'Locatária' },
+    { value: 'fiador', label: 'Fiador' },
+    { value: 'fiadora', label: 'Fiadora' },
+  ];
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -224,7 +226,7 @@ export default function GenerateContract() {
 
                     {party.documentId && (
                       <div className="pl-4 border-l-2 border-primary/20">
-                        <ExtractedDataDisplay data={getDocumentData(party.documentId) || []} />
+                        <ExtractedDataDisplay data={getDocumentData(party.documentId)} />
                       </div>
                     )}
                   </div>
