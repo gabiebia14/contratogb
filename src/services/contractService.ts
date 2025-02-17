@@ -52,7 +52,7 @@ export const generateContract = async (
     const templateData = processTemplateData(document.extracted_data);
     const processedContent = replaceTemplateVariables(template.content, templateData);
 
-    const { data: contract, error } = await supabase.functions.invoke('generate-contract', {
+    const { data: result, error } = await supabase.functions.invoke('generate-contract', {
       body: { 
         templateId, 
         documentId, 
@@ -63,11 +63,25 @@ export const generateContract = async (
 
     if (error) throw error;
     
-    if (!contract?.contract) {
+    if (!result?.contract?.id) {
       throw new Error('Erro ao salvar contrato');
     }
 
-    return contract.contract;
+    // Aguarda um momento para garantir que o contrato foi salvo
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Verifica se o contrato realmente existe no banco
+    const { data: contract, error: verifyError } = await supabase
+      .from('contracts')
+      .select('*')
+      .eq('id', result.contract.id)
+      .maybeSingle();
+
+    if (verifyError || !contract) {
+      throw new Error('Erro ao verificar contrato gerado');
+    }
+
+    return result.contract;
   } catch (error: any) {
     console.error('Erro ao processar template:', error);
     throw new Error('Erro ao processar template: ' + (error.message || 'Erro desconhecido'));
