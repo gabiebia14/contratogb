@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -47,22 +46,37 @@ interface ExtractedData {
   locadora_estado?: string;
 }
 
-// Função auxiliar para decodificar base64 de forma segura
 function base64ToUint8Array(base64: string) {
-  // Remove possíveis cabeçalhos de data URI
-  const cleanBase64 = base64.replace(/^data:.*?;base64,/, '');
-  
   try {
-    const binaryString = atob(cleanBase64);
+    const cleanBase64 = base64.replace(/^data:.*?;base64,/, '').trim();
+    
+    if (!cleanBase64) {
+      throw new Error('Conteúdo base64 vazio');
+    }
+
+    const paddedBase64 = cleanBase64.padEnd(cleanBase64.length + (4 - cleanBase64.length % 4) % 4, '=');
+    
+    const base64Url = paddedBase64
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+
+    const standardBase64 = base64Url
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
+
+    const binaryString = atob(standardBase64);
+    
     const len = binaryString.length;
     const bytes = new Uint8Array(len);
     for (let i = 0; i < len; i++) {
       bytes[i] = binaryString.charCodeAt(i);
     }
+    
     return bytes;
   } catch (error) {
     console.error('Erro ao decodificar base64:', error);
-    throw new Error('Erro ao decodificar conteúdo do template');
+    throw new Error('Erro ao decodificar conteúdo do template: ' + (error.message || 'Formato inválido'));
   }
 }
 
@@ -72,7 +86,6 @@ export const useContractGeneration = () => {
   const generateContract = async (templateId: string, documentId: string, title: string) => {
     setLoading(true);
     try {
-      // Buscar o template e o documento
       const [templateResult, documentResult] = await Promise.all([
         supabase
           .from('contract_templates')
@@ -92,21 +105,19 @@ export const useContractGeneration = () => {
       const template = templateResult.data;
       const document = documentResult.data;
 
-      // Verificar se o template tem conteúdo
       if (!template.content) {
         throw new Error('Template não possui conteúdo');
       }
 
-      // Preparar os dados extraídos do documento
+      console.log('Template content length:', template.content.length);
+
       let documentData: ExtractedData = {};
       try {
         const parsedData: ExtractedData = typeof document.extracted_data === 'string' 
           ? JSON.parse(document.extracted_data) 
           : document.extracted_data;
 
-        // Garantir que todos os campos necessários estejam presentes
         documentData = {
-          // Dados do locatário/locatária
           locatario_nome: parsedData.locatario_nome || '',
           locatario_nacionalidade: parsedData.locatario_nacionalidade || '',
           locatario_estado_civil: parsedData.locatario_estado_civil || '',
@@ -127,7 +138,6 @@ export const useContractGeneration = () => {
           locataria_cidade: parsedData.locataria_cidade || '',
           locataria_estado: parsedData.locataria_estado || '',
 
-          // Dados do locador/locadora
           locador_nome: parsedData.locador_nome || '',
           locador_nacionalidade: parsedData.locador_nacionalidade || '',
           locador_estado_civil: parsedData.locador_estado_civil || '',
@@ -157,10 +167,8 @@ export const useContractGeneration = () => {
       }
 
       try {
-        // Converter o conteúdo base64 em Uint8Array
         const templateContent = base64ToUint8Array(template.content);
         
-        // Criar uma nova instância do Docxtemplater com o template
         const zip = new PizZip(templateContent);
         const doc = new Docxtemplater(zip, {
           paragraphLoop: true,
@@ -170,23 +178,19 @@ export const useContractGeneration = () => {
         
         console.log('Template carregado, aplicando dados...');
         
-        // Configurar o template com os dados
         doc.setData(documentData);
 
         console.log('Renderizando documento...');
         
-        // Renderizar o documento
         doc.render();
 
-        // Gerar o conteúdo processado
         const processedContent = doc.getZip().generate({
           type: 'base64',
           mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
         });
 
         console.log('Documento processado, salvando contrato...');
-
-        // Criar o contrato no banco de dados
+        
         const { data: contract, error } = await supabase.functions.invoke('generate-contract', {
           body: { 
             templateId, 
