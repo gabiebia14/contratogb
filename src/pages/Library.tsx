@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { FileUploadArea } from '@/components/ocr/FileUploadArea';
+import FileUploadArea from '@/components/ocr/FileUploadArea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Book, Upload } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
