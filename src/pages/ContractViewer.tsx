@@ -6,6 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
+// Função auxiliar para validar UUID
+const isValidUUID = (uuid: string) => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+};
+
 export default function ContractViewer() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -16,6 +22,12 @@ export default function ContractViewer() {
   useEffect(() => {
     const fetchContract = async () => {
       try {
+        if (!id || !isValidUUID(id)) {
+          setError('ID do contrato inválido');
+          toast.error('ID do contrato inválido');
+          return;
+        }
+
         const { data, error } = await supabase
           .from('contracts')
           .select(`
@@ -24,7 +36,7 @@ export default function ContractViewer() {
             document:processed_documents(file_name)
           `)
           .eq('id', id)
-          .maybeSingle(); // Usando maybeSingle() em vez de single()
+          .maybeSingle();
 
         if (error) throw error;
         
@@ -44,10 +56,8 @@ export default function ContractViewer() {
       }
     };
 
-    if (id) {
-      fetchContract();
-    }
-  }, [id]);
+    fetchContract();
+  }, [id, navigate]);
 
   if (loading) {
     return (
