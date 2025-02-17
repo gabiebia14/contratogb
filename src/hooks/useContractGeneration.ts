@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -48,35 +49,37 @@ interface ExtractedData {
 
 function base64ToUint8Array(base64: string) {
   try {
+    // Remove possíveis cabeçalhos de data URI e espaços em branco
     const cleanBase64 = base64.replace(/^data:.*?;base64,/, '').trim();
     
     if (!cleanBase64) {
       throw new Error('Conteúdo base64 vazio');
     }
 
-    const paddedBase64 = cleanBase64.padEnd(cleanBase64.length + (4 - cleanBase64.length % 4) % 4, '=');
+    // Decodifica o base64 diretamente para um array de bytes
+    const binary = window.atob(cleanBase64);
+    const bytes = new Uint8Array(binary.length);
     
-    const base64Url = paddedBase64
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '');
-
-    const standardBase64 = base64Url
-      .replace(/-/g, '+')
-      .replace(/_/g, '/');
-
-    const binaryString = atob(standardBase64);
-    
-    const len = binaryString.length;
-    const bytes = new Uint8Array(len);
-    for (let i = 0; i < len; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
+    // Converte cada caractere em seu valor ASCII
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i) & 0xFF; // Garante que pegamos apenas os 8 bits menos significativos
     }
     
     return bytes;
   } catch (error) {
     console.error('Erro ao decodificar base64:', error);
-    throw new Error('Erro ao decodificar conteúdo do template: ' + (error.message || 'Formato inválido'));
+    
+    // Tenta uma abordagem alternativa usando TextEncoder
+    try {
+      const decoder = new TextDecoder('utf-8');
+      const encoder = new TextEncoder();
+      const decodedBase64 = window.atob(cleanBase64);
+      const decodedText = decoder.decode(encoder.encode(decodedBase64));
+      return encoder.encode(decodedText);
+    } catch (alternativeError) {
+      console.error('Erro na abordagem alternativa:', alternativeError);
+      throw new Error('Erro ao decodificar conteúdo do template: Formato inválido ou caracteres não suportados');
+    }
   }
 }
 
