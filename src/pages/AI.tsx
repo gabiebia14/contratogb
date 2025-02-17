@@ -21,12 +21,15 @@ export default function AI() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const fileInputRef = useState<HTMLInputElement | null>(null);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       if (file.type === 'application/pdf' || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        if (file.size > 5 * 1024 * 1024) { // 5MB limit
+          toast.error('O arquivo deve ter menos de 5MB');
+          return;
+        }
         setSelectedFile(file);
         toast.success('Arquivo selecionado: ' + file.name);
       } else {
@@ -57,7 +60,13 @@ export default function AI() {
         body: formData
       });
 
-      if (error) throw error;
+      if (error) {
+        // Check for specific error types
+        if (error.message.includes('429') || error.message.includes('quota')) {
+          throw new Error('O serviço está temporariamente indisponível. Por favor, aguarde alguns minutos e tente novamente.');
+        }
+        throw error;
+      }
 
       if (selectedFile) {
         setMessages(prev => [...prev, { 
@@ -84,7 +93,7 @@ export default function AI() {
       }
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
-      toast.error('Erro ao enviar mensagem: ' + (error as Error).message);
+      toast.error((error as Error).message);
     } finally {
       setLoading(false);
     }
