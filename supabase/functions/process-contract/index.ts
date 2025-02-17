@@ -16,12 +16,10 @@ serve(async (req) => {
   }
 
   try {
-    const formData = await req.formData();
-    const file = formData.get('file') as File | null;
-    const content = formData.get('content') as string;
+    const { content } = await req.json();
     
-    if (!content && !file) {
-      throw new Error('Conteúdo ou arquivo é obrigatório');
+    if (!content) {
+      throw new Error('Conteúdo é obrigatório');
     }
 
     const apiKey = Deno.env.get('GEMINI_API_KEY');
@@ -41,13 +39,7 @@ serve(async (req) => {
       }
     });
 
-    let prompt = content;
-    if (file) {
-      // TODO: Implement file handling when Gemini's file API is available
-      prompt = `Analisando o arquivo: ${file.name}\n${content}`;
-    }
-
-    const result = await model.generateContent(prompt);
+    const result = await model.generateContent(content);
     const response = await result.response;
     const text = response.text();
     
