@@ -1,33 +1,20 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import FileUploadArea from '@/components/ocr/FileUploadArea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Book, PlusCircle } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-
-interface Book {
-  id: string;
-  title: string;
-  author: string;
-  description: string;
-  file_path: string;
-  cover_image: string;
-  last_page: number;
-  total_pages: number;
-  created_at: string;
-}
+import { BookCard } from '@/components/library/BookCard';
+import { AddBookDialog } from '@/components/library/AddBookDialog';
+import { useBooks } from '@/hooks/useBooks';
+import { useBookUpload } from '@/hooks/useBookUpload';
 
 export default function Library() {
   const navigate = useNavigate();
-  const [uploadingBook, setUploadingBook] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const { books, isLoading } = useBooks();
+  const { uploadingBook, handleFileUpload } = useBookUpload(() => setDialogOpen(false));
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -41,103 +28,7 @@ export default function Library() {
     checkAuth();
   }, [navigate]);
 
-  const { data: books, isLoading } = useQuery({
-    queryKey: ['library-books'],
-    queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('Não autenticado');
-      }
-
-      const { data, error } = await supabase
-        .from('library_books')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data as Book[];
-    },
-    retry: false,
-    meta: {
-      onError: (error: Error) => {
-        console.error('Erro ao carregar livros:', error);
-        if (error.message === 'Não autenticado') {
-          navigate('/auth');
-        } else {
-          toast.error('Erro ao carregar os livros');
-        }
-      }
-    }
-  });
-
-  const handleFileUpload = async (files: File[]) => {
-    if (files.length === 0) return;
-
-    const file = files[0];
-    if (file.type !== 'application/pdf') {
-      toast.error('Por favor, selecione um arquivo PDF');
-      return;
-    }
-
-    try {
-      setUploadingBook(true);
-      
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error('Sua sessão expirou. Por favor, faça login novamente');
-        navigate('/auth');
-        return;
-      }
-      
-      // Upload the PDF file
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${session.user.id}/${crypto.randomUUID()}.${fileExt}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('library_pdfs')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      // Process the PDF to get the first page as an image
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const { error: functionError, data: functionData } = await supabase.functions.invoke('extract-pdf-cover', {
-        body: formData,
-      });
-
-      if (functionError) throw functionError;
-
-      let coverImagePath = '/placeholder.svg';
-      if (functionData?.coverImageUrl) {
-        coverImagePath = functionData.coverImageUrl;
-      }
-
-      // Create book record
-      const { error: insertError } = await supabase
-        .from('library_books')
-        .insert({
-          title: file.name.replace(`.${fileExt}`, ''),
-          file_path: filePath,
-          file_size: file.size,
-          user_id: session.user.id,
-          cover_image: coverImagePath
-        });
-
-      if (insertError) throw insertError;
-
-      toast.success('Livro adicionado com sucesso!');
-      setDialogOpen(false);
-    } catch (error) {
-      console.error('Erro ao fazer upload:', error);
-      toast.error('Erro ao fazer upload do livro');
-    } finally {
-      setUploadingBook(false);
-    }
-  };
-
-  const openBook = async (book: Book) => {
+  const openBook = async (filePath: string) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -148,7 +39,7 @@ export default function Library() {
 
       const { data } = await supabase.storage
         .from('library_pdfs')
-        .createSignedUrl(book.file_path, 60 * 60);
+        .createSignedUrl(filePath, 60 * 60);
 
       if (data?.signedUrl) {
         window.open(data.signedUrl, '_blank');
@@ -176,20 +67,12 @@ export default function Library() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="flex items-center gap-2" disabled={uploadingBook}>
-                <PlusCircle className="h-5 w-5" />
-                {uploadingBook ? 'Adicionando...' : 'Adicionar Livro'}
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Adicionar Novo Livro</DialogTitle>
-              </DialogHeader>
-              <FileUploadArea onFilesSelected={handleFileUpload} />
-            </DialogContent>
-          </Dialog>
+          <AddBookDialog
+            isOpen={dialogOpen}
+            isUploading={uploadingBook}
+            onOpenChange={setDialogOpen}
+            onFileUpload={handleFileUpload}
+          />
         </div>
       </div>
 
@@ -197,27 +80,11 @@ export default function Library() {
         {isLoading ? (
           <p>Carregando biblioteca...</p>
         ) : filteredBooks?.map((book) => (
-          <Card 
-            key={book.id} 
-            className="hover:shadow-lg transition-shadow cursor-pointer group"
-            onClick={() => openBook(book)}
-          >
-            <div className="aspect-[3/4] relative overflow-hidden rounded-t-lg">
-              <img
-                src={book.cover_image || '/placeholder.svg'}
-                alt={book.title}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-              />
-            </div>
-            <CardContent className="p-4">
-              <h3 className="font-semibold line-clamp-2">{book.title}</h3>
-              {book.author && (
-                <p className="text-sm text-gray-500 mt-1 line-clamp-1">
-                  {book.author}
-                </p>
-              )}
-            </CardContent>
-          </Card>
+          <BookCard
+            key={book.id}
+            book={book}
+            onClick={() => openBook(book.file_path)}
+          />
         ))}
       </div>
 
