@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { useContractTemplates } from '@/hooks/useContractTemplates';
@@ -20,10 +19,8 @@ export default function ContractTemplates() {
 
   const processTemplateWithHandlebars = (content: string) => {
     try {
-      // Registrar o template no Handlebars
       const template = Handlebars.compile(content);
       
-      // Extrair variáveis do conteúdo usando regex
       const matches = content.match(/{{([^}]+)}}/g);
       const variables: Record<string, string> = {};
       
@@ -47,7 +44,7 @@ export default function ContractTemplates() {
     }
   };
 
-  const previewTemplate = (content: string, variables: Record<string, string>) => {
+  const previewTemplate = (content: string, variables: Record<string, any>) => {
     try {
       const template = Handlebars.compile(content);
       const sampleData: Record<string, string> = {};
@@ -77,7 +74,6 @@ export default function ContractTemplates() {
     }
 
     try {
-      // Validar e processar o template antes de salvar
       const processed = processTemplateWithHandlebars(newTemplate.content);
       if (!processed) {
         toast.error('Template inválido');
@@ -90,7 +86,6 @@ export default function ContractTemplates() {
         processed.variables
       );
       
-      // Reset form
       setNewTemplate({
         name: '',
         content: '',
@@ -180,7 +175,7 @@ export default function ContractTemplates() {
                 <h4 className="font-medium mb-2">Preview do Modelo:</h4>
                 <div className="bg-gray-50 p-4 rounded-lg max-h-[300px] overflow-y-auto whitespace-pre-wrap text-sm">
                   {template.template_variables 
-                    ? previewTemplate(template.content, template.template_variables)
+                    ? previewTemplate(template.content, template.template_variables as Record<string, string>)
                     : template.content}
                 </div>
 
