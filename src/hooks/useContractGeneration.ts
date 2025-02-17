@@ -48,14 +48,14 @@ interface ExtractedData {
 }
 
 function base64ToUint8Array(base64: string) {
-  try {
-    // Remove possíveis cabeçalhos de data URI e espaços em branco
-    const cleanBase64 = base64.replace(/^data:.*?;base64,/, '').trim();
-    
-    if (!cleanBase64) {
-      throw new Error('Conteúdo base64 vazio');
-    }
+  // Remove possíveis cabeçalhos de data URI e espaços em branco
+  const cleanBase64 = base64.replace(/^data:.*?;base64,/, '').trim();
+  
+  if (!cleanBase64) {
+    throw new Error('Conteúdo base64 vazio');
+  }
 
+  try {
     // Decodifica o base64 diretamente para um array de bytes
     const binary = window.atob(cleanBase64);
     const bytes = new Uint8Array(binary.length);
