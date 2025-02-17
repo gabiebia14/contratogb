@@ -37,21 +37,46 @@ export const useContractGeneration = () => {
         documentData = typeof document.extracted_data === 'string' 
           ? JSON.parse(document.extracted_data) 
           : document.extracted_data;
+
+        console.log('Dados extraídos do documento:', documentData);
       } catch (error) {
         console.error('Erro ao processar dados do documento:', error);
         toast.error('Erro ao processar dados do documento');
         return;
       }
 
-      // Criar uma nova instância do Docxtemplater
-      const doc = new Docxtemplater();
+      // Criar uma nova instância do Docxtemplater com o template
+      const zip = new PizZip(template.content);
+      const doc = new Docxtemplater(zip, {
+        paragraphLoop: true,
+        linebreaks: true
+      });
       
-      // Configurar o template com os dados usando setData (método correto)
+      console.log('Template carregado, aplicando dados...');
+      
+      // Configurar o template com os dados
       doc.setData(documentData);
-      doc.render();
+
+      console.log('Renderizando documento...');
+      
+      try {
+        // Renderizar o documento
+        doc.render();
+      } catch (error) {
+        console.error('Erro ao renderizar documento:', error);
+        if (error.properties && error.properties.errors) {
+          console.log('Erros detalhados:', error.properties.errors);
+        }
+        throw new Error('Erro ao renderizar documento com os dados fornecidos');
+      }
 
       // Gerar o conteúdo processado
-      const processedContent = doc.getFullText();
+      const processedContent = doc.getZip().generate({
+        type: 'string',
+        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      });
+
+      console.log('Documento processado, salvando contrato...');
 
       // Criar o contrato no banco de dados
       const { data: contract, error } = await supabase.functions.invoke('generate-contract', {
