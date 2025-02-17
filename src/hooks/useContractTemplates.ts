@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Template } from '@/types/contracts';
+import { Template, TemplateVariables } from '@/types/contracts';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 
@@ -25,7 +25,7 @@ export const useContractTemplates = () => {
     }
   });
 
-  const addTemplate = async (name: string, content: string, variables: Record<string, string>) => {
+  const addTemplate = async (name: string, content: string, variables: Partial<TemplateVariables>) => {
     setLoading(true);
     try {
       const { error } = await supabase

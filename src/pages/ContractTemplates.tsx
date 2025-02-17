@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { useContractTemplates } from '@/hooks/useContractTemplates';
@@ -170,10 +169,10 @@ export default function ContractTemplates() {
     }
   };
 
-  const previewTemplate = (content: string, variables: Record<string, string>) => {
+  const previewTemplate = (content: string, variables: Partial<TemplateVariables>) => {
     try {
       const template = Handlebars.compile(content);
-      const sampleData = Object.keys(variables).reduce((acc, key) => {
+      const sampleData = Object.entries(variables).reduce((acc, [key, description]) => {
         acc[key] = `[Exemplo ${key}]`;
         return acc;
       }, {} as Record<string, string>);
