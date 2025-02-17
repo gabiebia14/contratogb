@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Plus, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import Handlebars from 'handlebars';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -99,11 +100,24 @@ export default function ContractTemplates() {
         if (analysisError) throw analysisError;
 
         if (analysisData) {
-          setProcessedContent(analysisData);
-          setNewTemplate(prev => ({
-            ...prev,
-            content: analysisData.text
-          }));
+          // Compile template with Handlebars
+          try {
+            const template = Handlebars.compile(analysisData.text);
+            const compiledContent = template({}); // Empty object for now, just to validate
+            
+            setProcessedContent({
+              text: compiledContent,
+              variables: analysisData.variables
+            });
+            
+            setNewTemplate(prev => ({
+              ...prev,
+              content: compiledContent
+            }));
+          } catch (handlebarsError) {
+            console.error('Handlebars compilation error:', handlebarsError);
+            toast.error('Erro ao processar template: ' + (handlebarsError as Error).message);
+          }
         }
         
         setShowAnalysisDialog(true);
@@ -125,12 +139,26 @@ export default function ContractTemplates() {
       if (error) throw error;
 
       if (data) {
-        setProcessedContent(data);
-        setNewTemplate(prev => ({
-          ...prev,
-          content: data.text
-        }));
-        toast.success('Parâmetros adicionados com sucesso!');
+        try {
+          // Compile template with Handlebars
+          const template = Handlebars.compile(data.text);
+          const compiledContent = template({}); // Empty object for now, just to validate
+          
+          setProcessedContent({
+            text: compiledContent,
+            variables: data.variables
+          });
+          
+          setNewTemplate(prev => ({
+            ...prev,
+            content: compiledContent
+          }));
+          
+          toast.success('Parâmetros adicionados com sucesso!');
+        } catch (handlebarsError) {
+          console.error('Handlebars compilation error:', handlebarsError);
+          toast.error('Erro ao processar template: ' + (handlebarsError as Error).message);
+        }
       } else {
         throw new Error('Nenhum conteúdo processado');
       }
@@ -139,6 +167,21 @@ export default function ContractTemplates() {
       toast.error('Erro ao analisar contrato: ' + (error as Error).message);
     } finally {
       setShowAnalysisDialog(false);
+    }
+  };
+
+  const previewTemplate = (content: string, variables: Record<string, string>) => {
+    try {
+      const template = Handlebars.compile(content);
+      const sampleData = Object.keys(variables).reduce((acc, key) => {
+        acc[key] = `[Exemplo ${key}]`;
+        return acc;
+      }, {} as Record<string, string>);
+      
+      return template(sampleData);
+    } catch (error) {
+      console.error('Error previewing template:', error);
+      return content;
     }
   };
 
@@ -156,6 +199,14 @@ export default function ContractTemplates() {
     }
 
     try {
+      // Validate Handlebars template before saving
+      try {
+        Handlebars.compile(newTemplate.content || rawContent);
+      } catch (handlebarsError) {
+        toast.error('Template inválido: ' + (handlebarsError as Error).message);
+        return;
+      }
+
       await addTemplate(
         newTemplate.name,
         newTemplate.content || rawContent,
@@ -249,7 +300,7 @@ export default function ContractTemplates() {
                 <div className="grid grid-cols-2 gap-2 p-4 bg-gray-50 rounded-lg">
                   {Object.entries(processedContent.variables).map(([key, description]) => (
                     <div key={key} className="text-sm">
-                      <span className="font-mono text-blue-600">{`{${key}}`}</span>
+                      <span className="font-mono text-blue-600">{`{{${key}}}`}</span>
                       <span className="text-gray-600 ml-2">{description}</span>
                     </div>
                   ))}
@@ -284,9 +335,11 @@ export default function ContractTemplates() {
               </div>
               
               <div className="border-t pt-4">
-                <h4 className="font-medium mb-2">Conteúdo do Modelo:</h4>
+                <h4 className="font-medium mb-2">Preview do Modelo:</h4>
                 <div className="bg-gray-50 p-4 rounded-lg max-h-[300px] overflow-y-auto whitespace-pre-wrap text-sm">
-                  {template.content}
+                  {template.template_variables 
+                    ? previewTemplate(template.content, template.template_variables)
+                    : template.content}
                 </div>
 
                 {template.template_variables && Object.keys(template.template_variables).length > 0 && (
@@ -295,7 +348,7 @@ export default function ContractTemplates() {
                     <div className="grid grid-cols-2 gap-2 p-4 bg-gray-50 rounded-lg">
                       {Object.entries(template.template_variables).map(([key, description]) => (
                         <div key={key} className="text-sm">
-                          <span className="font-mono text-blue-600">{`{${key}}`}</span>
+                          <span className="font-mono text-blue-600">{`{{${key}}}`}</span>
                           <span className="text-gray-600 ml-2">{description}</span>
                         </div>
                       ))}
