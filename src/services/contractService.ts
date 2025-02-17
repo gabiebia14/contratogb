@@ -49,9 +49,11 @@ export const generateContract = async (
   document: any
 ) => {
   try {
+    console.log('Iniciando geração do contrato...');
     const templateData = processTemplateData(document.extracted_data);
     const processedContent = replaceTemplateVariables(template.content, templateData);
 
+    console.log('Chamando edge function generate-contract...');
     const { data: result, error } = await supabase.functions.invoke('generate-contract', {
       body: { 
         templateId, 
@@ -61,26 +63,48 @@ export const generateContract = async (
       }
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Erro na edge function:', error);
+      throw error;
+    }
     
     if (!result?.contract?.id) {
-      throw new Error('Erro ao salvar contrato');
+      console.error('Edge function não retornou ID do contrato');
+      throw new Error('Erro ao salvar contrato: ID não retornado');
     }
 
-    // Aguarda um momento para garantir que o contrato foi salvo
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Aumenta o tempo de espera para garantir que o contrato foi salvo
+    console.log('Aguardando persistência do contrato...');
+    await new Promise(resolve => setTimeout(resolve, 2000));
 
-    // Verifica se o contrato realmente existe no banco
-    const { data: contract, error: verifyError } = await supabase
-      .from('contracts')
-      .select('*')
-      .eq('id', result.contract.id)
-      .maybeSingle();
+    // Tenta buscar o contrato algumas vezes antes de desistir
+    let attempts = 0;
+    let contract = null;
+    while (attempts < 3 && !contract) {
+      console.log(`Tentativa ${attempts + 1} de verificar contrato...`);
+      const { data, error: verifyError } = await supabase
+        .from('contracts')
+        .select('*')
+        .eq('id', result.contract.id)
+        .maybeSingle();
 
-    if (verifyError || !contract) {
-      throw new Error('Erro ao verificar contrato gerado');
+      if (!verifyError && data) {
+        contract = data;
+        break;
+      }
+
+      attempts++;
+      if (attempts < 3) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
     }
 
+    if (!contract) {
+      console.error('Contrato não encontrado após tentativas');
+      throw new Error('Erro ao verificar contrato gerado: contrato não encontrado');
+    }
+
+    console.log('Contrato gerado com sucesso:', contract.id);
     return result.contract;
   } catch (error: any) {
     console.error('Erro ao processar template:', error);

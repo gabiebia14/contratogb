@@ -21,6 +21,8 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
+    console.log('Iniciando inserção do contrato no banco...');
+
     // Criar o contrato no banco de dados
     const { data: contract, error: insertError } = await supabaseClient
       .from('contracts')
@@ -39,6 +41,12 @@ serve(async (req) => {
       console.error('Error creating contract:', insertError)
       throw insertError
     }
+
+    if (!contract) {
+      throw new Error('Contrato não foi criado corretamente')
+    }
+
+    console.log('Contrato criado com sucesso:', contract.id);
 
     return new Response(
       JSON.stringify({
