@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -59,11 +60,16 @@ export default function GenerateContract() {
   const getDocumentData = (documentId: string): ExtractedField[] => {
     const document = documents.find(doc => doc.id === documentId);
     if (!document?.extracted_data) return [];
-    return [{
-      field: 'extracted_data',
-      value: document.extracted_data,
+
+    const extractedData = typeof document.extracted_data === 'string'
+      ? JSON.parse(document.extracted_data)
+      : document.extracted_data;
+
+    return Object.entries(extractedData).map(([field, value]) => ({
+      field,
+      value: String(value),
       confidence: 1
-    }];
+    }));
   };
 
   const handleGenerate = async () => {
@@ -218,7 +224,7 @@ export default function GenerateContract() {
                                            extractedData.locataria_nome ||
                                            extractedData.fiador_nome;
                                 
-                                if (name) {
+                                if (name && typeof name === 'string') {
                                   displayName = name;
                                 }
                               } catch (error) {
