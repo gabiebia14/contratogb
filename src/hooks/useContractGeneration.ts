@@ -5,6 +5,48 @@ import { toast } from 'sonner';
 import Docxtemplater from 'docxtemplater';
 import PizZip from 'pizzip';
 
+interface ExtractedData {
+  locatario_nome?: string;
+  locatario_nacionalidade?: string;
+  locatario_estado_civil?: string;
+  locatario_profissao?: string;
+  locatario_rg?: string;
+  locatario_cpf?: string;
+  locatario_endereco?: string;
+  locatario_cidade?: string;
+  locatario_estado?: string;
+
+  locataria_nome?: string;
+  locataria_nacionalidade?: string;
+  locataria_estado_civil?: string;
+  locataria_profissao?: string;
+  locataria_rg?: string;
+  locataria_cpf?: string;
+  locataria_endereco?: string;
+  locataria_cidade?: string;
+  locataria_estado?: string;
+
+  locador_nome?: string;
+  locador_nacionalidade?: string;
+  locador_estado_civil?: string;
+  locador_profissao?: string;
+  locador_rg?: string;
+  locador_cpf?: string;
+  locador_endereco?: string;
+  locador_cidade?: string;
+  locador_estado?: string;
+
+  locadora_nome?: string;
+  locadora_nacionalidade?: string;
+  locadora_estado_civil?: string;
+  locadora_profissao?: string;
+  locadora_rg?: string;
+  locadora_cpf?: string;
+  locadora_endereco?: string;
+  locadora_cidade?: string;
+  locadora_estado?: string;
+}
+
 export const useContractGeneration = () => {
   const [loading, setLoading] = useState(false);
 
@@ -37,59 +79,58 @@ export const useContractGeneration = () => {
       }
 
       // Preparar os dados extraídos do documento
-      let documentData = {};
+      let documentData: ExtractedData = {};
       try {
-        documentData = typeof document.extracted_data === 'string' 
+        const parsedData: ExtractedData = typeof document.extracted_data === 'string' 
           ? JSON.parse(document.extracted_data) 
           : document.extracted_data;
 
         // Garantir que todos os campos necessários estejam presentes
-        const formattedData = {
+        documentData = {
           // Dados do locatário/locatária
-          locatario_nome: documentData.locatario_nome || '',
-          locatario_nacionalidade: documentData.locatario_nacionalidade || '',
-          locatario_estado_civil: documentData.locatario_estado_civil || '',
-          locatario_profissao: documentData.locatario_profissao || '',
-          locatario_rg: documentData.locatario_rg || '',
-          locatario_cpf: documentData.locatario_cpf || '',
-          locatario_endereco: documentData.locatario_endereco || '',
-          locatario_cidade: documentData.locatario_cidade || '',
-          locatario_estado: documentData.locatario_estado || '',
+          locatario_nome: parsedData.locatario_nome || '',
+          locatario_nacionalidade: parsedData.locatario_nacionalidade || '',
+          locatario_estado_civil: parsedData.locatario_estado_civil || '',
+          locatario_profissao: parsedData.locatario_profissao || '',
+          locatario_rg: parsedData.locatario_rg || '',
+          locatario_cpf: parsedData.locatario_cpf || '',
+          locatario_endereco: parsedData.locatario_endereco || '',
+          locatario_cidade: parsedData.locatario_cidade || '',
+          locatario_estado: parsedData.locatario_estado || '',
 
-          locataria_nome: documentData.locataria_nome || '',
-          locataria_nacionalidade: documentData.locataria_nacionalidade || '',
-          locataria_estado_civil: documentData.locataria_estado_civil || '',
-          locataria_profissao: documentData.locataria_profissao || '',
-          locataria_rg: documentData.locataria_rg || '',
-          locataria_cpf: documentData.locataria_cpf || '',
-          locataria_endereco: documentData.locataria_endereco || '',
-          locataria_cidade: documentData.locataria_cidade || '',
-          locataria_estado: documentData.locataria_estado || '',
+          locataria_nome: parsedData.locataria_nome || '',
+          locataria_nacionalidade: parsedData.locataria_nacionalidade || '',
+          locataria_estado_civil: parsedData.locataria_estado_civil || '',
+          locataria_profissao: parsedData.locataria_profissao || '',
+          locataria_rg: parsedData.locataria_rg || '',
+          locataria_cpf: parsedData.locataria_cpf || '',
+          locataria_endereco: parsedData.locataria_endereco || '',
+          locataria_cidade: parsedData.locataria_cidade || '',
+          locataria_estado: parsedData.locataria_estado || '',
 
           // Dados do locador/locadora
-          locador_nome: documentData.locador_nome || '',
-          locador_nacionalidade: documentData.locador_nacionalidade || '',
-          locador_estado_civil: documentData.locador_estado_civil || '',
-          locador_profissao: documentData.locador_profissao || '',
-          locador_rg: documentData.locador_rg || '',
-          locador_cpf: documentData.locador_cpf || '',
-          locador_endereco: documentData.locador_endereco || '',
-          locador_cidade: documentData.locador_cidade || '',
-          locador_estado: documentData.locador_estado || '',
+          locador_nome: parsedData.locador_nome || '',
+          locador_nacionalidade: parsedData.locador_nacionalidade || '',
+          locador_estado_civil: parsedData.locador_estado_civil || '',
+          locador_profissao: parsedData.locador_profissao || '',
+          locador_rg: parsedData.locador_rg || '',
+          locador_cpf: parsedData.locador_cpf || '',
+          locador_endereco: parsedData.locador_endereco || '',
+          locador_cidade: parsedData.locador_cidade || '',
+          locador_estado: parsedData.locador_estado || '',
 
-          locadora_nome: documentData.locadora_nome || '',
-          locadora_nacionalidade: documentData.locadora_nacionalidade || '',
-          locadora_estado_civil: documentData.locadora_estado_civil || '',
-          locadora_profissao: documentData.locadora_profissao || '',
-          locadora_rg: documentData.locadora_rg || '',
-          locadora_cpf: documentData.locadora_cpf || '',
-          locadora_endereco: documentData.locadora_endereco || '',
-          locadora_cidade: documentData.locadora_cidade || '',
-          locadora_estado: documentData.locadora_estado || '',
+          locadora_nome: parsedData.locadora_nome || '',
+          locadora_nacionalidade: parsedData.locadora_nacionalidade || '',
+          locadora_estado_civil: parsedData.locadora_estado_civil || '',
+          locadora_profissao: parsedData.locadora_profissao || '',
+          locadora_rg: parsedData.locadora_rg || '',
+          locadora_cpf: parsedData.locadora_cpf || '',
+          locadora_endereco: parsedData.locadora_endereco || '',
+          locadora_cidade: parsedData.locadora_cidade || '',
+          locadora_estado: parsedData.locadora_estado || '',
         };
 
-        console.log('Dados formatados para o template:', formattedData);
-        documentData = formattedData;
+        console.log('Dados formatados para o template:', documentData);
       } catch (error) {
         console.error('Erro ao processar dados do documento:', error);
         toast.error('Erro ao processar dados do documento');
