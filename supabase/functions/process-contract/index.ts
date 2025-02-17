@@ -27,56 +27,49 @@ serve(async (req) => {
     const genAI = new GoogleGenerativeAI(apiKey);
     
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash-thinking-exp-01-21",
+      model: "gemini-pro",
       generationConfig: {
         temperature: 0.7,
         topP: 0.95,
         topK: 64,
-        maxOutputTokens: 65536,
+        maxOutputTokens: 4096,
       }
     });
 
-    let content = '';
-    let fileContent = '';
-
-    // Handle both FormData and JSON requests
-    const contentType = req.headers.get('content-type') || '';
+    const formData = await req.formData();
+    const file = formData.get('file') as File | null;
+    const content = formData.get('content') as string;
     
-    if (contentType.includes('multipart/form-data')) {
-      const formData = await req.formData();
-      const file = formData.get('file') as File | null;
-      content = formData.get('content') as string || '';
-      
-      if (file) {
-        fileContent = await file.text();
-      }
-    } else {
-      const json = await req.json();
-      content = json.content || '';
-      fileContent = json.fileContent || '';
-    }
-
-    if (!content && !fileContent) {
+    if (!content && !file) {
       throw new Error('Conteúdo ou arquivo é obrigatório');
     }
 
-    const prompt = fileContent ? 
-      `Analise o seguinte documento:\n${fileContent}\n\n${content ? `Considerando o conteúdo acima, responda: ${content}` : 'Por favor, analise este documento e substitua os dados das partes pelos parâmetros dinâmicos conforme as instruções do sistema.'}` : 
-      content;
+    let prompt = '';
+    if (file) {
+      const fileContent = await file.text();
+      // Limit file content size
+      const truncatedContent = fileContent.slice(0, 10000); // First 10k chars
+      prompt = `Analise o seguinte documento:
+Nome do arquivo: ${file.name}
+Conteúdo do arquivo:
+${truncatedContent}
+
+${content ? `Considerando o conteúdo acima, responda: ${content}` : 'Por favor, analise este documento e forneça um resumo detalhado, destacando os pontos principais.'}`;
+    } else {
+      prompt = content;
+    }
 
     console.log('Enviando requisição para o Gemini API...');
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
-    console.log('Resposta recebida do Gemini API:', text);
+    console.log('Resposta recebida do Gemini API');
 
-    // Remove blocos de código se presentes
-    const cleanText = text.replace(/```(?:.*\n)?([\s\S]*?)```/g, '$1').trim();
-    
     return new Response(
       JSON.stringify({ 
-        text: cleanText,
-        fileProcessed: !!fileContent
+        text,
+        fileProcessed: !!file,
+        fileName: file?.name 
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

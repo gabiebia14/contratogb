@@ -50,29 +50,12 @@ export default function AI() {
     try {
       setLoading(true);
 
-      let formData = new FormData();
-      let fileContent = '';
-      
-      if (selectedFile) {
-        formData.append('file', selectedFile);
-        fileContent = await selectedFile.text();
-      }
-
-      const { data, error } = await supabase.functions.invoke('process-contract', {
-        body: {
-          content: input.trim(),
-          fileContent
-        }
-      });
-
-      if (error) throw error;
-
+      // Primeiro, vamos adicionar a mensagem do usuário
       if (selectedFile) {
         setMessages(prev => [...prev, { 
           role: 'user', 
           content: `Arquivo enviado: ${selectedFile.name}` 
         }]);
-        setSelectedFile(null);
       }
 
       if (input.trim()) {
@@ -82,12 +65,32 @@ export default function AI() {
         }]);
       }
 
-      setInput('');
+      // Preparar os dados para enviar
+      let formData = new FormData();
+      
+      if (selectedFile) {
+        formData.append('file', selectedFile);
+      }
+      formData.append('content', input.trim());
 
+      const { data, error } = await supabase.functions.invoke('process-contract', {
+        body: formData
+      });
+
+      if (error) {
+        console.error('Erro na função:', error);
+        throw error;
+      }
+
+      // Limpar o input e arquivo selecionado
+      setInput('');
+      setSelectedFile(null);
+
+      // Adicionar a resposta do assistente
       if (data) {
         setMessages(prev => [...prev, { 
           role: 'assistant', 
-          content: typeof data.text === 'string' ? data.text : JSON.stringify(data, null, 2)
+          content: data.text || 'Não foi possível processar a resposta.'
         }]);
       }
     } catch (error) {
