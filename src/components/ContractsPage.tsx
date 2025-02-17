@@ -2,8 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, Download, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 const ContractsPage = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
   const [contracts, setContracts] = useState([]);
@@ -25,6 +27,10 @@ const ContractsPage = () => {
     };
     fetchContracts();
   }, []);
+
+  const handleViewContract = (contractId: string) => {
+    navigate(`/juridico/contracts/${contractId}`);
+  };
 
   const filteredContracts = contracts.filter(contract => {
     const matchesSearch = contract.title.toLowerCase().includes(searchTerm.toLowerCase());
@@ -59,7 +65,10 @@ const ContractsPage = () => {
               <option value="expired">Expirado</option>
               <option value="cancelled">Cancelado</option>
             </select>
-            <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
+            <button 
+              onClick={() => navigate('/juridico/new-contract')}
+              className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+            >
               Novo Contrato
             </button>
           </div>
@@ -110,7 +119,10 @@ const ContractsPage = () => {
                       <button className="p-2 hover:bg-gray-100 rounded-lg" title="Download">
                         <Download size={20} className="text-gray-500" />
                       </button>
-                      <button className="text-indigo-600 hover:text-indigo-800">
+                      <button 
+                        onClick={() => handleViewContract(contract.id)}
+                        className="text-indigo-600 hover:text-indigo-800"
+                      >
                         Ver detalhes
                       </button>
                     </div>
