@@ -1,5 +1,6 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import FileUploadArea from '@/components/ocr/FileUploadArea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Book, Upload } from 'lucide-react';
@@ -22,12 +23,31 @@ interface Book {
 }
 
 export default function Library() {
+  const navigate = useNavigate();
   const [uploadingBook, setUploadingBook] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Verificar autenticação ao carregar o componente
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Por favor, faça login para acessar a biblioteca');
+        navigate('/auth');
+      }
+    };
+    
+    checkAuth();
+  }, [navigate]);
 
   const { data: books, isLoading } = useQuery({
     queryKey: ['library-books'],
     queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Não autenticado');
+      }
+
       const { data, error } = await supabase
         .from('library_books')
         .select('*')
@@ -35,6 +55,15 @@ export default function Library() {
 
       if (error) throw error;
       return data as Book[];
+    },
+    retry: false,
+    onError: (error) => {
+      console.error('Erro ao carregar livros:', error);
+      if (error.message === 'Não autenticado') {
+        navigate('/auth');
+      } else {
+        toast.error('Erro ao carregar os livros');
+      }
     }
   });
 
@@ -49,6 +78,13 @@ export default function Library() {
 
     try {
       setUploadingBook(true);
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Sua sessão expirou. Por favor, faça login novamente');
+        navigate('/auth');
+        return;
+      }
       
       // Upload do arquivo PDF
       const fileExt = file.name.split('.').pop();
@@ -67,7 +103,7 @@ export default function Library() {
           title: file.name.replace(`.${fileExt}`, ''),
           file_path: filePath,
           file_size: file.size,
-          user_id: (await supabase.auth.getUser()).data.user?.id,
+          user_id: session.user.id,
         });
 
       if (insertError) throw insertError;
@@ -83,6 +119,13 @@ export default function Library() {
 
   const openBook = async (book: Book) => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Sua sessão expirou. Por favor, faça login novamente');
+        navigate('/auth');
+        return;
+      }
+
       const { data } = await supabase.storage
         .from('library_pdfs')
         .createSignedUrl(book.file_path, 60 * 60); // URL válida por 1 hora
