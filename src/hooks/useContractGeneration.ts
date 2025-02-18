@@ -13,6 +13,8 @@ export const useContractGeneration = () => {
   const generateContract = async (templateId: string, parties: ContractParty[], title: string) => {
     setLoading(true);
     try {
+      console.log('Iniciando geração de contrato com partes:', parties);
+
       const { data: template } = await supabase
         .from('contract_templates')
         .select('content')
@@ -37,7 +39,10 @@ export const useContractGeneration = () => {
       // Processa cada documento baseado em seu papel no contrato
       for (const party of parties) {
         const document = documents.find(d => d.id === party.documentId);
-        if (!document) continue;
+        if (!document) {
+          console.warn(`Documento não encontrado para a parte: ${party.role}`);
+          continue;
+        }
 
         const rawData = typeof document.extracted_data === 'string'
           ? JSON.parse(document.extracted_data)
@@ -45,14 +50,18 @@ export const useContractGeneration = () => {
 
         const prefix = getPartyPrefix(party.role);
         console.log(`Processando documento para ${party.role} com prefixo ${prefix}`);
+        console.log('Dados extraídos:', rawData);
         
         const mappedData = mapDocumentFields(rawData, prefix);
         console.log('Dados mapeados:', mappedData);
 
-        variables = { ...variables, ...mappedData };
+        // Armazena os dados com o prefixo correto
+        Object.entries(mappedData).forEach(([key, value]) => {
+          variables[key.toLowerCase()] = value; // Normaliza as chaves para lowercase
+        });
       }
 
-      console.log('Todas as variáveis coletadas:', variables);
+      console.log('Variáveis finais para processamento:', variables);
       
       const processedContent = processTemplate(template.content, variables);
       
