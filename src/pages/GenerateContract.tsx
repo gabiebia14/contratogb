@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -57,7 +58,7 @@ export default function GenerateContract() {
   };
 
   const getDocumentData = (documentId: string): ExtractedField[] => {
-    const document = documents.find(doc => doc.id === documentId);
+    const document = documents?.find(doc => doc.id === documentId);
     if (!document?.extracted_data) return [];
 
     let extractedData: Record<string, any>;
