@@ -12,6 +12,17 @@ interface ContractParty {
 export const useContractGeneration = () => {
   const [loading, setLoading] = useState(false);
 
+  const normalizeVariableName = (varName: string): string[] => {
+    // Remove o prefixo (se existir) e retorna todas as variantes possíveis
+    const withoutPrefix = varName.replace(/^(locador|locatario|locataria|fiador|fiadora)_/, '');
+    return [
+      varName, // Original
+      varName.replace('locatario_', 'locataria_'), // Variante feminina
+      varName.replace('locataria_', 'locatario_'), // Variante masculina
+      withoutPrefix // Sem prefixo
+    ];
+  };
+
   const processTemplate = (template: string, variables: Record<string, any>) => {
     let processedContent = template;
     console.log('Variáveis disponíveis para substituição:', variables);
@@ -24,12 +35,23 @@ export const useContractGeneration = () => {
 
     // Substitui todas as variáveis encontradas no template
     variablesToReplace.forEach(varName => {
-      const value = variables[varName] || '';
+      // Tenta todas as variantes possíveis da variável
+      const variants = normalizeVariableName(varName);
+      let value = '';
+      
+      // Procura o primeiro valor disponível entre as variantes
+      for (const variant of variants) {
+        if (variables[variant]) {
+          value = variables[variant];
+          break;
+        }
+      }
+
       const regex = new RegExp(`{${varName}}`, 'g');
       processedContent = processedContent.replace(regex, value);
       
-      if (!variables[varName]) {
-        console.log(`Variável não encontrada: ${varName}`);
+      if (!value) {
+        console.log(`Nenhuma variante encontrada para: ${varName}. Tentou: ${variants.join(', ')}`);
       }
     });
 
@@ -74,12 +96,20 @@ export const useContractGeneration = () => {
 
         // Define o prefixo baseado no papel (role) do documento
         let prefix = '';
-        if (party.role.startsWith('locador')) prefix = 'locador_';
-        else if (party.role.startsWith('locataria')) prefix = 'locataria_';
-        else if (party.role.startsWith('locatario')) prefix = 'locatario_';
-        else if (party.role.startsWith('fiador')) prefix = 'fiador_';
+        let alternativePrefix = '';
+        if (party.role.startsWith('locador')) {
+          prefix = 'locador_';
+        } else if (party.role.startsWith('locataria')) {
+          prefix = 'locataria_';
+          alternativePrefix = 'locatario_'; // Adiciona prefixo alternativo
+        } else if (party.role.startsWith('locatario')) {
+          prefix = 'locatario_';
+          alternativePrefix = 'locataria_'; // Adiciona prefixo alternativo
+        } else if (party.role.startsWith('fiador')) {
+          prefix = 'fiador_';
+        }
 
-        console.log(`Processando documento com role ${party.role}, usando prefixo ${prefix}`);
+        console.log(`Processando documento com role ${party.role}, usando prefixo ${prefix} e alternativo ${alternativePrefix}`);
 
         // Define os campos que queremos mapear
         const fieldsToMap = [
@@ -87,20 +117,20 @@ export const useContractGeneration = () => {
           'endereco', 'bairro', 'cidade', 'estado', 'cep'
         ];
 
-        // Mapeia os campos com e sem prefixo
+        // Mapeia os campos com todos os prefixos possíveis
         fieldsToMap.forEach(field => {
-          // Tenta pegar o valor com prefixo primeiro
-          let value = rawData[`${prefix}${field}`];
-          
-          // Se não encontrou com prefixo, tenta sem prefixo
-          if (!value) {
-            value = rawData[field];
-          }
+          let value = rawData[`${prefix}${field}`] || rawData[field];
 
-          // Se encontrou algum valor, salva tanto com prefixo quanto sem
           if (value) {
+            // Salva com o prefixo principal
             variables[`${prefix}${field}`] = String(value);
-            // Também salva sem prefixo se ainda não existir
+            
+            // Salva com o prefixo alternativo (se existir)
+            if (alternativePrefix) {
+              variables[`${alternativePrefix}${field}`] = String(value);
+            }
+            
+            // Salva sem prefixo se ainda não existir
             if (!variables[field]) {
               variables[field] = String(value);
             }
@@ -108,16 +138,20 @@ export const useContractGeneration = () => {
 
           // Caso especial para o nome_completo
           if (field === 'nome' && rawData.nome_completo) {
-            variables[`${prefix}${field}`] = String(rawData.nome_completo);
+            const nomeValue = String(rawData.nome_completo);
+            variables[`${prefix}${field}`] = nomeValue;
+            if (alternativePrefix) {
+              variables[`${alternativePrefix}${field}`] = nomeValue;
+            }
             if (!variables[field]) {
-              variables[field] = String(rawData.nome_completo);
+              variables[field] = nomeValue;
             }
           }
         });
 
         console.log(`Dados processados para ${party.role}:`, 
           Object.entries(variables)
-            .filter(([key]) => key.startsWith(prefix))
+            .filter(([key]) => key.startsWith(prefix) || (alternativePrefix && key.startsWith(alternativePrefix)))
             .reduce((obj, [key, value]) => ({ ...obj, [key]: value }), {})
         );
       }
@@ -143,7 +177,7 @@ export const useContractGeneration = () => {
           title,
           content: processedContent,
           template_id: templateId,
-          document_id: parties[0].documentId, // Mantém o primeiro documento como principal
+          document_id: parties[0].documentId,
           variables: variables as Json,
           status: 'draft',
           metadata: {
