@@ -14,15 +14,23 @@ export const useContractGeneration = () => {
 
   const processTemplate = (template: string, variables: Record<string, any>) => {
     let processedContent = template;
+    console.log('Variáveis disponíveis para substituição:', variables);
+
+    // Cria um mapa de todas as variáveis que precisam ser substituídas
+    const matches = template.match(/{[^}]+}/g) || [];
+    const variablesToReplace = new Set(matches.map(match => match.slice(1, -1)));
+    
+    console.log('Variáveis encontradas no template:', Array.from(variablesToReplace));
 
     // Substitui todas as variáveis encontradas no template
-    Object.entries(variables).forEach(([key, value]) => {
-      // Remove as chaves ao redor da variável
-      const variableName = key.replace(/[{}]/g, '');
-      // Cria um regex que busca a variável com as chaves
-      const regex = new RegExp(`{${variableName}}`, 'g');
-      // Substitui todas as ocorrências pela string do valor
-      processedContent = processedContent.replace(regex, value ? String(value) : '');
+    variablesToReplace.forEach(varName => {
+      const value = variables[varName] || '';
+      const regex = new RegExp(`{${varName}}`, 'g');
+      processedContent = processedContent.replace(regex, value);
+      
+      if (!variables[varName]) {
+        console.log(`Variável não encontrada: ${varName}`);
+      }
     });
 
     return processedContent;
@@ -45,37 +53,20 @@ export const useContractGeneration = () => {
       // Busca todos os documentos selecionados
       const { data: documents } = await supabase
         .from('processed_documents')
-        .select('extracted_data, id')
+        .select('extracted_data, id, document_role')
         .in('id', parties.map(p => p.documentId));
 
       if (!documents || documents.length === 0) {
         throw new Error('Documentos não encontrados');
       }
 
-      // Inicializa o objeto de variáveis com valores vazios
-      let variables: Record<string, string> = {
-        // Dados básicos padrão vazios
-        nome_completo: '', cpf: '', rg: '', nacionalidade: '', estado_civil: '', profissao: '',
-        // Locador
-        locador_nome: '', locador_cpf: '', locador_rg: '', locador_nacionalidade: '',
-        locador_estado_civil: '', locador_profissao: '', locador_endereco: '',
-        locador_bairro: '', locador_cidade: '', locador_estado: '', locador_cep: '',
-        // Locatário
-        locatario_nome: '', locatario_cpf: '', locatario_rg: '', locatario_nacionalidade: '',
-        locatario_estado_civil: '', locatario_profissao: '', locatario_endereco: '',
-        locatario_bairro: '', locatario_cidade: '', locatario_estado: '', locatario_cep: '',
-        // Fiador
-        fiador_nome: '', fiador_cpf: '', fiador_rg: '', fiador_nacionalidade: '',
-        fiador_estado_civil: '', fiador_profissao: '', fiador_endereco: '',
-        fiador_bairro: '', fiador_cidade: '', fiador_estado: '', fiador_cep: '',
-        // Outros
-        cnpj: '', razao_social: '', email: '', telefone: ''
-      };
+      // Inicializa o objeto de variáveis
+      let variables: Record<string, string> = {};
 
       // Processa cada documento baseado em seu papel no contrato
-      parties.forEach(party => {
+      for (const party of parties) {
         const document = documents.find(d => d.id === party.documentId);
-        if (!document) return;
+        if (!document) continue;
 
         const rawData = typeof document.extracted_data === 'string'
           ? JSON.parse(document.extracted_data)
@@ -84,41 +75,52 @@ export const useContractGeneration = () => {
         // Define o prefixo baseado no papel (role) do documento
         let prefix = '';
         if (party.role.startsWith('locador')) prefix = 'locador_';
+        else if (party.role.startsWith('locataria')) prefix = 'locataria_';
         else if (party.role.startsWith('locatario')) prefix = 'locatario_';
         else if (party.role.startsWith('fiador')) prefix = 'fiador_';
 
-        // Se temos um prefixo, copiamos os dados com o prefixo correto
-        if (prefix) {
-          const fieldsToMap = ['nome', 'cpf', 'rg', 'nacionalidade', 'estado_civil', 'profissao', 
-                             'endereco', 'bairro', 'cidade', 'estado', 'cep'];
-          
-          fieldsToMap.forEach(field => {
-            // Tenta primeiro buscar o campo já com prefixo
-            const prefixedValue = rawData[`${prefix}${field}`];
-            if (prefixedValue) {
-              variables[`${prefix}${field}`] = String(prefixedValue);
-            } 
-            // Se não encontrar, tenta buscar o campo sem prefixo
-            else if (rawData[field]) {
-              variables[`${prefix}${field}`] = String(rawData[field]);
-            }
-            // Se encontrar o campo no formato nome_completo, usa para o campo nome
-            else if (field === 'nome' && rawData.nome_completo) {
-              variables[`${prefix}${field}`] = String(rawData.nome_completo);
-            }
-          });
-        }
+        console.log(`Processando documento com role ${party.role}, usando prefixo ${prefix}`);
 
-        // Também mantém os dados básicos do primeiro documento
-        if (parties.indexOf(party) === 0) {
-          variables.nome_completo = rawData.nome_completo || '';
-          variables.cpf = rawData.cpf || '';
-          variables.rg = rawData.rg || '';
-          variables.nacionalidade = rawData.nacionalidade || '';
-          variables.estado_civil = rawData.estado_civil || '';
-          variables.profissao = rawData.profissao || '';
-        }
-      });
+        // Define os campos que queremos mapear
+        const fieldsToMap = [
+          'nome', 'cpf', 'rg', 'nacionalidade', 'estado_civil', 'profissao',
+          'endereco', 'bairro', 'cidade', 'estado', 'cep'
+        ];
+
+        // Mapeia os campos com e sem prefixo
+        fieldsToMap.forEach(field => {
+          // Tenta pegar o valor com prefixo primeiro
+          let value = rawData[`${prefix}${field}`];
+          
+          // Se não encontrou com prefixo, tenta sem prefixo
+          if (!value) {
+            value = rawData[field];
+          }
+
+          // Se encontrou algum valor, salva tanto com prefixo quanto sem
+          if (value) {
+            variables[`${prefix}${field}`] = String(value);
+            // Também salva sem prefixo se ainda não existir
+            if (!variables[field]) {
+              variables[field] = String(value);
+            }
+          }
+
+          // Caso especial para o nome_completo
+          if (field === 'nome' && rawData.nome_completo) {
+            variables[`${prefix}${field}`] = String(rawData.nome_completo);
+            if (!variables[field]) {
+              variables[field] = String(rawData.nome_completo);
+            }
+          }
+        });
+
+        console.log(`Dados processados para ${party.role}:`, 
+          Object.entries(variables)
+            .filter(([key]) => key.startsWith(prefix))
+            .reduce((obj, [key, value]) => ({ ...obj, [key]: value }), {})
+        );
+      }
 
       console.log('Template original:', template.content);
       console.log('Variáveis para substituição:', variables);
