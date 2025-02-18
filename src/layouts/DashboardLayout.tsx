@@ -2,13 +2,18 @@
 import { useState, useEffect } from 'react';
 import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, SidebarMenu, 
   SidebarMenuItem, SidebarMenuButton, SidebarGroup, SidebarGroupContent } from "@/components/ui/sidebar";
-import { Layout, Menu as MenuIcon, FileText, Plus, Settings, FolderOpen, MessageSquare, Book } from 'lucide-react';
+import { Layout, Menu as MenuIcon, FileText, Plus, Settings, FolderOpen, MessageSquare, Book, 
+  Home, Building2, LineChart, MapPin, MessagesSquare } from 'lucide-react';
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/integrations/supabase/client';
 
-export default function DashboardLayout() {
+interface DashboardLayoutProps {
+  tipo?: 'juridico' | 'proprietario' | 'admin';
+}
+
+export default function DashboardLayout({ tipo = 'juridico' }: DashboardLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -26,16 +31,33 @@ export default function DashboardLayout() {
     }
   };
 
-  const menuItems = [
-    { path: '/juridico', icon: Layout, label: 'Dashboard' },
-    { path: '/juridico/contracts', icon: FileText, label: 'Contratos' },
-    { path: '/juridico/gerar-contrato', icon: Plus, label: 'Novo Contrato' },
-    { path: '/juridico/templates', icon: FolderOpen, label: 'Modelos de Contratos' },
-    { path: '/juridico/ai', icon: MessageSquare, label: 'IA' },
-    { path: '/juridico/documentos', icon: FileText, label: 'Documentos' },
-    { path: '/juridico/library', icon: Book, label: 'Biblioteca' },
-    { path: '/juridico/settings', icon: Settings, label: 'Configurações' },
-  ];
+  const getMenuItems = () => {
+    switch (tipo) {
+      case 'proprietario':
+        return [
+          { path: '/proprietario', icon: Layout, label: 'Dashboard' },
+          { path: '/proprietario/imoveis', icon: Building2, label: 'Imóveis' },
+          { path: '/proprietario/renda', icon: LineChart, label: 'Renda' },
+          { path: '/proprietario/mapa', icon: MapPin, label: 'Mapa' },
+          { path: '/proprietario/chat', icon: MessagesSquare, label: 'Chat' },
+          { path: '/proprietario/settings', icon: Settings, label: 'Configurações' },
+        ];
+      case 'juridico':
+      default:
+        return [
+          { path: '/juridico', icon: Layout, label: 'Dashboard' },
+          { path: '/juridico/contracts', icon: FileText, label: 'Contratos' },
+          { path: '/juridico/gerar-contrato', icon: Plus, label: 'Novo Contrato' },
+          { path: '/juridico/templates', icon: FolderOpen, label: 'Modelos de Contratos' },
+          { path: '/juridico/ai', icon: MessageSquare, label: 'IA' },
+          { path: '/juridico/documentos', icon: FileText, label: 'Documentos' },
+          { path: '/juridico/library', icon: Book, label: 'Biblioteca' },
+          { path: '/juridico/settings', icon: Settings, label: 'Configurações' },
+        ];
+    }
+  };
+
+  const menuItems = getMenuItems();
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -44,8 +66,9 @@ export default function DashboardLayout() {
         <div className="w-[280px] border-r bg-background min-h-screen fixed left-0 top-0 z-30">
           <Sidebar collapsible="none" className="border-none">
             <SidebarHeader className="p-4">
-              <Link to="/juridico" className="text-2xl font-bold flex items-center gap-2">
-                <span className="text-cyan-400">▲</span> ContractPro
+              <Link to={`/${tipo}`} className="text-2xl font-bold flex items-center gap-2">
+                <span className="text-cyan-400">▲</span> 
+                {tipo === 'proprietario' ? 'PropControl' : 'ContractPro'}
               </Link>
             </SidebarHeader>
             <SidebarContent className="h-[calc(100vh-80px)] overflow-y-auto">
@@ -68,20 +91,22 @@ export default function DashboardLayout() {
                   </SidebarMenu>
                 </SidebarGroupContent>
               </SidebarGroup>
-              <SidebarGroup>
-                <SidebarGroupContent>
-                  <div className="bg-indigo-800 rounded-lg p-4 mx-2 mb-4">
-                    <h3 className="font-medium mb-2 text-white">Tutorial</h3>
-                    <p className="text-sm text-gray-300 mb-4">Aprenda a gerenciar contratos</p>
-                    <Button 
-                      className="w-full bg-cyan-400 hover:bg-cyan-500" 
-                      onClick={() => navigate('/juridico/tutorial')}
-                    >
-                      Começar
-                    </Button>
-                  </div>
-                </SidebarGroupContent>
-              </SidebarGroup>
+              {tipo === 'proprietario' && (
+                <SidebarGroup>
+                  <SidebarGroupContent>
+                    <div className="bg-[#0EA5E9] rounded-lg p-4 mx-2 mb-4">
+                      <h3 className="font-medium mb-2 text-white">Suporte</h3>
+                      <p className="text-sm text-blue-100 mb-4">Precisa de ajuda com seu painel?</p>
+                      <Button 
+                        className="w-full bg-white text-[#0EA5E9] hover:bg-blue-50" 
+                        onClick={() => navigate('/proprietario/chat')}
+                      >
+                        Falar com Suporte
+                      </Button>
+                    </div>
+                  </SidebarGroupContent>
+                </SidebarGroup>
+              )}
             </SidebarContent>
           </Sidebar>
         </div>

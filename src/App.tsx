@@ -16,6 +16,13 @@ import AI from '@/pages/AI';
 import Library from '@/pages/Library';
 import GenerateContract from '@/pages/GenerateContract';
 
+// Proprietário Pages
+import ProprietarioDashboard from '@/pages/proprietario/Dashboard';
+import Imoveis from '@/pages/proprietario/Imoveis';
+import Renda from '@/pages/proprietario/Renda';
+import MapaImoveis from '@/pages/proprietario/MapaImoveis';
+import ProprietarioChat from '@/pages/proprietario/Chat';
+
 const queryClient = new QueryClient();
 
 function App() {
@@ -39,8 +46,16 @@ function App() {
             <Route path="library" element={<Library />} />
           </Route>
 
-          {/* Placeholder routes for other dashboards */}
-          <Route path="/proprietario" element={<Navigate to="/em-construcao" />} />
+          {/* Property Owner Dashboard */}
+          <Route path="/proprietario" element={<DashboardLayout tipo="proprietario" />}>
+            <Route index element={<ProprietarioDashboard />} />
+            <Route path="imoveis" element={<Imoveis />} />
+            <Route path="renda" element={<Renda />} />
+            <Route path="mapa" element={<MapaImoveis />} />
+            <Route path="chat" element={<ProprietarioChat />} />
+          </Route>
+
+          {/* Admin Dashboard Placeholder */}
           <Route path="/admin" element={<Navigate to="/em-construcao" />} />
           
           <Route path="*" element={<NotFound />} />
