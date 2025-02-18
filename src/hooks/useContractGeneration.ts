@@ -4,8 +4,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Json } from '@/integrations/supabase/types';
 import { ContractParty } from '@/types/contract-generation';
-import { processTemplate } from '@/utils/contractVariables';
-import { mapDocumentFields, getPartyPrefix } from '@/services/documentMapper';
+import { processTemplate, validateTemplate } from '@/utils/templateUtils';
 
 export const useContractGeneration = () => {
   const [loading, setLoading] = useState(false);
@@ -23,6 +22,12 @@ export const useContractGeneration = () => {
 
       if (!template) {
         throw new Error('Template não encontrado');
+      }
+
+      // Valida o template antes de processar
+      const validation = validateTemplate(template.content);
+      if (!validation.isValid) {
+        throw new Error(`Template inválido: ${validation.errors.join(', ')}`);
       }
 
       const { data: documents } = await supabase
@@ -44,25 +49,26 @@ export const useContractGeneration = () => {
           continue;
         }
 
-        const rawData = typeof document.extracted_data === 'string'
+        const extractedData = typeof document.extracted_data === 'string'
           ? JSON.parse(document.extracted_data)
           : document.extracted_data;
 
-        const prefix = getPartyPrefix(party.role);
-        console.log(`Processando documento para ${party.role} com prefixo ${prefix}`);
-        console.log('Dados extraídos:', rawData);
-        
-        const mappedData = mapDocumentFields(rawData, prefix);
-        console.log('Dados mapeados:', mappedData);
-
-        // Armazena os dados com o prefixo correto
-        Object.entries(mappedData).forEach(([key, value]) => {
-          variables[key.toLowerCase()] = value; // Normaliza as chaves para lowercase
+        // Adiciona campos com prefixo do papel
+        Object.entries(extractedData).forEach(([key, value]) => {
+          const varKey = `${party.role.toLowerCase()}_${key}`.toLowerCase();
+          variables[varKey] = String(value);
+          console.log(`Mapeando ${key} para ${varKey} com valor ${value}`);
         });
+
+        // Adiciona campos sem prefixo (apenas para a primeira parte)
+        if (parties.indexOf(party) === 0) {
+          Object.entries(extractedData).forEach(([key, value]) => {
+            variables[key.toLowerCase()] = String(value);
+          });
+        }
       }
 
       console.log('Variáveis finais para processamento:', variables);
-      
       const processedContent = processTemplate(template.content, variables);
       
       const { data: contract, error } = await supabase

@@ -4,10 +4,6 @@ export interface ContractParty {
   documentId: string;
 }
 
-export interface ContractVariables {
-  [key: string]: string;
-}
-
 export interface DocumentFields {
   nome?: string;
   nome_completo?: string;
@@ -24,4 +20,14 @@ export interface DocumentFields {
   email?: string;
   telefone?: string;
   [key: string]: string | undefined;
+}
+
+export interface ContractVariables {
+  [key: string]: string;
+}
+
+export interface TemplateValidationResult {
+  isValid: boolean;
+  errors: string[];
+  variables: string[];
 }
