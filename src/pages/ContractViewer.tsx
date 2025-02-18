@@ -19,29 +19,36 @@ const fetchContractWithRetry = async (id: string, maxAttempts = 5) => {
   while (attempts < maxAttempts) {
     console.log(`Tentativa ${attempts + 1} de buscar contrato ${id}`);
     
-    const { data, error } = await supabase
-      .from('contracts')
-      .select(`
-        *,
-        template:contract_templates(name),
-        document:processed_documents(file_name)
-      `)
-      .eq('id', id)
-      .maybeSingle();
+    try {
+      const { data, error } = await supabase
+        .from('contracts')
+        .select(`
+          *,
+          template:contract_templates(name),
+          document:processed_documents(file_name)
+        `)
+        .eq('id', id)
+        .maybeSingle();
 
-    if (error) {
-      console.error('Erro ao buscar contrato:', error);
-      throw error;
-    }
+      if (error) {
+        console.error('Erro ao buscar contrato:', error);
+        throw error;
+      }
 
-    if (data) {
-      console.log('Contrato encontrado:', data);
-      return data;
-    }
+      if (data) {
+        console.log('Contrato encontrado:', data);
+        return data;
+      }
 
-    attempts++;
-    if (attempts < maxAttempts) {
-      console.log(`Aguardando 1 segundo antes da próxima tentativa...`);
+      attempts++;
+      if (attempts < maxAttempts) {
+        console.log(`Aguardando 1 segundo antes da próxima tentativa...`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    } catch (error) {
+      console.error(`Erro na tentativa ${attempts + 1}:`, error);
+      attempts++;
+      if (attempts === maxAttempts) throw error;
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
   }
@@ -78,8 +85,8 @@ export default function ContractViewer() {
         console.log('Contrato carregado com sucesso:', contractData);
       } catch (err: any) {
         console.error('Erro ao buscar contrato:', err);
-        setError('Erro ao carregar o contrato. Por favor, tente novamente mais tarde.');
-        toast.error('Erro ao carregar o contrato: ' + err.message);
+        setError(err.message || 'Erro ao carregar o contrato. Por favor, tente novamente mais tarde.');
+        toast.error('Erro ao carregar o contrato: ' + (err.message || 'Erro desconhecido'));
       } finally {
         setLoading(false);
       }
@@ -92,7 +99,7 @@ export default function ContractViewer() {
   useEffect(() => {
     if (!id) return;
 
-    const contractSubscription = supabase
+    const channel = supabase
       .channel('contract_updates')
       .on('postgres_changes', 
         { 
@@ -101,18 +108,22 @@ export default function ContractViewer() {
           table: 'contracts',
           filter: `id=eq.${id}` 
         }, 
-        (payload) => {
+        async (payload) => {
           console.log('Atualização do contrato detectada:', payload);
-          // Recarrega o contrato quando houver mudanças
-          fetchContractWithRetry(id)
-            .then(data => setContract(data))
-            .catch(error => console.error('Erro ao atualizar contrato:', error));
+          try {
+            const updatedContract = await fetchContractWithRetry(id);
+            setContract(updatedContract);
+          } catch (error) {
+            console.error('Erro ao atualizar contrato:', error);
+          }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Status da inscrição:', status);
+      });
 
     return () => {
-      contractSubscription.unsubscribe();
+      channel.unsubscribe();
     };
   }, [id]);
 
@@ -163,11 +174,11 @@ export default function ContractViewer() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{contract.title}</CardTitle>
+        <CardTitle>{contract.title || 'Contrato sem título'}</CardTitle>
         <div className="text-sm text-gray-500">
-          Modelo: {contract.template?.name}
+          Modelo: {contract.template?.name || 'N/A'}
           <br />
-          Documento: {contract.document?.file_name}
+          Documento: {contract.document?.file_name || 'N/A'}
         </div>
       </CardHeader>
       <CardContent>
