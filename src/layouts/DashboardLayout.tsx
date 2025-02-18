@@ -38,63 +38,50 @@ export default function DashboardLayout() {
   ];
 
   return (
-    <SidebarProvider defaultOpen={true}>
-      <div className="flex-1 min-w-0 overflow-auto">
-        <Button 
-          variant="outline"
-          className="fixed top-4 left-4 z-[60] lg:hidden"
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          size="icon"
-        >
-          <MenuIcon className="h-4 w-4" />
-        </Button>
-
-        <div className={`sidebar-container ${isMobileMenuOpen ? 'open' : ''}`}>
-          <Sidebar className="flex border-r bg-background h-full" variant="sidebar">
-            <SidebarHeader className="p-4">
-              <Link to="/juridico" className="text-2xl font-bold flex items-center gap-2">
-                <span className="text-cyan-400">▲</span> ContractPro
-              </Link>
-            </SidebarHeader>
-            <SidebarContent>
-              <SidebarGroup>
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    {menuItems.map((item) => (
-                      <SidebarMenuItem key={item.path}>
-                        <SidebarMenuButton
-                          asChild
-                          isActive={location.pathname === item.path}
-                        >
-                          <Link to={item.path}>
-                            <item.icon className="w-4 h-4" />
-                            <span>{item.label}</span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    ))}
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </SidebarGroup>
-              <SidebarGroup className="mt-auto">
-                <SidebarGroupContent>
-                  <div className="bg-indigo-800 rounded-lg p-4 mx-2 mb-4">
-                    <h3 className="font-medium mb-2 text-white">Tutorial</h3>
-                    <p className="text-sm text-gray-300 mb-4">Aprenda a gerenciar contratos</p>
-                    <Button 
-                      className="w-full bg-cyan-400 hover:bg-cyan-500" 
-                      onClick={() => navigate('/juridico/tutorial')}
-                    >
-                      Começar
-                    </Button>
-                  </div>
-                </SidebarGroupContent>
-              </SidebarGroup>
-            </SidebarContent>
-          </Sidebar>
+    <div className="flex h-screen">
+      {/* Sidebar fixo */}
+      <div className="w-[280px] border-r bg-background h-screen fixed left-0 top-0">
+        <div className="p-4">
+          <Link to="/juridico" className="text-2xl font-bold flex items-center gap-2">
+            <span className="text-cyan-400">▲</span> ContractPro
+          </Link>
         </div>
+        <div className="overflow-y-auto h-[calc(100vh-80px)]">
+          <div className="p-2">
+            <SidebarMenu>
+              {menuItems.map((item) => (
+                <SidebarMenuItem key={item.path}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location.pathname === item.path}
+                  >
+                    <Link to={item.path}>
+                      <item.icon className="w-4 h-4" />
+                      <span>{item.label}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </div>
+          <div className="mt-auto p-4">
+            <div className="bg-indigo-800 rounded-lg p-4">
+              <h3 className="font-medium mb-2 text-white">Tutorial</h3>
+              <p className="text-sm text-gray-300 mb-4">Aprenda a gerenciar contratos</p>
+              <Button 
+                className="w-full bg-cyan-400 hover:bg-cyan-500" 
+                onClick={() => navigate('/juridico/tutorial')}
+              >
+                Começar
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        <main className="main-content bg-gray-50">
+      {/* Conteúdo principal com margem para o sidebar */}
+      <div className="flex-1 ml-[280px]">
+        <main className="bg-gray-50 min-h-screen">
           <div className="p-4 md:p-8">
             <div className="flex justify-end items-center mb-4 md:mb-8">
               <div className="flex items-center gap-4">
@@ -113,6 +100,6 @@ export default function DashboardLayout() {
           </div>
         </main>
       </div>
-    </SidebarProvider>
+    </div>
   );
 }
