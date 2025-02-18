@@ -41,25 +41,63 @@ export const fetchDocument = async (documentId: string) => {
   return data;
 };
 
+const mergeDocumentData = async (documents: Array<{ role: string; documentId: string }>) => {
+  let mergedData: Record<string, any> = {};
+
+  for (const doc of documents) {
+    const document = await fetchDocument(doc.documentId);
+    const extractedData = typeof document.extracted_data === 'string'
+      ? JSON.parse(document.extracted_data)
+      : document.extracted_data;
+
+    // Determina o prefixo com base no papel
+    const prefix = doc.role.toLowerCase();
+
+    // Mapeia os campos com o prefixo correto
+    Object.entries(extractedData).forEach(([key, value]) => {
+      // Se o campo já tem o prefixo correto, usa direto
+      if (key.startsWith(prefix)) {
+        mergedData[key] = value;
+      } else {
+        // Se não tem prefixo, adiciona o prefixo correto
+        const newKey = `${prefix}_${key}`;
+        mergedData[newKey] = value;
+      }
+    });
+  }
+
+  return mergedData;
+};
+
 export const generateContract = async (
   templateId: string,
-  documentId: string,
-  title: string,
-  template: any,
-  document: any
+  documents: Array<{ role: string; documentId: string }>,
+  title: string
 ) => {
   try {
-    console.log('Iniciando geração do contrato...');
-    const templateData = processTemplateData(document.extracted_data);
-    const processedContent = replaceTemplateVariables(template.content, templateData);
+    console.log('Iniciando geração do contrato...', { templateId, documents, title });
+    
+    // Busca o template
+    const template = await fetchTemplate(templateId);
+    
+    // Processa todos os documentos e mescla seus dados
+    const mergedData = await mergeDocumentData(documents);
+    console.log('Dados mesclados dos documentos:', mergedData);
+    
+    // Processa o template com os dados mesclados
+    const processedContent = replaceTemplateVariables(template.content, mergedData);
+    console.log('Conteúdo processado:', processedContent);
 
-    console.log('Chamando edge function generate-contract...');
+    // Chama a edge function para gerar o contrato
     const { data: result, error } = await supabase.functions.invoke('generate-contract', {
       body: { 
         templateId, 
-        documentId, 
+        documentId: documents[0].documentId, // Mantém o primeiro documento como principal
         title,
-        content: processedContent
+        content: processedContent,
+        metadata: {
+          parties: documents
+        }
       }
     });
 
