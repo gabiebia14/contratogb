@@ -29,7 +29,7 @@ export default function DashboardLayout() {
   const menuItems = [
     { path: '/juridico', icon: Layout, label: 'Dashboard' },
     { path: '/juridico/contracts', icon: FileText, label: 'Contratos' },
-    { path: '/juridico/new-contract', icon: Plus, label: 'Novo Contrato' },
+    { path: '/juridico/gerar-contrato', icon: Plus, label: 'Novo Contrato' },
     { path: '/juridico/templates', icon: FolderOpen, label: 'Modelos de Contratos' },
     { path: '/juridico/ai', icon: MessageSquare, label: 'IA' },
     { path: '/juridico/documentos', icon: FileText, label: 'Documentos' },

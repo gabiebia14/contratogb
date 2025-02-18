@@ -13,7 +13,7 @@ function Dashboard() {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Link to="/juridico/new-contract">
+        <Link to="/juridico/gerar-contrato">
           <Card className="p-6 hover:bg-gray-50 transition-colors cursor-pointer">
             <div className="flex items-center gap-4">
               <div className="bg-indigo-100 p-3 rounded-lg">
