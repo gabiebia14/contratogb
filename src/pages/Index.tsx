@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 
 function Dashboard() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full max-w-[1600px] mx-auto px-4">
       <div className="mb-8">
         <h2 className="text-2xl font-semibold">Dashboard</h2>
         <p className="text-gray-500 mt-1">Visão geral dos seus contratos e atividades</p>
@@ -67,15 +67,15 @@ function Dashboard() {
       <div className="mt-8">
         <h3 className="text-lg font-semibold mb-4">Contratos Pendentes</h3>
         <Card className="p-6">
-          <div className="flex items-center justify-between bg-amber-50 p-4 rounded-lg">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-amber-50 p-4 rounded-lg">
             <div className="flex items-center gap-3">
-              <FileText className="w-5 h-5 text-amber-600" />
+              <FileText className="w-5 h-5 text-amber-600 flex-shrink-0" />
               <div>
                 <p className="font-medium">Contrato de Prestação de Serviços</p>
                 <p className="text-sm text-gray-500">Solicitado por: Maria Santos</p>
               </div>
             </div>
-            <Button>Iniciar</Button>
+            <Button className="w-full sm:w-auto">Iniciar</Button>
           </div>
         </Card>
       </div>
@@ -83,9 +83,9 @@ function Dashboard() {
       {/* Contratos Próximos da Validade */}
       <div className="mt-8">
         <h3 className="text-lg font-semibold mb-4">Contratos Próximos da Validade</h3>
-        <Card className="p-6">
+        <Card className="p-6 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[800px]">
               <thead className="text-sm text-gray-500 border-b">
                 <tr>
                   <th className="text-left pb-3">CONTRATO</th>

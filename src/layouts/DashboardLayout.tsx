@@ -38,17 +38,17 @@ export default function DashboardLayout() {
   ];
 
   return (
-    <div className="flex h-screen">
+    <div className="flex min-h-screen bg-gray-50">
       <SidebarProvider defaultOpen={true}>
         {/* Sidebar fixo */}
-        <div className="w-[280px] border-r bg-background h-screen fixed left-0 top-0">
+        <div className="w-[280px] border-r bg-background min-h-screen fixed left-0 top-0 z-30">
           <Sidebar collapsible="none" className="border-none">
             <SidebarHeader className="p-4">
               <Link to="/juridico" className="text-2xl font-bold flex items-center gap-2">
                 <span className="text-cyan-400">▲</span> ContractPro
               </Link>
             </SidebarHeader>
-            <SidebarContent>
+            <SidebarContent className="h-[calc(100vh-80px)] overflow-y-auto">
               <SidebarGroup>
                 <SidebarGroupContent>
                   <SidebarMenu>
@@ -87,8 +87,8 @@ export default function DashboardLayout() {
         </div>
 
         {/* Conteúdo principal com margem para o sidebar */}
-        <div className="flex-1 ml-[280px]">
-          <main className="bg-gray-50 min-h-screen">
+        <div className="flex-1 ml-[280px] w-[calc(100%-280px)]">
+          <main className="min-h-screen">
             <div className="p-4 md:p-8">
               <div className="flex justify-end items-center mb-4 md:mb-8">
                 <div className="flex items-center gap-4">
@@ -101,7 +101,7 @@ export default function DashboardLayout() {
                   </Button>
                 </div>
               </div>
-              <div className="w-full max-w-7xl mx-auto">
+              <div className="w-full max-w-full mx-auto overflow-x-hidden">
                 <Outlet />
               </div>
             </div>
