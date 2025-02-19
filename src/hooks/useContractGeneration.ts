@@ -62,22 +62,44 @@ export const useContractGeneration = () => {
             const varKey = `${party.role.toLowerCase()}_${key}`.toLowerCase();
             variables[varKey] = String(value);
             console.log(`Mapeando ${key} para ${varKey} com valor ${value}`);
-
-            // Se for a primeira parte, adiciona também sem prefixo
-            if (parties.indexOf(party) === 0) {
-              variables[key.toLowerCase()] = String(value);
-              console.log(`Mapeando versão sem prefixo ${key} com valor ${value}`);
-            }
           }
         });
 
         // Adiciona variáveis específicas baseadas no papel
-        if (party.role.toLowerCase().includes('locador')) {
-          variables[`parte_locadora`] = extractedData.nome_completo || extractedData.nome || '';
-          variables[`qualificacao_locador`] = `${extractedData.nacionalidade || 'brasileiro(a)'}, ${extractedData.estado_civil || 'solteiro(a)'}, ${extractedData.profissao || 'empresário(a)'}`;
-        } else if (party.role.toLowerCase().includes('locatario')) {
-          variables[`parte_locataria`] = extractedData.nome_completo || extractedData.nome || '';
-          variables[`qualificacao_locatario`] = `${extractedData.nacionalidade || 'brasileiro(a)'}, ${extractedData.estado_civil || 'solteiro(a)'}, ${extractedData.profissao || 'empresário(a)'}`;
+        const rolePrefix = party.role.toLowerCase();
+        
+        // Dados básicos sempre preenchidos com valores padrão se necessário
+        variables[`${rolePrefix}_nacionalidade`] = extractedData.nacionalidade || 'brasileiro(a)';
+        variables[`${rolePrefix}_estado_civil`] = extractedData.estado_civil || 'solteiro(a)';
+        variables[`${rolePrefix}_profissao`] = extractedData.profissao || 'empresário(a)';
+        variables[`${rolePrefix}_nome`] = extractedData.nome_completo || extractedData.nome || '';
+        variables[`${rolePrefix}_rg`] = extractedData.rg || '';
+        variables[`${rolePrefix}_cpf`] = extractedData.cpf || '';
+        variables[`${rolePrefix}_endereco`] = extractedData.endereco || '';
+        variables[`${rolePrefix}_bairro`] = extractedData.bairro || '';
+        variables[`${rolePrefix}_cidade`] = extractedData.cidade || '';
+        variables[`${rolePrefix}_estado`] = extractedData.estado || '';
+
+        // Qualificações especiais por papel
+        if (rolePrefix.includes('locador')) {
+          variables['parte_locadora'] = extractedData.nome_completo || extractedData.nome || '';
+          variables['qualificacao_locador'] = `${variables[`${rolePrefix}_nacionalidade`]}, ${variables[`${rolePrefix}_estado_civil`]}, ${variables[`${rolePrefix}_profissao`]}`;
+        } else if (rolePrefix.includes('locatario') || rolePrefix.includes('locataria')) {
+          variables['parte_locataria'] = extractedData.nome_completo || extractedData.nome || '';
+          variables['qualificacao_locatario'] = `${variables[`${rolePrefix}_nacionalidade`]}, ${variables[`${rolePrefix}_estado_civil`]}, ${variables[`${rolePrefix}_profissao`]}`;
+        } else if (rolePrefix.includes('fiador') || rolePrefix.includes('fiadora')) {
+          variables['parte_fiadora'] = extractedData.nome_completo || extractedData.nome || '';
+          variables['qualificacao_fiador'] = `${variables[`${rolePrefix}_nacionalidade`]}, ${variables[`${rolePrefix}_estado_civil`]}, ${variables[`${rolePrefix}_profissao`]}`;
+        }
+
+        // Se for a primeira parte, adiciona também sem prefixo para compatibilidade
+        if (parties.indexOf(party) === 0) {
+          Object.entries(extractedData).forEach(([key, value]) => {
+            if (value) {
+              variables[key.toLowerCase()] = String(value);
+              console.log(`Mapeando versão sem prefixo ${key} com valor ${value}`);
+            }
+          });
         }
       }
 
