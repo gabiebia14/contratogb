@@ -53,18 +53,31 @@ export const useContractGeneration = () => {
           ? JSON.parse(document.extracted_data)
           : document.extracted_data;
 
+        console.log(`Processando documento para papel ${party.role}:`, extractedData);
+
         // Adiciona campos com prefixo do papel
         Object.entries(extractedData).forEach(([key, value]) => {
-          const varKey = `${party.role.toLowerCase()}_${key}`.toLowerCase();
-          variables[varKey] = String(value);
-          console.log(`Mapeando ${key} para ${varKey} com valor ${value}`);
+          if (value) {
+            // Adiciona versão com prefixo
+            const varKey = `${party.role.toLowerCase()}_${key}`.toLowerCase();
+            variables[varKey] = String(value);
+            console.log(`Mapeando ${key} para ${varKey} com valor ${value}`);
+
+            // Se for a primeira parte, adiciona também sem prefixo
+            if (parties.indexOf(party) === 0) {
+              variables[key.toLowerCase()] = String(value);
+              console.log(`Mapeando versão sem prefixo ${key} com valor ${value}`);
+            }
+          }
         });
 
-        // Adiciona campos sem prefixo (apenas para a primeira parte)
-        if (parties.indexOf(party) === 0) {
-          Object.entries(extractedData).forEach(([key, value]) => {
-            variables[key.toLowerCase()] = String(value);
-          });
+        // Adiciona variáveis específicas baseadas no papel
+        if (party.role.toLowerCase().includes('locador')) {
+          variables[`parte_locadora`] = extractedData.nome_completo || extractedData.nome || '';
+          variables[`qualificacao_locador`] = `${extractedData.nacionalidade || 'brasileiro(a)'}, ${extractedData.estado_civil || 'solteiro(a)'}, ${extractedData.profissao || 'empresário(a)'}`;
+        } else if (party.role.toLowerCase().includes('locatario')) {
+          variables[`parte_locataria`] = extractedData.nome_completo || extractedData.nome || '';
+          variables[`qualificacao_locatario`] = `${extractedData.nacionalidade || 'brasileiro(a)'}, ${extractedData.estado_civil || 'solteiro(a)'}, ${extractedData.profissao || 'empresário(a)'}`;
         }
       }
 

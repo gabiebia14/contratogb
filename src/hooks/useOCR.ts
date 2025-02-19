@@ -197,7 +197,7 @@ export const useOCR = () => {
     loading,
     extractedData,
     processedDocuments,
-    setProcessedDocuments, // Added this line to expose the setter
+    setProcessedDocuments,
     handleFilesSelected,
     processFiles
   };
