@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { ExtractedData } from '@/types/contract';
-import { processTemplateData, replaceTemplateVariables } from '@/utils/templateUtils';
+import { processTemplate } from '@/utils/templateUtils';
 
 export const fetchTemplate = async (templateId: string) => {
   const { data, error } = await supabase
@@ -85,7 +85,7 @@ export const generateContract = async (
     console.log('Dados mesclados dos documentos:', mergedData);
     
     // Processa o template com os dados mesclados
-    const processedContent = replaceTemplateVariables(template.content, mergedData);
+    const processedContent = processTemplate(template.content, mergedData);
     console.log('Conteúdo processado:', processedContent);
 
     // Chama a edge function para gerar o contrato
