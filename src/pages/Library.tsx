@@ -168,7 +168,6 @@ export default function Library() {
                 error={<div>Erro ao carregar PDF!</div>}
               >
                 <HTMLFlipBook
-                  style={{}}
                   width={400}
                   height={600}
                   size="stretch"
@@ -184,6 +183,10 @@ export default function Library() {
                   ref={flipBookRef}
                   showCover={true}
                   className="mx-auto"
+                  startZIndex={0}
+                  autoSize={true}
+                  maxShadowOpacity={0.5}
+                  mobileScrollSupport={true}
                 >
                   <PageCover>
                     <h2 className="text-xl font-bold">{currentBookTitle}</h2>
