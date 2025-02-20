@@ -12,10 +12,25 @@ serve(async (req) => {
   }
 
   try {
-    const { texto } = await req.json()
+    let texto = '';
+    const contentType = req.headers.get('content-type') || '';
+
+    // Handle form data (file upload)
+    if (contentType.includes('multipart/form-data')) {
+      const formData = await req.formData();
+      const file = formData.get('file') as File;
+      if (!file) {
+        throw new Error('Nenhum arquivo foi enviado');
+      }
+      texto = await file.text();
+    } else {
+      // Handle JSON data (text input)
+      const { texto: textoInput } = await req.json();
+      texto = textoInput;
+    }
 
     if (!texto) {
-      throw new Error('O texto do contrato é necessário')
+      throw new Error('O texto do contrato é necessário');
     }
 
     const response = await fetch(
