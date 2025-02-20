@@ -15,9 +15,9 @@ export default function AI() {
         <Card className="p-6">
           <div className="flex flex-col items-center space-y-4 text-center">
             <MessagesSquare className="h-12 w-12 text-blue-500" />
-            <h3 className="text-xl font-semibold">Gerar Contrato com IA</h3>
+            <h3 className="text-xl font-semibold">Gerar Parametros de Modelos de Contrato</h3>
             <p className="text-muted-foreground">
-              Use nosso assistente de IA para gerar contratos personalizados de forma rápida e eficiente.
+              Assistente de IA para substituir os dados dos contratos por parametros.
             </p>
             <Button 
               onClick={() => navigate('/juridico/ai/chat')}
@@ -45,6 +45,24 @@ export default function AI() {
             </Button>
           </div>
         </Card>
+
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="p-6">
+          <div className="flex flex-col items-center space-y-4 text-center">
+            <MessagesSquare className="h-12 w-12 text-blue-500" />
+            <h3 className="text-xl font-semibold">Comparar Contratos</h3>
+            <p className="text-muted-foreground">
+              Compare contratos para encontrar diferencas.
+            </p>
+            <Button 
+              onClick={() => navigate('/juridico/ai/chat')}
+              size="lg"
+              className="mt-4"
+            >
+              Começar
+            </Button>
+          </div>
       </div>
     </div>
   );
