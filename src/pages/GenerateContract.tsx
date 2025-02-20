@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { useContractGeneration } from '@/hooks/useContractGeneration';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, ScrollText } from 'lucide-react';
 import ExtractedDataDisplay from '@/components/ocr/ExtractedDataDisplay';
 import { ExtractedField } from '@/types/ocr';
 
@@ -109,7 +109,7 @@ export default function GenerateContract() {
   ];
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="container mx-auto py-6 space-y-6 max-w-7xl">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Gerar Novo Contrato</h1>
         <Button onClick={() => navigate('/juridico/contracts')} variant="outline">
@@ -117,71 +117,87 @@ export default function GenerateContract() {
         </Button>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Templates Disponíveis</CardTitle>
+      <div className="grid md:grid-cols-3 gap-6">
+        <Card className="md:col-span-2">
+          <CardHeader className="border-b bg-muted/40">
+            <CardTitle className="text-xl">Templates Disponíveis</CardTitle>
             <CardDescription>Selecione um template para começar</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="grid sm:grid-cols-2 gap-4 p-6">
             {templatesLoading ? (
-              <p>Carregando templates...</p>
+              <div className="col-span-2 flex items-center justify-center h-32">
+                <p className="text-muted-foreground">Carregando templates...</p>
+              </div>
             ) : (
               templates?.map((template) => (
                 <div
                   key={template.id}
-                  className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                  className={`flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-all hover:shadow-md ${
                     selectedTemplate === template.id
-                      ? 'border-primary bg-primary/5'
+                      ? 'border-primary bg-primary/5 ring-2 ring-primary/10'
                       : 'hover:border-primary/50'
                   }`}
                   onClick={() => handleTemplateSelect(template.id)}
                 >
-                  <h3 className="font-medium">{template.name}</h3>
-                  <p className="text-sm text-muted-foreground">{template.category}</p>
+                  <ScrollText className="h-5 w-5 text-primary/70 mt-0.5" />
+                  <div className="space-y-1">
+                    <h3 className="font-medium leading-none">{template.name}</h3>
+                    <p className="text-sm text-muted-foreground">{template.category}</p>
+                  </div>
                 </div>
               ))
             )}
           </CardContent>
         </Card>
 
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button
-              className="w-full"
-              disabled={!selectedTemplate}
-              variant="outline"
-            >
-              Visualizar Template
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right" className="w-[90vw] sm:max-w-xl">
-            <SheetHeader>
-              <SheetTitle>Preview do Template</SheetTitle>
-              <SheetDescription>
-                Visualize como o template será preenchido
-              </SheetDescription>
-            </SheetHeader>
-            <div className="mt-6 prose prose-sm max-w-none">
-              {previewContent ? (
-                <div className="whitespace-pre-wrap">{previewContent}</div>
-              ) : (
-                <p>Selecione um template para visualizar</p>
-              )}
-            </div>
-          </SheetContent>
-        </Sheet>
+        <Card>
+          <CardHeader className="border-b bg-muted/40">
+            <CardTitle className="text-xl">Preview</CardTitle>
+            <CardDescription>
+              Visualize o template selecionado
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-6">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button
+                  className="w-full"
+                  disabled={!selectedTemplate}
+                  variant="secondary"
+                >
+                  <ScrollText className="mr-2 h-4 w-4" />
+                  Visualizar Template
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[90vw] sm:max-w-xl">
+                <SheetHeader>
+                  <SheetTitle>Preview do Template</SheetTitle>
+                  <SheetDescription>
+                    Visualize como o template será preenchido
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="mt-6 prose prose-sm max-w-none">
+                  {previewContent ? (
+                    <div className="whitespace-pre-wrap">{previewContent}</div>
+                  ) : (
+                    <p className="text-muted-foreground">Selecione um template para visualizar</p>
+                  )}
+                </div>
+              </SheetContent>
+            </Sheet>
+          </CardContent>
+        </Card>
 
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle>Dados do Contrato</CardTitle>
+        <Card className="md:col-span-3">
+          <CardHeader className="border-b bg-muted/40">
+            <CardTitle className="text-xl">Dados do Contrato</CardTitle>
             <CardDescription>
               Adicione as partes do contrato e seus respectivos documentos
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-6 p-6">
             {documentsLoading ? (
-              <p>Carregando documentos...</p>
+              <p className="text-muted-foreground">Carregando documentos...</p>
             ) : (
               <>
                 {contractParties.map((party, index) => (
@@ -264,22 +280,24 @@ export default function GenerateContract() {
                   </div>
                 ))}
 
-                <Button
-                  onClick={handleAddParty}
-                  variant="outline"
-                  className="w-full"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Adicionar Parte
-                </Button>
+                <div className="flex flex-col gap-4 items-center pt-4">
+                  <Button
+                    onClick={handleAddParty}
+                    variant="outline"
+                    className="w-full max-w-md"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Adicionar Parte
+                  </Button>
 
-                <Button
-                  onClick={handleGenerate}
-                  disabled={!selectedTemplate || contractParties.length === 0 || loading}
-                  className="w-full"
-                >
-                  {loading ? 'Gerando Contrato...' : 'Gerar Contrato'}
-                </Button>
+                  <Button
+                    onClick={handleGenerate}
+                    disabled={!selectedTemplate || contractParties.length === 0 || loading}
+                    className="w-full max-w-md"
+                  >
+                    {loading ? 'Gerando Contrato...' : 'Gerar Contrato'}
+                  </Button>
+                </div>
               </>
             )}
           </CardContent>
