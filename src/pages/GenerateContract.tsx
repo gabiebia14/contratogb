@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -117,56 +116,48 @@ export default function GenerateContract() {
         </Button>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
-        <Card className="md:col-span-2">
+      <div className="grid gap-6">
+        <Card className="w-full">
           <CardHeader className="border-b bg-muted/40">
             <CardTitle className="text-xl">Templates Disponíveis</CardTitle>
             <CardDescription>Selecione um template para começar</CardDescription>
           </CardHeader>
-          <CardContent className="grid sm:grid-cols-2 gap-4 p-6">
-            {templatesLoading ? (
-              <div className="col-span-2 flex items-center justify-center h-32">
-                <p className="text-muted-foreground">Carregando templates...</p>
-              </div>
-            ) : (
-              templates?.map((template) => (
-                <div
-                  key={template.id}
-                  className={`flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-all hover:shadow-md ${
-                    selectedTemplate === template.id
-                      ? 'border-primary bg-primary/5 ring-2 ring-primary/10'
-                      : 'hover:border-primary/50'
-                  }`}
-                  onClick={() => handleTemplateSelect(template.id)}
-                >
-                  <ScrollText className="h-5 w-5 text-primary/70 mt-0.5" />
-                  <div className="space-y-1">
-                    <h3 className="font-medium leading-none">{template.name}</h3>
-                    <p className="text-sm text-muted-foreground">{template.category}</p>
-                  </div>
+          <CardContent className="p-6 space-y-6">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {templatesLoading ? (
+                <div className="col-span-full flex items-center justify-center h-32">
+                  <p className="text-muted-foreground">Carregando templates...</p>
                 </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
+              ) : (
+                templates?.map((template) => (
+                  <div
+                    key={template.id}
+                    className={`flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-all hover:shadow-md ${
+                      selectedTemplate === template.id
+                        ? 'border-primary bg-primary/5 ring-2 ring-primary/10'
+                        : 'hover:border-primary/50'
+                    }`}
+                    onClick={() => handleTemplateSelect(template.id)}
+                  >
+                    <ScrollText className="h-5 w-5 text-primary/70 mt-0.5" />
+                    <div className="space-y-1">
+                      <h3 className="font-medium leading-none">{template.name}</h3>
+                      <p className="text-sm text-muted-foreground">{template.category}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
 
-        <Card>
-          <CardHeader className="border-b bg-muted/40">
-            <CardTitle className="text-xl">Preview</CardTitle>
-            <CardDescription>
-              Visualize o template selecionado
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-6">
             <Sheet>
               <SheetTrigger asChild>
                 <Button
-                  className="w-full"
+                  className="w-full max-w-md mx-auto block"
                   disabled={!selectedTemplate}
                   variant="secondary"
                 >
                   <ScrollText className="mr-2 h-4 w-4" />
-                  Visualizar Template
+                  Visualizar Template Selecionado
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-[90vw] sm:max-w-xl">
@@ -188,7 +179,7 @@ export default function GenerateContract() {
           </CardContent>
         </Card>
 
-        <Card className="md:col-span-3">
+        <Card>
           <CardHeader className="border-b bg-muted/40">
             <CardTitle className="text-xl">Dados do Contrato</CardTitle>
             <CardDescription>
