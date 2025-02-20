@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -183,10 +182,11 @@ export default function Library() {
                   ref={flipBookRef}
                   showCover={true}
                   className="mx-auto"
-                  startZIndex={0}
-                  autoSize={true}
-                  maxShadowOpacity={0.5}
-                  mobileScrollSupport={true}
+                  style={{}}
+                  clickEventForward={true}
+                  swipeDistance={0}
+                  showPageCorners={true}
+                  disableFlipByClick={false}
                 >
                   <PageCover>
                     <h2 className="text-xl font-bold">{currentBookTitle}</h2>
