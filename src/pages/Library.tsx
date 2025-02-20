@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -183,6 +184,10 @@ export default function Library() {
                   showCover={true}
                   className="mx-auto"
                   style={{}}
+                  startZIndex={0}
+                  autoSize={true}
+                  maxShadowOpacity={0.5}
+                  mobileScrollSupport={true}
                   clickEventForward={true}
                   swipeDistance={0}
                   showPageCorners={true}
