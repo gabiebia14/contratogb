@@ -1,22 +1,33 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { corsHeaders } from "../_shared/cors.ts";
 
-const PERPLEXITY_API_KEY = Deno.env.get('PERPLEXITY_API_KEY');
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    const { contrato1, contrato2 } = await req.json();
+    const { contrato1, contrato2 } = await req.json()
 
     if (!contrato1 || !contrato2) {
-      throw new Error('Ambos os contratos são necessários para comparação');
+      throw new Error('Ambos os contratos são necessários para comparação')
     }
 
-    const prompt = `Como um especialista em direito brasileiro, analise e compare os dois contratos a seguir:
+    const { pipeline } = await import("@huggingface/transformers")
+
+    // Initialize the text generation pipeline with a smaller, faster model
+    const generator = await pipeline(
+      "text-generation",
+      "mistralai/Mixtral-8x7B-Instruct-v0.1",
+      { device: "cpu" }
+    )
+
+    const prompt = `Analise e compare os dois contratos a seguir como um especialista jurídico:
 
 Contrato 1:
 ${contrato1}
@@ -24,62 +35,35 @@ ${contrato1}
 Contrato 2:
 ${contrato2}
 
-Por favor, forneça uma análise detalhada focando nos seguintes aspectos:
-1. Principais diferenças entre os contratos
-2. Cláusulas presentes em um contrato mas ausentes no outro
-3. Diferenças significativas em termos e condições
-4. Possíveis implicações legais das diferenças encontradas
-5. Recomendações para harmonização dos contratos, se necessário
+Compare os seguintes aspectos:
+1. Principais diferenças
+2. Cláusulas presentes/ausentes
+3. Termos e condições diferentes
+4. Implicações legais
+5. Recomendações
 
-Organize sua resposta em tópicos claros e objetivos.`;
+Responda de forma objetiva e estruturada.`
 
-    const response = await fetch('https://api.perplexity.ai/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${PERPLEXITY_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'llama-3.1-sonar-small-128k-online',
-        messages: [
-          {
-            role: 'system',
-            content: 'Você é um especialista em direito brasileiro, especializado em análise e comparação de contratos.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        temperature: 0.2,
-        max_tokens: 4000,
-        top_p: 0.9,
-      }),
-    });
+    const result = await generator(prompt, {
+      max_length: 1000,
+      temperature: 0.3,
+      top_p: 0.95,
+    })
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Erro ao processar a comparação');
-    }
-
-    const data = await response.json();
-    const análise = data.choices[0].message.content;
+    const análise = result[0].generated_text
 
     return new Response(
       JSON.stringify({ análise }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      },
-    );
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    )
   } catch (error) {
-    console.error('Erro:', error);
+    console.error('Erro:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
-      },
-    );
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500
+      }
+    )
   }
-});
+})
