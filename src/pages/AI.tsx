@@ -7,6 +7,7 @@ import { Send, Upload, FileText, GitCompare } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { useContractGemini } from '@/hooks/useContractGemini';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -22,6 +23,7 @@ export default function AI() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const { processContract } = useContractGemini();
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -56,6 +58,15 @@ export default function AI() {
           role: 'user', 
           content: `Arquivo enviado: ${selectedFile.name}` 
         }]);
+
+        // Ler o conteúdo do arquivo
+        const fileContent = await selectedFile.text();
+        const processedText = await processContract(fileContent);
+
+        setMessages(prev => [...prev, { 
+          role: 'assistant', 
+          content: processedText || 'Não foi possível processar o arquivo.'
+        }]);
       }
 
       if (input.trim()) {
@@ -63,36 +74,20 @@ export default function AI() {
           role: 'user', 
           content: input.trim() 
         }]);
-      }
 
-      let formData = new FormData();
-      
-      if (selectedFile) {
-        formData.append('file', selectedFile);
-      }
-      formData.append('content', input.trim());
+        const processedText = await processContract(input.trim());
 
-      const { data, error } = await supabase.functions.invoke('process-contract', {
-        body: formData
-      });
-
-      if (error) {
-        console.error('Erro na função:', error);
-        throw error;
+        setMessages(prev => [...prev, { 
+          role: 'assistant', 
+          content: processedText || 'Não foi possível processar a mensagem.'
+        }]);
       }
 
       setInput('');
       setSelectedFile(null);
-
-      if (data) {
-        setMessages(prev => [...prev, { 
-          role: 'assistant', 
-          content: data.text || 'Não foi possível processar a resposta.'
-        }]);
-      }
     } catch (error) {
-      console.error('Erro ao enviar mensagem:', error);
-      toast.error('Erro ao enviar mensagem. Por favor, tente novamente.');
+      console.error('Erro ao processar:', error);
+      toast.error('Erro ao processar. Por favor, tente novamente.');
     } finally {
       setLoading(false);
     }
