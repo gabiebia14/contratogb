@@ -37,7 +37,7 @@ export default function AI() {
               Análise rápida e precisa de contratos existentes usando inteligência artificial.
             </p>
             <Button 
-              onClick={() => navigate('/juridico/ai/chat')}
+              onClick={() => navigate('/juridico/ai/analisar')}
               size="lg"
               className="mt-4"
             >
@@ -54,7 +54,7 @@ export default function AI() {
               Compare contratos para encontrar diferencas.
             </p>
             <Button 
-              onClick={() => navigate('/juridico/ai/chat')}
+              onClick={() => navigate('/juridico/ai/comparar')}
               size="lg"
               className="mt-4"
             >

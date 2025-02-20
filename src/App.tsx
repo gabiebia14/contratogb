@@ -16,6 +16,8 @@ import AI from '@/pages/AI';
 import AIChat from '@/pages/AIChat';
 import Library from '@/pages/Library';
 import GenerateContract from '@/pages/GenerateContract';
+import AnalisarContrato from '@/pages/AnalisarContrato';
+import CompararContratos from '@/pages/CompararContratos';
 
 const queryClient = new QueryClient();
 
@@ -38,6 +40,8 @@ function App() {
             <Route path="documentos" element={<Documents />} />
             <Route path="ai" element={<AI />} />
             <Route path="ai/chat" element={<AIChat />} />
+            <Route path="ai/analisar" element={<AnalisarContrato />} />
+            <Route path="ai/comparar" element={<CompararContratos />} />
             <Route path="library" element={<Library />} />
           </Route>
 
