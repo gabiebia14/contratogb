@@ -13,6 +13,7 @@ import Dashboard from '@/pages/Index';
 import Landing from '@/pages/Landing';
 import DashboardSelection from '@/pages/DashboardSelection';
 import AI from '@/pages/AI';
+import AIChat from '@/pages/AIChat';
 import Library from '@/pages/Library';
 import GenerateContract from '@/pages/GenerateContract';
 
@@ -36,6 +37,7 @@ function App() {
             <Route path="gerar-contrato" element={<GenerateContract />} />
             <Route path="documentos" element={<Documents />} />
             <Route path="ai" element={<AI />} />
+            <Route path="ai/chat" element={<AIChat />} />
             <Route path="library" element={<Library />} />
           </Route>
 
