@@ -11,7 +11,7 @@ export default function AI() {
     <div className="container mx-auto py-6 space-y-6">
       <h2 className="text-2xl font-bold">Assistente de IA</h2>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card className="p-6">
           <div className="flex flex-col items-center space-y-4 text-center">
             <MessagesSquare className="h-12 w-12 text-blue-500" />
@@ -46,8 +46,6 @@ export default function AI() {
           </div>
         </Card>
 
-
-<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="p-6">
           <div className="flex flex-col items-center space-y-4 text-center">
             <MessagesSquare className="h-12 w-12 text-blue-500" />
@@ -63,6 +61,7 @@ export default function AI() {
               Começar
             </Button>
           </div>
+        </Card>
       </div>
     </div>
   );
