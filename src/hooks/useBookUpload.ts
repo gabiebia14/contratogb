@@ -3,10 +3,12 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 
 export function useBookUpload(onSuccess: () => void) {
   const [uploadingBook, setUploadingBook] = useState(false);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const handleFileUpload = async (files: File[]) => {
     if (files.length === 0) return;
@@ -36,18 +38,23 @@ export function useBookUpload(onSuccess: () => void) {
 
       if (uploadError) throw uploadError;
 
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const { error: functionError, data: functionData } = await supabase.functions.invoke('extract-pdf-cover', {
-        body: formData,
-      });
-
-      if (functionError) throw functionError;
-
+      // Tenta extrair a capa, mas não falha se houver erro
       let coverImagePath = '/placeholder.svg';
-      if (functionData?.coverImageUrl) {
-        coverImagePath = functionData.coverImageUrl;
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const { error: functionError, data: functionData } = await supabase.functions.invoke('extract-pdf-cover', {
+          body: formData,
+        });
+
+        if (!functionError && functionData?.coverImageUrl) {
+          coverImagePath = functionData.coverImageUrl;
+        } else {
+          console.warn('Não foi possível extrair a capa do PDF, usando placeholder:', functionError);
+        }
+      } catch (coverError) {
+        console.warn('Erro ao extrair capa do PDF:', coverError);
       }
 
       const { error: insertError } = await supabase
@@ -61,6 +68,9 @@ export function useBookUpload(onSuccess: () => void) {
         });
 
       if (insertError) throw insertError;
+
+      // Atualiza a cache do React Query
+      await queryClient.invalidateQueries({ queryKey: ['library-books'] });
 
       toast.success('Livro adicionado com sucesso!');
       onSuccess();
