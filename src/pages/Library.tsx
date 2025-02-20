@@ -9,12 +9,18 @@ import { AddBookDialog } from '@/components/library/AddBookDialog';
 import { useBooks } from '@/hooks/useBooks';
 import { useBookUpload } from '@/hooks/useBookUpload';
 import HTMLFlipBook from 'react-pageflip';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Document, Page as PDFPage, pdfjs } from 'react-pdf';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-interface Page {
-  pageNumber: number;
+// Configurar worker do PDF.js
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
+
+interface PageProps {
+  number: number;
+  width?: number;
+  height?: number;
   url: string;
 }
 
@@ -22,12 +28,13 @@ export default function Library() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [pdfPages, setPdfPages] = useState<Page[]>([]);
+  const [numPages, setNumPages] = useState<number>(0);
   const [isReaderOpen, setIsReaderOpen] = useState(false);
   const [currentBookTitle, setCurrentBookTitle] = useState('');
+  const [currentPdfUrl, setCurrentPdfUrl] = useState<string>('');
   const { books, isLoading } = useBooks();
   const { uploadingBook, handleFileUpload } = useBookUpload(() => setDialogOpen(false));
-  const flipBookRef = useRef(null);
+  const flipBookRef = useRef<any>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -55,9 +62,8 @@ export default function Library() {
         .createSignedUrl(filePath, 60 * 60);
 
       if (data?.signedUrl) {
-        // Em vez de abrir em uma nova aba, vamos abrir no visualizador
         setCurrentBookTitle(title);
-        setPdfPages([{ pageNumber: 1, url: data.signedUrl }]); // Inicialmente só uma página
+        setCurrentPdfUrl(data.signedUrl);
         setIsReaderOpen(true);
       }
     } catch (error) {
@@ -71,19 +77,32 @@ export default function Library() {
     (book.author && book.author.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  // Componente Page para o HTMLFlipBook
+  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
+    setNumPages(numPages);
+  };
+
+  // Componentes do FlipBook
   const PageCover = ({ children }: { children: React.ReactNode }) => {
     return (
-      <div className="flex items-center justify-center bg-white shadow-lg rounded-lg w-[400px] h-[600px]">
-        {children}
+      <div className="flip-page-cover bg-white shadow-lg rounded-lg">
+        <div className="flex items-center justify-center w-[400px] h-[600px]">
+          {children}
+        </div>
       </div>
     );
   };
 
-  const Page = ({ url }: { url: string }) => {
+  const Page = ({ number }: { number: number }) => {
     return (
-      <div className="flex items-center justify-center bg-white shadow-lg rounded-lg w-[400px] h-[600px]">
-        <iframe src={url} className="w-full h-full rounded-lg" />
+      <div className="flip-page bg-white shadow-lg rounded-lg">
+        <div className="flex items-center justify-center w-[400px] h-[600px]">
+          <PDFPage
+            pageNumber={number}
+            width={400}
+            renderTextLayer={false}
+            renderAnnotationLayer={false}
+          />
+        </div>
       </div>
     );
   };
@@ -141,30 +160,43 @@ export default function Library() {
           </SheetHeader>
           
           <div className="flex justify-center">
-            <HTMLFlipBook
-              width={400}
-              height={600}
-              size="stretch"
-              minWidth={315}
-              maxWidth={1000}
-              minHeight={400}
-              maxHeight={1533}
-              drawShadow={true}
-              flippingTime={1000}
-              ref={flipBookRef}
-              showCover={true}
-              className="mx-auto"
-            >
-              <PageCover>
-                <h2 className="text-xl font-bold">{currentBookTitle}</h2>
-              </PageCover>
-              {pdfPages.map((page) => (
-                <Page key={page.pageNumber} url={page.url} />
-              ))}
-              <PageCover>
-                <h2 className="text-xl font-bold">Fim</h2>
-              </PageCover>
-            </HTMLFlipBook>
+            {currentPdfUrl && (
+              <Document
+                file={currentPdfUrl}
+                onLoadSuccess={onDocumentLoadSuccess}
+                loading={<div>Carregando PDF...</div>}
+                error={<div>Erro ao carregar PDF!</div>}
+              >
+                <HTMLFlipBook
+                  style={{}}
+                  width={400}
+                  height={600}
+                  size="stretch"
+                  minWidth={315}
+                  maxWidth={1000}
+                  minHeight={400}
+                  maxHeight={1533}
+                  drawShadow={true}
+                  flippingTime={1000}
+                  usePortrait={true}
+                  startPage={0}
+                  useMouseEvents={true}
+                  ref={flipBookRef}
+                  showCover={true}
+                  className="mx-auto"
+                >
+                  <PageCover>
+                    <h2 className="text-xl font-bold">{currentBookTitle}</h2>
+                  </PageCover>
+                  {Array.from(new Array(numPages), (_, index) => (
+                    <Page key={index + 1} number={index + 1} />
+                  ))}
+                  <PageCover>
+                    <h2 className="text-xl font-bold">Fim</h2>
+                  </PageCover>
+                </HTMLFlipBook>
+              </Document>
+            )}
           </div>
         </SheetContent>
       </Sheet>
