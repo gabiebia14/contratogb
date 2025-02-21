@@ -1,6 +1,7 @@
+
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { useContractTemplates } from '@/hooks/useContractTemplates';
+import { useContractTemplates } from '@/features/juridico/hooks/useContractTemplates';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Upload } from 'lucide-react';
@@ -38,7 +39,7 @@ export default function ContractTemplates() {
       };
     } catch (error) {
       console.error('Erro ao processar template:', error);
-      toast.error('Erro ao processar template: ' + (error as Error).message);
+      toast.error('Erro ao processar template: ' + ((error as Error).message || 'Erro desconhecido'));
       return null;
     }
   };
@@ -95,7 +96,7 @@ export default function ContractTemplates() {
       toast.success('Modelo de contrato adicionado com sucesso!');
     } catch (error) {
       console.error('Error adding template:', error);
-      toast.error('Erro ao adicionar modelo de contrato: ' + (error as Error).message);
+      toast.error('Erro ao adicionar modelo de contrato: ' + ((error as Error).message || 'Erro desconhecido'));
     }
   };
 
@@ -140,7 +141,7 @@ export default function ContractTemplates() {
               />
               <p className="text-xs text-gray-500 mt-1">
                 Use chaves duplas para campos dinâmicos.
-                Exemplos: {"{{locador_nome}}, {{locatario_cpf}}"}
+                Exemplos: {"{"}"{locador_nome}, {locatario_cpf}"}
               </p>
             </div>
 
@@ -174,7 +175,7 @@ export default function ContractTemplates() {
                 <h4 className="font-medium mb-2">Preview do Modelo:</h4>
                 <div className="bg-gray-50 p-4 rounded-lg max-h-[300px] overflow-y-auto whitespace-pre-wrap text-sm">
                   {template.template_variables 
-                    ? previewTemplate(template.content, template.template_variables as Record<string, string>)
+                    ? previewTemplate(template.content, template.template_variables)
                     : template.content}
                 </div>
 
@@ -185,7 +186,7 @@ export default function ContractTemplates() {
                       {Object.entries(template.template_variables).map(([key, description]) => (
                         <div key={key} className="text-sm">
                           <span className="font-mono text-blue-600">{`{{${key}}}`}</span>
-                          <span className="text-gray-600 ml-2">{description}</span>
+                          <span className="text-gray-600 ml-2">{String(description)}</span>
                         </div>
                       ))}
                     </div>
