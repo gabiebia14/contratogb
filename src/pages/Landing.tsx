@@ -39,7 +39,7 @@ export default function Landing() {
             <Button
               variant="outline"
               className="hidden md:flex"
-              onClick={() => navigate("/dashboard-selection")}
+              onClick={() => navigate("/auth")}
             >
               Entrar
             </Button>
@@ -141,7 +141,7 @@ export default function Landing() {
               <Button
                 size="lg"
                 className="text-lg px-8 bg-white text-blue-600 hover:bg-blue-50"
-                onClick={() => navigate("/dashboard-selection")}
+                onClick={() => navigate("/auth")}
               >
                 Teste Grátis
               </Button>

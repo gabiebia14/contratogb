@@ -30,22 +30,12 @@ const Auth = () => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        const path = location.pathname;
-        if (path.includes('juridico')) {
-          navigate('/juridico');
-        } else if (path.includes('proprietario')) {
-          navigate('/proprietario');
-        } else if (path.includes('admin')) {
-          navigate('/admin');
-        } else {
-          navigate('/juridico');
-        }
+        navigate('/juridico');
       }
     };
     
     checkSession();
 
-    // Listener para mudanças na autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session) {
         navigate('/juridico');
@@ -58,7 +48,7 @@ const Auth = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate, location.pathname]);
+  }, [navigate]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,7 +130,6 @@ const Auth = () => {
       }
 
       if (data?.user) {
-        // Login bem sucedido, navegue para a rota apropriada
         navigate('/juridico');
       }
     } catch (error: any) {
