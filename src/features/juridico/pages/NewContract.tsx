@@ -1,3 +1,4 @@
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -22,7 +23,7 @@ import { Input } from "@/components/ui/input";
 import { useContractTemplates } from "@/features/juridico/hooks/useContractTemplates";
 import { useProcessedDocuments } from "@/features/juridico/hooks/useProcessedDocuments";
 import { useContractGeneration } from "@/features/juridico/hooks/useContractGeneration";
-import { toast } from 'sonner';
+import { toast } from "sonner";
 
 const formSchema = z.object({
   title: z.string().min(1, "O título é obrigatório"),
@@ -55,33 +56,26 @@ export default function NewContract() {
         values.title
       );
 
-      toast({
-        title: "Contrato criado com sucesso!",
+      toast.success("Contrato criado com sucesso!", {
         description: (
           <div className="flex flex-col gap-2">
             <p>O contrato foi gerado e está pronto para revisão.</p>
-            <div className="flex gap-2">
-              <button 
-                onClick={() => navigate(`/juridico/contracts/${contract.id}`)}
-                className="text-blue-500 hover:text-blue-700 underline"
-              >
-                Visualizar Contrato
-              </button>
-            </div>
+            <button 
+              onClick={() => navigate(`/juridico/contracts/${contract.id}`)}
+              className="text-blue-500 hover:text-blue-700 underline"
+            >
+              Visualizar Contrato
+            </button>
           </div>
-        ),
-        duration: 5000,
+        )
       });
 
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
       navigate(`/juridico/contracts/${contract.id}`);
     } catch (error) {
       console.error('Erro ao gerar contrato:', error);
-      toast({
-        title: "Erro ao gerar contrato",
-        description: "Ocorreu um erro ao gerar o contrato. Por favor, tente novamente.",
-        variant: "destructive",
+      toast.error("Erro ao gerar contrato", {
+        description: "Ocorreu um erro ao gerar o contrato. Por favor, tente novamente."
       });
     }
   }
