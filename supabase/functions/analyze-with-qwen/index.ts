@@ -12,24 +12,45 @@ if (!HF_TOKEN) {
   console.error('HUGGING_FACE_ACCESS_TOKEN não está configurado');
 }
 
-// Usando o modelo Mixtral que tem melhor performance com textos longos
 const MODEL_URL = "https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1";
 
-// Função para truncar o texto mantendo parágrafos completos
 function truncateText(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text;
   
-  // Encontra o último parágrafo completo dentro do limite
   const truncated = text.substring(0, maxLength);
   const lastParagraph = truncated.lastIndexOf('\n\n');
   
   if (lastParagraph === -1) {
-    // Se não encontrar parágrafos, corta na última frase completa
     const lastSentence = truncated.lastIndexOf('.');
     return lastSentence === -1 ? truncated : truncated.substring(0, lastSentence + 1);
   }
   
   return truncated.substring(0, lastParagraph) + '\n\n[Texto truncado devido ao tamanho...]';
+}
+
+async function extractTextFromFile(file: File): Promise<string> {
+  const fileType = file.type;
+  let text = '';
+
+  try {
+    if (fileType === 'application/pdf') {
+      // Para PDFs, por enquanto retornamos o texto bruto
+      text = await file.text();
+    } else {
+      // Para arquivos de texto
+      text = await file.text();
+    }
+
+    // Remove caracteres não imprimíveis e normaliza espaços
+    text = text.replace(/[\x00-\x09\x0B-\x0C\x0E-\x1F\x7F-\x9F]/g, '')
+               .replace(/\s+/g, ' ')
+               .trim();
+
+    return text;
+  } catch (error) {
+    console.error('Erro ao extrair texto do arquivo:', error);
+    throw new Error(`Não foi possível extrair o texto do arquivo: ${error.message}`);
+  }
 }
 
 serve(async (req) => {
@@ -44,35 +65,28 @@ serve(async (req) => {
     console.log('Content-Type recebido:', contentType);
     console.log('HF Token presente:', !!HF_TOKEN);
 
-    // Handle form data (file upload)
     if (contentType.includes('multipart/form-data')) {
       try {
         const formData = await req.formData();
-        const file = formData.get('file');
+        const file = formData.get('file') as File;
         
         if (!file) {
           throw new Error('Nenhum arquivo foi enviado');
         }
 
         console.log('Arquivo recebido:', file.name, 'Tipo:', file.type);
-
-        const fileContent = await file.text();
-        if (!fileContent) {
-          throw new Error('Não foi possível ler o conteúdo do arquivo');
-        }
-
-        texto = fileContent;
-        console.log('Tamanho do texto original:', texto.length);
+        texto = await extractTextFromFile(file);
+        console.log('Texto extraído (primeiros 200 caracteres):', texto.substring(0, 200));
+        
       } catch (error) {
         console.error('Erro ao processar arquivo:', error);
         throw new Error(`Erro ao processar arquivo: ${error.message}`);
       }
     } else {
-      // Handle JSON data (text input)
       try {
         const json = await req.json();
         texto = json.texto;
-        console.log('Tamanho do texto recebido via JSON:', texto?.length);
+        console.log('Texto recebido via JSON (primeiros 200 caracteres):', texto?.substring(0, 200));
       } catch (error) {
         console.error('Erro ao processar JSON:', error);
         throw new Error(`Erro ao processar entrada de texto: ${error.message}`);
@@ -83,24 +97,24 @@ serve(async (req) => {
       throw new Error('O texto do contrato é necessário');
     }
 
-    // Limita o tamanho do texto para evitar exceder o limite de tokens
-    const MAX_TEXT_LENGTH = 12000; // Aproximadamente 3000 tokens
+    const MAX_TEXT_LENGTH = 12000;
     const textoTruncado = truncateText(texto, MAX_TEXT_LENGTH);
-
     console.log('Tamanho do texto após truncamento:', textoTruncado.length);
 
-    const prompt = `<s>[INST] Você é um especialista jurídico brasileiro. Analise o seguinte contrato e forneça uma análise concisa e estruturada:
+    const prompt = `<s>[INST] Você é um especialista jurídico brasileiro. Por favor, analise CUIDADOSAMENTE o seguinte contrato e forneça uma análise detalhada. O texto a ser analisado é:
 
 ${textoTruncado}
 
-Forneça uma análise que inclua:
-1. Principais cláusulas e implicações
-2. Riscos identificados
-3. Sugestões de melhorias
-4. Conformidade legal
-5. Recomendações [/INST]</s>`;
+Sua análise deve incluir ESPECIFICAMENTE:
+1. Identificação do tipo de contrato e partes envolvidas
+2. Análise das principais cláusulas e obrigações
+3. Pontos críticos e riscos jurídicos identificados
+4. Sugestões específicas de melhorias ou ajustes necessários
+5. Avaliação da conformidade legal e recomendações práticas
 
-    console.log('Iniciando análise com o Hugging Face...');
+Importante: Baseie sua análise APENAS no conteúdo do contrato fornecido, sem fazer suposições. [/INST]</s>`;
+
+    console.log('Enviando solicitação para o modelo...');
 
     const response = await fetch(MODEL_URL, {
       method: 'POST',
@@ -112,7 +126,7 @@ Forneça uma análise que inclua:
         inputs: prompt,
         parameters: {
           max_new_tokens: 1024,
-          temperature: 0.7,
+          temperature: 0.3, // Reduzido para respostas mais focadas
           top_p: 0.95,
           return_full_text: false,
         }
@@ -137,7 +151,6 @@ Forneça uma análise que inclua:
 
     let análise = result[0].generated_text.trim();
     
-    // Adiciona aviso se o texto foi truncado
     if (texto.length > MAX_TEXT_LENGTH) {
       análise = "⚠️ Nota: Devido ao tamanho do documento, apenas uma parte foi analisada.\n\n" + análise;
     }
