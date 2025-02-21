@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Property, PropertyType } from "@/types/properties";
@@ -21,10 +20,9 @@ export default function Imoveis() {
       'casa': 'casa',
       'apartamento': 'apartamento',
       'comercial': 'comercial',
-      'rural': 'rural',
-      'terreno': 'terreno',
+      'area': 'terreno',
       'área': 'terreno',
-      'area': 'terreno'
+      'lote': 'terreno'
     };
 
     return typeMap[type] || 'casa';

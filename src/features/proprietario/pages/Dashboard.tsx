@@ -1,15 +1,13 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, Home, Warehouse, TreePine } from "lucide-react";
-import { Bar, BarChart, Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from 'recharts';
+import { Building2, Home, Warehouse } from "lucide-react";
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { Property } from "@/types/properties";
 import { toast } from "sonner";
 
 export default function Dashboard() {
-  const [period, setPeriod] = useState('6m');
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -41,7 +39,6 @@ export default function Dashboard() {
     houses: properties.filter(p => p.type === 'casa').reduce((acc, curr) => acc + (curr.quantity || 1), 0),
     apartments: properties.filter(p => p.type === 'apartamento').reduce((acc, curr) => acc + (curr.quantity || 1), 0),
     commercial: properties.filter(p => p.type === 'comercial').reduce((acc, curr) => acc + (curr.quantity || 1), 0),
-    rural: properties.filter(p => p.type === 'rural').reduce((acc, curr) => acc + (curr.quantity || 1), 0),
     terrenos: properties.filter(p => p.type === 'terreno').reduce((acc, curr) => acc + (curr.quantity || 1), 0),
   };
 
@@ -56,7 +53,7 @@ export default function Dashboard() {
     { title: 'Casas', value: propertyStats.houses, icon: Home, color: 'text-blue-600' },
     { title: 'Apartamentos', value: propertyStats.apartments, icon: Building2, color: 'text-green-600' },
     { title: 'Comerciais', value: propertyStats.commercial, icon: Warehouse, color: 'text-yellow-600' },
-    { title: 'Rurais', value: propertyStats.rural, icon: TreePine, color: 'text-purple-600' },
+    { title: 'Terrenos', value: propertyStats.terrenos, icon: Warehouse, color: 'text-purple-600' },
   ];
 
   // Calculando receita por imóvel
