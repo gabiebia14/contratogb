@@ -1,5 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { Client } from 'npm:@gradio/client';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -62,18 +63,13 @@ serve(async (req) => {
       throw new Error('O texto do contrato é necessário');
     }
 
-    console.log('Iniciando chamada para Hugging Face API...');
+    console.log('Iniciando conexão com o Qwen...');
+    
+    const client = await Client.connect("Qwen/Qwen2.5-Turbo-1M-Demo");
+    
+    console.log('Enviando texto para análise...');
 
-    const response = await fetch(
-      "https://api-inference.huggingface.co/models/Qwen/Qwen1.5-72B-Chat",
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${Deno.env.get('HUGGING_FACE_ACCESS_TOKEN')}`,
-        },
-        method: "POST",
-        body: JSON.stringify({
-          inputs: `Analise o seguinte contrato como um especialista jurídico:
+    const prompt = `Analise o seguinte contrato como um especialista jurídico:
 
 ${texto}
 
@@ -84,27 +80,24 @@ Por favor, forneça uma análise detalhada incluindo:
 4. Conformidade com a legislação vigente
 5. Recomendações gerais
 
-Responda de forma clara e estruturada.`,
-        }),
-      }
-    );
+Responda de forma clara e estruturada.`;
 
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error('Erro na resposta do Hugging Face:', response.status, errorData);
-      throw new Error(`Erro na API do Hugging Face: ${response.status}`);
-    }
+    const result = await client.predict("/add_text", [
+      { text: prompt, files: [] }, // _input
+      [] // _chatbot
+    ]);
 
-    const result = await response.json();
-    console.log('Resposta recebida do Hugging Face');
+    console.log('Resposta recebida do Qwen');
 
-    if (!result[0]?.generated_text) {
-      console.error('Resposta inesperada do Hugging Face:', result);
+    if (!result?.data) {
       throw new Error('Resposta inválida do modelo');
     }
 
+    // A resposta estará no segundo elemento do array retornado
+    const análise = result.data[1][0][1].text;
+
     return new Response(
-      JSON.stringify({ análise: result[0].generated_text }),
+      JSON.stringify({ análise }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
