@@ -7,11 +7,17 @@ const corsHeaders = {
 }
 
 const HF_TOKEN = Deno.env.get('HUGGING_FACE_ACCESS_TOKEN');
-const MODEL_URL = "https://api-inference.huggingface.co/models/Qwen/Qwen1.5-72B-Chat";
+
+if (!HF_TOKEN) {
+  console.error('HUGGING_FACE_ACCESS_TOKEN não está configurado');
+}
+
+// Usando um modelo mais estável e testado do Hugging Face
+const MODEL_URL = "https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1";
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
@@ -19,6 +25,7 @@ serve(async (req) => {
     const contentType = req.headers.get('content-type') || '';
 
     console.log('Content-Type recebido:', contentType);
+    console.log('HF Token presente:', !!HF_TOKEN);
 
     // Handle form data (file upload)
     if (contentType.includes('multipart/form-data')) {
@@ -32,12 +39,6 @@ serve(async (req) => {
 
         console.log('Arquivo recebido:', file.name, 'Tipo:', file.type);
 
-        // Aceita tanto arquivos de texto quanto PDF
-        if (!file.type.includes('text/') && !file.type.includes('application/pdf')) {
-          throw new Error('Tipo de arquivo não suportado. Use arquivos de texto (.txt) ou PDF.');
-        }
-
-        // Lê o conteúdo do arquivo
         const fileContent = await file.text();
         if (!fileContent) {
           throw new Error('Não foi possível ler o conteúdo do arquivo');
@@ -65,24 +66,18 @@ serve(async (req) => {
       throw new Error('O texto do contrato é necessário');
     }
 
-    console.log('Iniciando análise...');
+    console.log('Iniciando análise com o Hugging Face...');
 
-    const prompt = `<|im_start|>system
-Você é um especialista jurídico que analisa contratos. Forneça uma análise detalhada, clara e estruturada do contrato apresentado.
-<|im_end|>
-<|im_start|>user
-Analise o seguinte contrato como um especialista jurídico:
+    const prompt = `<s>[INST] Você é um especialista jurídico brasileiro. Por favor, analise o seguinte contrato e forneça uma análise detalhada e estruturada:
 
 ${texto}
 
-Por favor, forneça uma análise detalhada incluindo:
+Sua análise deve incluir:
 1. Principais cláusulas e suas implicações
 2. Possíveis riscos ou pontos de atenção
 3. Sugestões de melhorias
 4. Conformidade com a legislação vigente
-5. Recomendações gerais
-<|im_end|>
-<|im_start|>assistant`;
+5. Recomendações gerais [/INST]</s>`;
 
     const response = await fetch(MODEL_URL, {
       method: 'POST',
@@ -96,28 +91,31 @@ Por favor, forneça uma análise detalhada incluindo:
           max_new_tokens: 2048,
           temperature: 0.7,
           top_p: 0.95,
-          do_sample: true,
+          return_full_text: false,
         }
       }),
     });
 
+    console.log('Status da resposta:', response.status);
+
     if (!response.ok) {
-      throw new Error(`Erro na API do Hugging Face: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('Erro da API:', errorText);
+      throw new Error(`Erro na API do Hugging Face: ${response.status} - ${errorText}`);
     }
 
     const result = await response.json();
     console.log('Resposta recebida:', result);
 
     if (!result || !Array.isArray(result) || !result[0]?.generated_text) {
+      console.error('Formato inesperado:', result);
       throw new Error('Formato de resposta inválido do modelo');
     }
 
-    // Extrai apenas a parte da resposta após o último <|im_start|>assistant
-    const fullResponse = result[0].generated_text;
-    const análise = fullResponse.split('<|im_start|>assistant').pop() || '';
+    const análise = result[0].generated_text.trim();
 
     return new Response(
-      JSON.stringify({ análise: análise.trim() }),
+      JSON.stringify({ análise }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
