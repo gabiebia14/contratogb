@@ -12,7 +12,7 @@ if (!HF_TOKEN) {
   console.error('HUGGING_FACE_ACCESS_TOKEN não está configurado');
 }
 
-const MODEL_URL = "https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1";
+const MODEL_URL = "https://api-inference.huggingface.co/models/Qwen/Qwen2.5-VL-3B-Instruct";
 
 function truncateText(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text;
@@ -34,14 +34,11 @@ async function extractTextFromFile(file: File): Promise<string> {
 
   try {
     if (fileType === 'application/pdf') {
-      // Para PDFs, por enquanto retornamos o texto bruto
       text = await file.text();
     } else {
-      // Para arquivos de texto
       text = await file.text();
     }
 
-    // Remove caracteres não imprimíveis e normaliza espaços
     text = text.replace(/[\x00-\x09\x0B-\x0C\x0E-\x1F\x7F-\x9F]/g, '')
                .replace(/\s+/g, ' ')
                .trim();
@@ -101,18 +98,21 @@ serve(async (req) => {
     const textoTruncado = truncateText(texto, MAX_TEXT_LENGTH);
     console.log('Tamanho do texto após truncamento:', textoTruncado.length);
 
-    const prompt = `<s>[INST] Você é um especialista jurídico brasileiro. Por favor, analise CUIDADOSAMENTE o seguinte contrato e forneça uma análise detalhada. O texto a ser analisado é:
+    const prompt = `<|im_start|>system
+Você é um especialista jurídico brasileiro altamente qualificado em análise de contratos. Sua função é analisar o contrato fornecido de maneira detalhada e profissional.<|im_end|>
+<|im_start|>user
+Por favor, analise o seguinte contrato:
 
 ${textoTruncado}
 
-Sua análise deve incluir ESPECIFICAMENTE:
-1. Identificação do tipo de contrato e partes envolvidas
-2. Análise das principais cláusulas e obrigações
-3. Pontos críticos e riscos jurídicos identificados
-4. Sugestões específicas de melhorias ou ajustes necessários
-5. Avaliação da conformidade legal e recomendações práticas
-
-Importante: Baseie sua análise APENAS no conteúdo do contrato fornecido, sem fazer suposições. [/INST]</s>`;
+Forneça uma análise detalhada incluindo:
+1. Tipo de contrato e partes envolvidas
+2. Principais cláusulas e obrigações
+3. Pontos críticos e riscos jurídicos
+4. Sugestões de melhorias
+5. Conformidade legal<|im_end|>
+<|im_start|>assistant
+Vou analisar o contrato em detalhes:`;
 
     console.log('Enviando solicitação para o modelo...');
 
@@ -126,8 +126,9 @@ Importante: Baseie sua análise APENAS no conteúdo do contrato fornecido, sem f
         inputs: prompt,
         parameters: {
           max_new_tokens: 1024,
-          temperature: 0.3, // Reduzido para respostas mais focadas
+          temperature: 0.3,
           top_p: 0.95,
+          do_sample: true,
           return_full_text: false,
         }
       }),
