@@ -6,24 +6,51 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Loader2, Upload } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import FileUploadArea from '@/components/ocr/FileUploadArea';
+import { Progress } from '@/components/ui/progress';
+import { useDropzone } from 'react-dropzone';
+import { cn } from '@/lib/utils';
 
 export default function AnalisarContrato() {
   const [contrato, setContrato] = useState('');
   const [análise, setAnálise] = useState('');
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
 
-  const handleFileUpload = async (files: File[]) => {
+  const { getRootProps, getInputProps, isDragActive, acceptedFiles } = useDropzone({
+    onDrop: handleFileUpload,
+    accept: {
+      'text/plain': ['.txt'],
+      'application/pdf': ['.pdf']
+    },
+    maxFiles: 1,
+    multiple: false
+  });
+
+  async function handleFileUpload(files: File[]) {
     if (files.length === 0) return;
 
     const file = files[0];
+    setProgress(0);
+    setLoading(true);
+
     try {
       const formData = new FormData();
       formData.append('file', file);
 
+      let progress = 0;
+      const intervalId = setInterval(() => {
+        progress += 5;
+        if (progress <= 90) {
+          setProgress(progress);
+        }
+      }, 500);
+
       const { data, error } = await supabase.functions.invoke('analyze-with-qwen', {
         body: formData,
       });
+
+      clearInterval(intervalId);
+      setProgress(100);
 
       if (error) throw error;
       
@@ -32,8 +59,11 @@ export default function AnalisarContrato() {
     } catch (error) {
       console.error('Erro ao analisar arquivo:', error);
       toast.error('Erro ao analisar o arquivo: ' + (error as Error).message);
+    } finally {
+      setLoading(false);
+      setTimeout(() => setProgress(0), 1000);
     }
-  };
+  }
 
   const analisarContrato = async () => {
     if (!contrato.trim()) {
@@ -41,11 +71,24 @@ export default function AnalisarContrato() {
       return;
     }
 
+    setProgress(0);
     setLoading(true);
+
     try {
+      let progress = 0;
+      const intervalId = setInterval(() => {
+        progress += 5;
+        if (progress <= 90) {
+          setProgress(progress);
+        }
+      }, 500);
+
       const { data, error } = await supabase.functions.invoke('analyze-with-qwen', {
         body: { texto: contrato }
       });
+
+      clearInterval(intervalId);
+      setProgress(100);
 
       if (error) throw error;
       
@@ -56,6 +99,7 @@ export default function AnalisarContrato() {
       toast.error('Erro ao analisar o contrato: ' + (error as Error).message);
     } finally {
       setLoading(false);
+      setTimeout(() => setProgress(0), 1000);
     }
   };
 
@@ -68,7 +112,31 @@ export default function AnalisarContrato() {
           <h3 className="text-lg font-semibold">Contrato</h3>
           
           <div className="space-y-4">
-            <FileUploadArea onFilesSelected={handleFileUpload} />
+            <div
+              {...getRootProps()}
+              className={cn(
+                "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors duration-200 ease-in-out",
+                isDragActive ? "border-primary bg-primary/5" : "border-gray-300 hover:border-primary"
+              )}
+            >
+              <input {...getInputProps()} />
+              <div className="space-y-2">
+                <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                <p className="text-sm text-gray-600">
+                  {isDragActive
+                    ? 'Solte o arquivo aqui...'
+                    : 'Arraste um arquivo ou clique para fazer upload'}
+                </p>
+                <p className="text-xs text-gray-500">
+                  Suporta: TXT e PDF (máx. 10MB)
+                </p>
+                {acceptedFiles[0] && (
+                  <p className="text-sm text-green-600">
+                    Arquivo selecionado: {acceptedFiles[0].name}
+                  </p>
+                )}
+              </div>
+            </div>
             
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -87,6 +155,16 @@ export default function AnalisarContrato() {
               value={contrato}
               onChange={(e) => setContrato(e.target.value)}
             />
+
+            {progress > 0 && (
+              <div className="space-y-2">
+                <Progress value={progress} className="h-2" />
+                <p className="text-sm text-center text-muted-foreground">
+                  Processando... {progress}%
+                </p>
+              </div>
+            )}
+
             <Button 
               onClick={analisarContrato}
               disabled={loading || !contrato.trim()}

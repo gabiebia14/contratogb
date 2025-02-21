@@ -30,14 +30,9 @@ serve(async (req) => {
 
         console.log('Arquivo recebido:', file.name, 'Tipo:', file.type);
 
-        // Verifica se é um arquivo PDF
-        if (file.type === 'application/pdf') {
-          throw new Error('Arquivos PDF ainda não são suportados. Por favor, copie e cole o texto do contrato diretamente.');
-        }
-
-        // Verifica se é um arquivo de texto
-        if (!file.type.includes('text/')) {
-          throw new Error('Tipo de arquivo não suportado. Use apenas arquivos de texto (.txt).');
+        // Aceita tanto arquivos de texto quanto PDF
+        if (!file.type.includes('text/') && !file.type.includes('application/pdf')) {
+          throw new Error('Tipo de arquivo não suportado. Use arquivos de texto (.txt) ou PDF.');
         }
 
         // Lê o conteúdo do arquivo
@@ -89,20 +84,31 @@ Responda de forma clara e estruturada.`;
 
     const result = await client.predict("/add_text", { 		
       _input: { text: prompt, files: [] }, 		
-      _chatbot: [[{ text: prompt, files: [] }, { text: "", flushing: false }]]
+      _chatbot: [] 
     });
 
-    console.log('Resposta recebida do Qwen:', JSON.stringify(result.data));
+    console.log('Resposta recebida do Qwen:', JSON.stringify(result));
 
     if (!result?.data) {
-      throw new Error('Resposta inválida do modelo');
+      console.error('Resposta vazia do modelo:', result);
+      throw new Error('O modelo não retornou uma resposta válida');
     }
 
-    // A resposta estará no segundo elemento do array e conterá o texto gerado
-    const análise = result.data[1]?.[0]?.[1]?.text;
+    // Trata os diferentes formatos possíveis de resposta
+    let análise = '';
+    if (Array.isArray(result.data) && result.data[1]?.[0]?.[1]?.text) {
+      análise = result.data[1][0][1].text;
+    } else if (typeof result.data === 'string') {
+      análise = result.data;
+    } else if (typeof result.data === 'object' && 'text' in result.data) {
+      análise = result.data.text;
+    } else {
+      console.error('Estrutura da resposta:', result.data);
+      throw new Error('Formato de resposta inesperado do modelo');
+    }
 
     if (!análise) {
-      throw new Error('O modelo não retornou uma análise válida');
+      throw new Error('Não foi possível extrair o texto da análise');
     }
 
     return new Response(
