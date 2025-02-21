@@ -28,6 +28,27 @@ export default function Imoveis() {
     }
   };
 
+  const parseCsvLine = (line: string) => {
+    const values = [];
+    let currentValue = '';
+    let insideQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      
+      if (char === '"') {
+        insideQuotes = !insideQuotes;
+      } else if (char === ',' && !insideQuotes) {
+        values.push(currentValue.trim());
+        currentValue = '';
+      } else {
+        currentValue += char;
+      }
+    }
+    values.push(currentValue.trim()); // Adiciona o último valor
+    return values;
+  };
+
   const syncProperties = async () => {
     try {
       setSyncing(true);
@@ -38,14 +59,19 @@ export default function Imoveis() {
       
       // Converter CSV para array de objetos
       const rows = csvText.split('\n');
-      const headers = rows[0].split(',');
+      const headers = parseCsvLine(rows[0]);
+      
       const properties = rows.slice(1).map(row => {
-        const values = row.split(',');
-        const obj: any = {};
+        const values = parseCsvLine(row);
+        const propertyData: Record<string, string> = {};
+        
         headers.forEach((header, index) => {
-          obj[header.trim()] = values[index]?.trim() || '';
+          // Remove aspas extras e espaços
+          const value = values[index]?.replace(/^["']|["']$/g, '').trim() || '';
+          propertyData[header.trim()] = value;
         });
-        return obj;
+        
+        return propertyData;
       });
 
       // Limpar dados existentes
@@ -57,7 +83,7 @@ export default function Imoveis() {
           type: normalizePropertyType(row['TIPO DE IMÓVEL']),
           quantity: parseInt(row['QUANTIDADE']) || 1,
           address: row['ENDEREÇO'],
-          income: row['RENDA'] ? parseFloat(row['RENDA'].replace('R$', '').replace('.', '').replace(',', '.')) : null,
+          income: row['RENDA'] ? parseFloat(row['RENDA'].replace('R$', '').replace(/\./g, '').replace(',', '.')) : null,
           tenant: row['LOCATÁRIO(A)'] || null,
           observations: row['OBSERVAÇÕES'] || null,
           city: row['CIDADE']
