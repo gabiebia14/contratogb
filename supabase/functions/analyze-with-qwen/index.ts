@@ -30,9 +30,14 @@ serve(async (req) => {
 
         console.log('Arquivo recebido:', file.name, 'Tipo:', file.type);
 
-        // Verifica se é um arquivo de texto ou PDF
-        if (!file.type.includes('text/') && !file.type.includes('application/pdf')) {
-          throw new Error('Tipo de arquivo não suportado. Use apenas arquivos de texto ou PDF.');
+        // Verifica se é um arquivo PDF
+        if (file.type === 'application/pdf') {
+          throw new Error('Arquivos PDF ainda não são suportados. Por favor, copie e cole o texto do contrato diretamente.');
+        }
+
+        // Verifica se é um arquivo de texto
+        if (!file.type.includes('text/')) {
+          throw new Error('Tipo de arquivo não suportado. Use apenas arquivos de texto (.txt).');
         }
 
         // Lê o conteúdo do arquivo
@@ -87,11 +92,11 @@ Responda de forma clara e estruturada.`;
       [] // _chatbot
     ]);
 
-    console.log('Resposta recebida do Qwen:', JSON.stringify(result.data));
+    console.log('Resposta recebida do Qwen');
 
     if (!result?.data?.[1]?.[0]?.[1]) {
       console.error('Resposta inesperada:', result);
-      throw new Error('Resposta inválida do modelo');
+      throw new Error('O modelo não conseguiu gerar uma análise válida. Por favor, tente novamente.');
     }
 
     const análise = result.data[1][0][1];
@@ -108,7 +113,7 @@ Responda de forma clara e estruturada.`;
       );
     } else {
       console.error('Formato de resposta inesperado:', análise);
-      throw new Error('Formato de resposta inesperado do modelo');
+      throw new Error('Formato de resposta inesperado do modelo. Por favor, tente novamente.');
     }
   } catch (error) {
     console.error('Erro na Edge Function:', error);
