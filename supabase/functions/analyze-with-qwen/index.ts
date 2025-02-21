@@ -1,9 +1,10 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { Client } from "@gradio/client";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+};
 
 const HF_TOKEN = Deno.env.get('HUGGING_FACE_ACCESS_TOKEN');
 
@@ -12,7 +13,7 @@ if (!HF_TOKEN) {
 }
 
 // Usando um modelo mais estável e testado do Hugging Face
-const MODEL_URL = "https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1";
+const MODEL_URL = "Qwen/Qwen2.5-Turbo-1M-Demo";
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -65,6 +66,13 @@ serve(async (req) => {
       throw new Error('O texto do contrato é necessário');
     }
 
+    // Truncate the text if it exceeds the token limit
+    const maxTokens = 32768 - 2048; // Adjust based on your max_new_tokens
+    if (texto.length > maxTokens) {
+      console.log(`Texto excede o limite de tokens. Truncando para ${maxTokens} tokens.`);
+      texto = texto.slice(0, maxTokens);
+    }
+
     console.log('Iniciando análise com o Hugging Face...');
 
     const prompt = `<s>[INST] Você é um especialista jurídico brasileiro. Por favor, analise o seguinte contrato e forneça uma análise detalhada e estruturada:
@@ -78,45 +86,34 @@ Sua análise deve incluir:
 4. Conformidade com a legislação vigente
 5. Recomendações gerais [/INST]</s>`;
 
-    const response = await fetch(MODEL_URL, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${HF_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        inputs: prompt,
-        parameters: {
-          max_new_tokens: 2048,
-          temperature: 0.7,
-          top_p: 0.95,
-          return_full_text: false,
-        }
-      }),
-    });
+    const client = await Client.connect(MODEL_URL);
 
-    console.log('Status da resposta:', response.status);
+    const result = await client.predict("/add_text", [
+      { text: prompt, files: [] }, 
+      []
+    ]);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Erro da API:', errorText);
-      throw new Error(`Erro na API do Hugging Face: ${response.status} - ${errorText}`);
+    console.log('Resposta recebida do Qwen');
+    if (!result?.data?.[1]?.[0]?.[1]) {
+      console.error('Resposta inesperada:', result);
+      throw new Error('O modelo não conseguiu gerar uma análise válida. Por favor, tente novamente.');
     }
 
-    const result = await response.json();
-    console.log('Resposta recebida:', result);
-
-    if (!result || !Array.isArray(result) || !result[0]?.generated_text) {
-      console.error('Formato inesperado:', result);
-      throw new Error('Formato de resposta inválido do modelo');
+    const análise = result.data[1][0][1];
+    if (typeof análise === 'string') {
+      return new Response(
+        JSON.stringify({ análise }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } else if (typeof análise === 'object' && análise.text) {
+      return new Response(
+        JSON.stringify({ análise: análise.text }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } else {
+      console.error('Formato de resposta inesperado:', análise);
+      throw new Error('Formato de resposta inesperado do modelo. Por favor, tente novamente.');
     }
-
-    const análise = result[0].generated_text.trim();
-
-    return new Response(
-      JSON.stringify({ análise }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
   } catch (error) {
     console.error('Erro na Edge Function:', error);
     return new Response(
