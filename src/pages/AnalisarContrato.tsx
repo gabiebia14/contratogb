@@ -23,7 +23,8 @@ export default function AnalisarContrato() {
       'application/pdf': ['.pdf']
     },
     maxFiles: 1,
-    multiple: false
+    multiple: false,
+    maxSize: 10 * 1024 * 1024 // 10MB
   });
 
   async function handleFileUpload(files: File[]) {
@@ -32,6 +33,7 @@ export default function AnalisarContrato() {
     const file = files[0];
     setProgress(0);
     setLoading(true);
+    setAnálise('');
 
     try {
       const formData = new FormData();
@@ -39,11 +41,11 @@ export default function AnalisarContrato() {
 
       let progress = 0;
       const intervalId = setInterval(() => {
-        progress += 5;
+        progress += 2;
         if (progress <= 90) {
           setProgress(progress);
         }
-      }, 500);
+      }, 1000);
 
       const { data, error } = await supabase.functions.invoke('analyze-with-qwen', {
         body: formData,
@@ -52,13 +54,21 @@ export default function AnalisarContrato() {
       clearInterval(intervalId);
       setProgress(100);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro do Supabase:', error);
+        throw new Error(error.message);
+      }
       
+      if (!data?.análise) {
+        throw new Error('Não foi possível gerar a análise do contrato');
+      }
+
       setAnálise(data.análise);
       toast.success('Análise concluída com sucesso!');
     } catch (error) {
       console.error('Erro ao analisar arquivo:', error);
-      toast.error('Erro ao analisar o arquivo: ' + (error as Error).message);
+      toast.error(error instanceof Error ? error.message : 'Erro ao analisar o arquivo');
+      setAnálise('');
     } finally {
       setLoading(false);
       setTimeout(() => setProgress(0), 1000);
@@ -73,15 +83,16 @@ export default function AnalisarContrato() {
 
     setProgress(0);
     setLoading(true);
+    setAnálise('');
 
     try {
       let progress = 0;
       const intervalId = setInterval(() => {
-        progress += 5;
+        progress += 2;
         if (progress <= 90) {
           setProgress(progress);
         }
-      }, 500);
+      }, 1000);
 
       const { data, error } = await supabase.functions.invoke('analyze-with-qwen', {
         body: { texto: contrato }
@@ -90,13 +101,21 @@ export default function AnalisarContrato() {
       clearInterval(intervalId);
       setProgress(100);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro do Supabase:', error);
+        throw new Error(error.message);
+      }
       
+      if (!data?.análise) {
+        throw new Error('Não foi possível gerar a análise do contrato');
+      }
+
       setAnálise(data.análise);
       toast.success('Análise concluída com sucesso!');
     } catch (error) {
       console.error('Erro ao analisar contrato:', error);
-      toast.error('Erro ao analisar o contrato: ' + (error as Error).message);
+      toast.error(error instanceof Error ? error.message : 'Erro ao analisar o contrato');
+      setAnálise('');
     } finally {
       setLoading(false);
       setTimeout(() => setProgress(0), 1000);
@@ -184,7 +203,7 @@ export default function AnalisarContrato() {
 
         <Card className="p-6 space-y-4">
           <h3 className="text-lg font-semibold">Análise do Contrato</h3>
-          <div className="min-h-[400px] p-4 border rounded-md bg-muted/50">
+          <div className="min-h-[400px] p-4 border rounded-md bg-muted/50 overflow-y-auto">
             {análise ? (
               <div className="whitespace-pre-wrap">{análise}</div>
             ) : (

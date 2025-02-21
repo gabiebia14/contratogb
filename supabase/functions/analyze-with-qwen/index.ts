@@ -1,11 +1,13 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { Client } from 'npm:@gradio/client';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
+
+const HF_TOKEN = Deno.env.get('HUGGING_FACE_ACCESS_TOKEN');
+const MODEL_URL = "https://api-inference.huggingface.co/models/Qwen/Qwen1.5-72B-Chat";
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -63,13 +65,13 @@ serve(async (req) => {
       throw new Error('O texto do contrato é necessário');
     }
 
-    console.log('Iniciando conexão com o Qwen...');
-    
-    const client = await Client.connect("Qwen/Qwen2.5-Turbo-1M-Demo");
-    
-    console.log('Enviando texto para análise...');
+    console.log('Iniciando análise...');
 
-    const prompt = `Analise o seguinte contrato como um especialista jurídico:
+    const prompt = `<|im_start|>system
+Você é um especialista jurídico que analisa contratos. Forneça uma análise detalhada, clara e estruturada do contrato apresentado.
+<|im_end|>
+<|im_start|>user
+Analise o seguinte contrato como um especialista jurídico:
 
 ${texto}
 
@@ -79,40 +81,43 @@ Por favor, forneça uma análise detalhada incluindo:
 3. Sugestões de melhorias
 4. Conformidade com a legislação vigente
 5. Recomendações gerais
+<|im_end|>
+<|im_start|>assistant`;
 
-Responda de forma clara e estruturada.`;
-
-    const result = await client.predict("/add_text", { 		
-      _input: { text: prompt, files: [] }, 		
-      _chatbot: [] 
+    const response = await fetch(MODEL_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${HF_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        inputs: prompt,
+        parameters: {
+          max_new_tokens: 2048,
+          temperature: 0.7,
+          top_p: 0.95,
+          do_sample: true,
+        }
+      }),
     });
 
-    console.log('Resposta recebida do Qwen:', JSON.stringify(result));
-
-    if (!result?.data) {
-      console.error('Resposta vazia do modelo:', result);
-      throw new Error('O modelo não retornou uma resposta válida');
+    if (!response.ok) {
+      throw new Error(`Erro na API do Hugging Face: ${response.status} ${response.statusText}`);
     }
 
-    // Trata os diferentes formatos possíveis de resposta
-    let análise = '';
-    if (Array.isArray(result.data) && result.data[1]?.[0]?.[1]?.text) {
-      análise = result.data[1][0][1].text;
-    } else if (typeof result.data === 'string') {
-      análise = result.data;
-    } else if (typeof result.data === 'object' && 'text' in result.data) {
-      análise = result.data.text;
-    } else {
-      console.error('Estrutura da resposta:', result.data);
-      throw new Error('Formato de resposta inesperado do modelo');
+    const result = await response.json();
+    console.log('Resposta recebida:', result);
+
+    if (!result || !Array.isArray(result) || !result[0]?.generated_text) {
+      throw new Error('Formato de resposta inválido do modelo');
     }
 
-    if (!análise) {
-      throw new Error('Não foi possível extrair o texto da análise');
-    }
+    // Extrai apenas a parte da resposta após o último <|im_start|>assistant
+    const fullResponse = result[0].generated_text;
+    const análise = fullResponse.split('<|im_start|>assistant').pop() || '';
 
     return new Response(
-      JSON.stringify({ análise }),
+      JSON.stringify({ análise: análise.trim() }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
