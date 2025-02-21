@@ -5,12 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { useContractGemini } from '@/hooks/useContractGemini';
 
 export default function CompararContratos() {
   const [contrato1, setContrato1] = useState('');
   const [contrato2, setContrato2] = useState('');
   const [resultado, setResultado] = useState('');
   const [loading, setLoading] = useState(false);
+  const { processContract } = useContractGemini();
 
   const compararContratos = async () => {
     if (!contrato1 || !contrato2) {
@@ -20,21 +22,26 @@ export default function CompararContratos() {
 
     setLoading(true);
     try {
-      const response = await fetch('https://gzamgeekhujhorkggjnl.supabase.co/functions/v1/comparar-contratos', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contrato1,
-          contrato2,
-        }),
-      });
+      // Prepara o prompt para o Gemini
+      const promptComparacao = `Por favor, compare os seguintes contratos como um especialista jurídico:
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Erro ao comparar contratos');
-      
-      setResultado(data.análise);
+Contrato 1:
+${contrato1}
+
+Contrato 2:
+${contrato2}
+
+Por favor, analise e compare os seguintes aspectos:
+1. Principais diferenças entre os contratos
+2. Cláusulas presentes em um contrato e ausentes em outro
+3. Termos e condições diferentes
+4. Possíveis implicações legais das diferenças encontradas
+5. Recomendações e observações importantes
+
+Formate a resposta de forma clara e estruturada.`;
+
+      const analise = await processContract(promptComparacao);
+      setResultado(analise);
       toast.success('Comparação realizada com sucesso!');
     } catch (error) {
       console.error('Erro:', error);
