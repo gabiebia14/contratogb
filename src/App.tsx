@@ -28,14 +28,7 @@ import Renda from '@/features/proprietario/pages/Renda';
 import Mapa from '@/features/proprietario/pages/Mapa';
 import Chat from '@/features/proprietario/pages/Chat';
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: false,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+const queryClient = new QueryClient();
 
 function App() {
   return (

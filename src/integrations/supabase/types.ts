@@ -248,45 +248,6 @@ export type Database = {
           },
         ]
       }
-      properties: {
-        Row: {
-          address: string
-          city: string
-          created_at: string
-          id: string
-          income: number | null
-          observations: string | null
-          quantity: number
-          tenant: string | null
-          type: Database["public"]["Enums"]["property_type"]
-          updated_at: string
-        }
-        Insert: {
-          address: string
-          city: string
-          created_at?: string
-          id?: string
-          income?: number | null
-          observations?: string | null
-          quantity?: number
-          tenant?: string | null
-          type: Database["public"]["Enums"]["property_type"]
-          updated_at?: string
-        }
-        Update: {
-          address?: string
-          city?: string
-          created_at?: string
-          id?: string
-          income?: number | null
-          observations?: string | null
-          quantity?: number
-          tenant?: string | null
-          type?: Database["public"]["Enums"]["property_type"]
-          updated_at?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
@@ -307,7 +268,6 @@ export type Database = {
       document_type_new: "documentos_pessoais" | "comprovante_endereco"
       marital_status: "solteiro" | "casado" | "divorciado" | "viuvo"
       marital_status_enum: "solteiro" | "casado" | "divorciado" | "viuvo"
-      property_type: "casa" | "apartamento" | "comercial" | "rural" | "terreno"
     }
     CompositeTypes: {
       [_ in never]: never
