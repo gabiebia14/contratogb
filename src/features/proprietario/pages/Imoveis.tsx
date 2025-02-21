@@ -37,36 +37,29 @@ export default function Imoveis() {
       const char = line[i];
       
       if (char === '"') {
-        // Se encontrarmos aspas, invertemos o estado de insideQuotes
         if (i > 0 && line[i-1] === '"') {
-          // Aspas duplas consecutivas são escapadas
           currentValue = currentValue.slice(0, -1) + '"';
         } else {
           insideQuotes = !insideQuotes;
         }
       } else if (char === ',' && !insideQuotes) {
-        // Só separamos por vírgula se não estivermos dentro de aspas
         values.push(currentValue.trim());
         currentValue = '';
       } else {
         currentValue += char;
       }
     }
-    // Adiciona o último valor
     values.push(currentValue.trim());
-    
-    // Remove aspas do início e fim de cada valor
     return values.map(value => value.replace(/^"(.*)"$/, '$1').trim());
   };
 
   const parseRenda = (rendaStr: string): number | null => {
     if (!rendaStr) return null;
     
-    // Remove R$, espaços e converte vírgula para ponto
     const value = rendaStr
-      .replace(/R\$\s*/g, '')  // Remove R$ e espaços depois dele
-      .replace(/\./g, '')      // Remove pontos de milhar
-      .replace(/,/g, '.')      // Converte vírgula para ponto decimal
+      .replace(/R\$\s*/g, '')
+      .replace(/\./g, '')
+      .replace(/,/g, '.')
       .trim();
     
     const parsed = parseFloat(value);
@@ -100,12 +93,28 @@ export default function Imoveis() {
         return propertyData;
       });
 
-      // Limpar dados existentes
-      await supabase.from('properties').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      // Primeiro, vamos buscar todos os IDs existentes
+      const { data: existingData } = await supabase
+        .from('properties')
+        .select('id');
 
-      // Inserir novos dados
-      const { error } = await supabase.from('properties').insert(
-        properties.map(row => ({
+      if (existingData && existingData.length > 0) {
+        // Se existem dados, deletamos todos
+        const { error: deleteError } = await supabase
+          .from('properties')
+          .delete()
+          .in('id', existingData.map(item => item.id));
+
+        if (deleteError) {
+          console.error('Erro ao deletar dados existentes:', deleteError);
+          throw deleteError;
+        }
+      }
+
+      // Agora inserimos os novos dados
+      const { error: insertError } = await supabase
+        .from('properties')
+        .insert(properties.map(row => ({
           type: normalizePropertyType(row['TIPO DE IMÓVEL']),
           quantity: parseInt(row['QUANTIDADE']) || 1,
           address: row['ENDEREÇO'],
@@ -113,12 +122,11 @@ export default function Imoveis() {
           tenant: row['LOCATÁRIO(A)'] || null,
           observations: row['OBSERVAÇÕES'] || null,
           city: row['CIDADE']
-        }))
-      );
+        })));
 
-      if (error) {
-        console.error('Erro ao inserir dados:', error);
-        throw error;
+      if (insertError) {
+        console.error('Erro ao inserir dados:', insertError);
+        throw insertError;
       }
 
       await loadProperties();
