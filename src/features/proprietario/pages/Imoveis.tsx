@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Property, PropertyType } from "@/types/properties";
@@ -14,18 +15,17 @@ export default function Imoveis() {
   const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsyn1gs9yeHktxDsKFl7uKgcaL7hEDpaRwdl7NHhJuXeikMInhcxG0137fPiVYyZ5AwK98Ny66W8l2/pub?gid=195841533&single=true&output=csv";
 
   const normalizePropertyType = (type: string): PropertyType => {
-    type = type.toLowerCase().trim();
-    
-    const typeMap: Record<string, PropertyType> = {
-      'casa': 'casa',
-      'apartamento': 'apartamento',
-      'comercial': 'comercial',
-      'area': 'terreno',
-      'área': 'terreno',
-      'lote': 'terreno'
-    };
-
-    return typeMap[type] || 'casa';
+    switch (type.toLowerCase().trim()) {
+      case 'casa': return 'casa';
+      case 'apartamento': return 'apartamento';
+      case 'comercial': return 'comercial';
+      case 'area':
+      case 'área':
+      case 'lote':
+      case 'rural':
+      case 'terreno': return 'terreno';
+      default: return 'casa';
+    }
   };
 
   const syncProperties = async () => {
@@ -85,7 +85,13 @@ export default function Imoveis() {
 
       if (error) throw error;
 
-      setProperties(data || []);
+      // Normaliza os tipos de propriedade antes de definir o estado
+      const normalizedProperties = (data || []).map(property => ({
+        ...property,
+        type: normalizePropertyType(property.type)
+      }));
+
+      setProperties(normalizedProperties);
     } catch (error) {
       console.error('Erro ao carregar imóveis:', error);
       toast.error('Erro ao carregar os imóveis');

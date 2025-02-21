@@ -4,12 +4,27 @@ import { Building2, Home, Warehouse } from "lucide-react";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Property } from "@/types/properties";
+import { Property, PropertyType } from "@/types/properties";
 import { toast } from "sonner";
 
 export default function Dashboard() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Função para normalizar o tipo de propriedade
+  const normalizePropertyType = (type: string): PropertyType => {
+    switch (type.toLowerCase()) {
+      case 'casa': return 'casa';
+      case 'apartamento': return 'apartamento';
+      case 'comercial': return 'comercial';
+      case 'area':
+      case 'área':
+      case 'lote':
+      case 'rural':
+      case 'terreno': return 'terreno';
+      default: return 'casa';
+    }
+  };
 
   // Função para carregar os imóveis
   const loadProperties = async () => {
@@ -21,7 +36,13 @@ export default function Dashboard() {
 
       if (error) throw error;
 
-      setProperties(data || []);
+      // Normaliza os tipos de propriedade antes de definir o estado
+      const normalizedProperties = (data || []).map(property => ({
+        ...property,
+        type: normalizePropertyType(property.type)
+      }));
+
+      setProperties(normalizedProperties);
     } catch (error) {
       console.error('Erro ao carregar imóveis:', error);
       toast.error('Erro ao carregar os imóveis');
