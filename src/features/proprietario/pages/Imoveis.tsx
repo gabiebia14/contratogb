@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Property, PropertyType } from "@/types/properties";
@@ -65,75 +66,48 @@ export default function Imoveis() {
     return isNaN(parsed) ? null : parsed;
   };
 
-  const clearAllProperties = async () => {
-    try {
-      const { error: deleteError } = await supabase
-        .from('properties')
-        .delete()
-        .gt('id', '00000000-0000-0000-0000-000000000000');
-
-      if (deleteError) {
-        throw deleteError;
-      }
-
-      setProperties([]);
-      await loadProperties();
-      toast.success('Todos os imóveis foram removidos com sucesso!');
-    } catch (error) {
-      console.error('Erro ao limpar imóveis:', error);
-      toast.error('Erro ao limpar os imóveis');
-    }
-  };
-
   const syncProperties = async () => {
     try {
       setSyncing(true);
       console.log('Iniciando sincronização...');
-      
-      const { error: deleteError } = await supabase
-        .from('properties')
-        .delete()
-        .gt('id', '00000000-0000-0000-0000-000000000000');
-
-      if (deleteError) {
-        console.error('Erro ao limpar dados existentes:', deleteError);
-        throw deleteError;
-      }
 
       const response = await fetch(SHEET_URL);
+      if (!response.ok) {
+        throw new Error('Falha ao buscar dados da planilha');
+      }
+
       const csvText = await response.text();
-      
       const rows = csvText.split('\n');
       const headers = parseCsvLine(rows[0]);
       
       console.log('Headers:', headers);
       
-      const properties = rows.slice(1).map(row => {
-        const values = parseCsvLine(row);
-        const propertyData: Record<string, string> = {};
-        
-        headers.forEach((header, index) => {
-          propertyData[header.trim()] = values[index] || '';
+      const propertiesToInsert = rows.slice(1)
+        .filter(row => row.trim()) // Remove linhas vazias
+        .map(row => {
+          const values = parseCsvLine(row);
+          const propertyData: Record<string, string> = {};
+          
+          headers.forEach((header, index) => {
+            propertyData[header.trim()] = values[index] || '';
+          });
+          
+          return {
+            type: normalizePropertyType(propertyData['TIPO DE IMÓVEL']),
+            quantity: parseInt(propertyData['QUANTIDADE']) || 1,
+            address: propertyData['ENDEREÇO'],
+            income: parseRenda(propertyData['RENDA']),
+            tenant: propertyData['LOCATÁRIO(A)'] || null,
+            observations: propertyData['OBSERVAÇÕES'] || null,
+            city: propertyData['CIDADE']
+          };
         });
-        
-        console.log('Linha processada:', propertyData);
-        return propertyData;
-      });
 
       const { error: insertError } = await supabase
         .from('properties')
-        .insert(properties.map(row => ({
-          type: normalizePropertyType(row['TIPO DE IMÓVEL']),
-          quantity: parseInt(row['QUANTIDADE']) || 1,
-          address: row['ENDEREÇO'],
-          income: parseRenda(row['RENDA']),
-          tenant: row['LOCATÁRIO(A)'] || null,
-          observations: row['OBSERVAÇÕES'] || null,
-          city: row['CIDADE']
-        })));
+        .insert(propertiesToInsert);
 
       if (insertError) {
-        console.error('Erro ao inserir dados:', insertError);
         throw insertError;
       }
 
@@ -179,14 +153,6 @@ export default function Imoveis() {
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Imóveis</h1>
         <div className="flex gap-2">
-          <Button 
-            variant="destructive"
-            onClick={clearAllProperties}
-            disabled={syncing}
-          >
-            <Trash2 className="w-4 h-4 mr-2" />
-            Limpar Todos
-          </Button>
           <Button 
             variant="outline"
             onClick={syncProperties}
