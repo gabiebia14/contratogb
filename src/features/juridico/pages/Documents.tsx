@@ -7,7 +7,7 @@ import FileUploadArea from '@/components/ocr/FileUploadArea';
 import OCRForm from '@/components/ocr/OCRForm';
 import ExtractedDataDisplay from '@/components/ocr/ExtractedDataDisplay';
 import ProcessedHistory from '@/components/ocr/ProcessedHistory';
-import { useOCR } from '@/hooks/useOCR';
+import { useOCR } from '@/features/juridico/hooks/useOCR';
 import { DocumentRole, DocumentType, MaritalStatus } from '@/types/ocr';
 import { Loader2 } from 'lucide-react';
 import { format } from 'date-fns';

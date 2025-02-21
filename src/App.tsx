@@ -8,16 +8,18 @@ import Auth from '@/pages/Auth';
 import ContractsPage from '@/components/ContractsPage';
 import ContractViewer from '@/pages/ContractViewer';
 import ContractTemplates from '@/pages/ContractTemplates';
-import Documents from '@/pages/Documents';
 import Dashboard from '@/pages/Index';
 import Landing from '@/pages/Landing';
 import DashboardSelection from '@/pages/DashboardSelection';
-import AI from '@/pages/AI';
-import AIChat from '@/pages/AIChat';
 import Library from '@/pages/Library';
-import GenerateContract from '@/pages/GenerateContract';
-import AnalisarContrato from '@/pages/AnalisarContrato';
-import CompararContratos from '@/pages/CompararContratos';
+
+// Import Juridico pages
+import AI from '@/features/juridico/pages/AI';
+import AIChat from '@/features/juridico/pages/AIChat';
+import Documents from '@/features/juridico/pages/Documents';
+import GenerateContract from '@/features/juridico/pages/GenerateContract';
+import AnalisarContrato from '@/features/juridico/pages/AnalisarContrato';
+import CompararContratos from '@/features/juridico/pages/CompararContratos';
 
 const queryClient = new QueryClient();
 
