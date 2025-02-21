@@ -1,18 +1,11 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { Client } from "npm:@gradio/client";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
-
-const HF_TOKEN = Deno.env.get('HUGGING_FACE_ACCESS_TOKEN');
-
-if (!HF_TOKEN) {
-  console.error('HUGGING_FACE_ACCESS_TOKEN não está configurado');
-}
-
-const MODEL_URL = "https://api-inference.huggingface.co/models/Qwen/Qwen2.5-VL-3B-Instruct";
 
 function truncateText(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text;
@@ -33,12 +26,7 @@ async function extractTextFromFile(file: File): Promise<string> {
   let text = '';
 
   try {
-    if (fileType === 'application/pdf') {
-      text = await file.text();
-    } else {
-      text = await file.text();
-    }
-
+    text = await file.text();
     text = text.replace(/[\x00-\x09\x0B-\x0C\x0E-\x1F\x7F-\x9F]/g, '')
                .replace(/\s+/g, ' ')
                .trim();
@@ -60,8 +48,8 @@ serve(async (req) => {
     const contentType = req.headers.get('content-type') || '';
 
     console.log('Content-Type recebido:', contentType);
-    console.log('HF Token presente:', !!HF_TOKEN);
 
+    // Processar entrada (arquivo ou texto)
     if (contentType.includes('multipart/form-data')) {
       try {
         const formData = await req.formData();
@@ -96,62 +84,55 @@ serve(async (req) => {
 
     const MAX_TEXT_LENGTH = 12000;
     const textoTruncado = truncateText(texto, MAX_TEXT_LENGTH);
-    console.log('Tamanho do texto após truncamento:', textoTruncado.length);
-
-    const prompt = `<|im_start|>system
-Você é um especialista jurídico brasileiro altamente qualificado em análise de contratos. Sua função é analisar o contrato fornecido de maneira detalhada e profissional.<|im_end|>
-<|im_start|>user
-Por favor, analise o seguinte contrato:
+    
+    console.log('Conectando ao modelo Qwen...');
+    const client = await Client.connect("Qwen/Qwen2.5-Turbo-1M-Demo");
+    
+    console.log('Enviando texto para análise...');
+    const prompt = `Por favor, analise o seguinte contrato de maneira detalhada e profissional:
 
 ${textoTruncado}
 
-Forneça uma análise detalhada incluindo:
+Forneça uma análise completa incluindo:
 1. Tipo de contrato e partes envolvidas
 2. Principais cláusulas e obrigações
 3. Pontos críticos e riscos jurídicos
 4. Sugestões de melhorias
-5. Conformidade legal<|im_end|>
-<|im_start|>assistant
-Vou analisar o contrato em detalhes:`;
+5. Conformidade legal`;
 
-    console.log('Enviando solicitação para o modelo...');
+    // Primeira chamada: adicionar o texto
+    const addTextResult = await client.predict(
+      "/add_text",
+      {
+        _input: { text: prompt, files: [] },
+        _chatbot: []
+      }
+    );
 
-    const response = await fetch(MODEL_URL, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${HF_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        inputs: prompt,
-        parameters: {
-          max_new_tokens: 1024,
-          temperature: 0.3,
-          top_p: 0.95,
-          do_sample: true,
-          return_full_text: false,
-        }
-      }),
-    });
+    // Segunda chamada: executar o agente
+    const analysisResult = await client.predict(
+      "/agent_run",
+      {
+        _chatbot: addTextResult[1] // Usa o resultado do chatbot da primeira chamada
+      }
+    );
 
-    console.log('Status da resposta:', response.status);
+    // Terceira chamada: finalizar
+    await client.predict("/flushed");
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Erro da API:', errorText);
-      throw new Error(`Erro na API do Hugging Face: ${response.status} - ${errorText}`);
+    let análise = '';
+    if (Array.isArray(analysisResult) && analysisResult.length > 0) {
+      // Extrai o texto da resposta do modelo
+      const lastMessage = analysisResult[analysisResult.length - 1];
+      if (Array.isArray(lastMessage) && lastMessage[1] && typeof lastMessage[1].text === 'string') {
+        análise = lastMessage[1].text.trim();
+      }
     }
 
-    const result = await response.json();
-    console.log('Resposta recebida do modelo');
-
-    if (!result || !Array.isArray(result) || !result[0]?.generated_text) {
-      console.error('Formato inesperado:', result);
-      throw new Error('Formato de resposta inválido do modelo');
+    if (!análise) {
+      throw new Error('Não foi possível gerar a análise do contrato');
     }
 
-    let análise = result[0].generated_text.trim();
-    
     if (texto.length > MAX_TEXT_LENGTH) {
       análise = "⚠️ Nota: Devido ao tamanho do documento, apenas uma parte foi analisada.\n\n" + análise;
     }
