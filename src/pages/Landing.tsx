@@ -1,7 +1,6 @@
-
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Play } from "lucide-react";
+import { Play, Check, DollarSign, Mail, Facebook, Twitter, Linkedin, Github } from "lucide-react";
 import { useCallback } from "react";
 import Particles from "react-particles";
 import { loadFull } from "tsparticles";
@@ -185,6 +184,180 @@ export default function Landing() {
           </div>
         </div>
       </div>
+
+      {/* Pricing Section */}
+      <div className="py-20 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Planos para Todos os Tamanhos
+            </h2>
+            <p className="text-xl text-gray-600">
+              Escolha o plano ideal para suas necessidades e comece a otimizar sua gestão imobiliária hoje mesmo.
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto">
+            {/* Plano Básico */}
+            <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-200 hover:border-blue-500 transition-colors">
+              <div className="text-center mb-8">
+                <h3 className="text-2xl font-semibold mb-2">Básico</h3>
+                <div className="flex items-center justify-center mb-4">
+                  <DollarSign className="w-6 h-6 text-blue-600" />
+                  <span className="text-4xl font-bold">49</span>
+                  <span className="text-gray-600 ml-2">/mês</span>
+                </div>
+                <p className="text-gray-600">Para pequenos negócios</p>
+              </div>
+              <ul className="space-y-4 mb-8">
+                {['Até 50 contratos', 'Gestão básica de documentos', '1 usuário', 'Suporte por email'].map((feature) => (
+                  <li key={feature} className="flex items-center">
+                    <Check className="w-5 h-5 text-blue-600 mr-2" />
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              <Button className="w-full" variant="outline">Começar Agora</Button>
+            </div>
+
+            {/* Plano Profissional */}
+            <div className="bg-blue-600 rounded-xl shadow-lg p-8 border-2 border-blue-500 transform scale-105">
+              <div className="text-center mb-8">
+                <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-sm mb-4 inline-block">Popular</span>
+                <h3 className="text-2xl font-semibold mb-2 text-white">Profissional</h3>
+                <div className="flex items-center justify-center mb-4">
+                  <DollarSign className="w-6 h-6 text-white" />
+                  <span className="text-4xl font-bold text-white">99</span>
+                  <span className="text-blue-100 ml-2">/mês</span>
+                </div>
+                <p className="text-blue-100">Para empresas em crescimento</p>
+              </div>
+              <ul className="space-y-4 mb-8">
+                {[
+                  'Até 200 contratos',
+                  'Gestão avançada de documentos',
+                  'Até 5 usuários',
+                  'Suporte prioritário',
+                  'Automações básicas'
+                ].map((feature) => (
+                  <li key={feature} className="flex items-center text-white">
+                    <Check className="w-5 h-5 text-blue-300 mr-2" />
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              <Button className="w-full bg-white text-blue-600 hover:bg-blue-50">Começar Agora</Button>
+            </div>
+
+            {/* Plano Empresarial */}
+            <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-200 hover:border-blue-500 transition-colors">
+              <div className="text-center mb-8">
+                <h3 className="text-2xl font-semibold mb-2">Empresarial</h3>
+                <div className="flex items-center justify-center mb-4">
+                  <DollarSign className="w-6 h-6 text-blue-600" />
+                  <span className="text-4xl font-bold">199</span>
+                  <span className="text-gray-600 ml-2">/mês</span>
+                </div>
+                <p className="text-gray-600">Para grandes empresas</p>
+              </div>
+              <ul className="space-y-4 mb-8">
+                {[
+                  'Contratos ilimitados',
+                  'Gestão completa de documentos',
+                  'Usuários ilimitados',
+                  'Suporte 24/7',
+                  'Automações avançadas',
+                  'API access'
+                ].map((feature) => (
+                  <li key={feature} className="flex items-center">
+                    <Check className="w-5 h-5 text-blue-600 mr-2" />
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              <Button className="w-full" variant="outline">Começar Agora</Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white">
+        <div className="container mx-auto px-4 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            {/* Coluna 1 - Sobre */}
+            <div>
+              <div className="flex items-center space-x-2 mb-6">
+                <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-xl">D</span>
+                </div>
+                <span className="text-xl font-semibold">DocHero</span>
+              </div>
+              <p className="text-gray-400 mb-6">
+                Simplificando a gestão imobiliária com tecnologia e inovação.
+              </p>
+              <div className="flex space-x-4">
+                <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                  <Facebook className="w-5 h-5" />
+                </a>
+                <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                  <Twitter className="w-5 h-5" />
+                </a>
+                <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                  <Linkedin className="w-5 h-5" />
+                </a>
+                <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                  <Github className="w-5 h-5" />
+                </a>
+              </div>
+            </div>
+
+            {/* Coluna 2 - Links */}
+            <div>
+              <h4 className="text-lg font-semibold mb-4">Produto</h4>
+              <ul className="space-y-3">
+                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Funcionalidades</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Integrações</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Preços</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">FAQ</a></li>
+              </ul>
+            </div>
+
+            {/* Coluna 3 - Links */}
+            <div>
+              <h4 className="text-lg font-semibold mb-4">Empresa</h4>
+              <ul className="space-y-3">
+                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Sobre nós</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Blog</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Carreiras</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Contato</a></li>
+              </ul>
+            </div>
+
+            {/* Coluna 4 - Newsletter */}
+            <div>
+              <h4 className="text-lg font-semibold mb-4">Fique por dentro</h4>
+              <p className="text-gray-400 mb-4">
+                Assine nossa newsletter para receber as últimas novidades.
+              </p>
+              <div className="flex gap-2">
+                <input
+                  type="email"
+                  placeholder="Seu e-mail"
+                  className="flex-1 bg-gray-800 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <Button size="icon" className="bg-blue-600 hover:bg-blue-700">
+                  <Mail className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
+            <p>&copy; 2024 DocHero. Todos os direitos reservados.</p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
