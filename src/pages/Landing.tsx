@@ -2,9 +2,21 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Play } from "lucide-react";
+import { useCallback } from "react";
+import Particles from "react-particles";
+import { loadFull } from "tsparticles";
+import type { Container, Engine } from "tsparticles-engine";
 
 export default function Landing() {
   const navigate = useNavigate();
+
+  const particlesInit = useCallback(async (engine: Engine) => {
+    await loadFull(engine);
+  }, []);
+
+  const particlesLoaded = useCallback(async (container: Container | undefined) => {
+    console.log("Particles loaded", container);
+  }, []);
 
   return (
     <div className="min-h-screen overflow-hidden">
@@ -36,52 +48,114 @@ export default function Landing() {
         </div>
       </header>
 
-      {/* Hero Section */}
+      {/* Hero Section with Particles */}
       <div className="relative min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 flex items-center">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239BA3AF' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }} />
-        </div>
+        <Particles
+          id="tsparticles"
+          init={particlesInit}
+          loaded={particlesLoaded}
+          options={{
+            fullScreen: {
+              enable: false
+            },
+            background: {
+              color: {
+                value: "transparent",
+              },
+            },
+            fpsLimit: 120,
+            interactivity: {
+              events: {
+                onClick: {
+                  enable: true,
+                  mode: "push",
+                },
+                onHover: {
+                  enable: true,
+                  mode: "repulse",
+                },
+                resize: true,
+              },
+              modes: {
+                push: {
+                  quantity: 4,
+                },
+                repulse: {
+                  distance: 200,
+                  duration: 0.4,
+                },
+              },
+            },
+            particles: {
+              color: {
+                value: "#ffffff",
+              },
+              links: {
+                color: "#ffffff",
+                distance: 150,
+                enable: true,
+                opacity: 0.2,
+                width: 1,
+              },
+              move: {
+                direction: "none",
+                enable: true,
+                outModes: {
+                  default: "bounce",
+                },
+                random: false,
+                speed: 2,
+                straight: false,
+              },
+              number: {
+                density: {
+                  enable: true,
+                  area: 800,
+                },
+                value: 80,
+              },
+              opacity: {
+                value: 0.2,
+              },
+              shape: {
+                type: "circle",
+              },
+              size: {
+                value: { min: 1, max: 3 },
+              },
+            },
+            detectRetina: true,
+          }}
+          className="absolute inset-0 z-10"
+        />
         
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="flex flex-col lg:flex-row items-center gap-12">
-            <div className="flex-1 text-center lg:text-left">
-              <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight">
-                Gestão Imobiliária<br />
-                <span className="text-blue-300">Simplificada</span>
-              </h1>
-              <p className="text-xl text-gray-300 mb-8 max-w-2xl">
-                Sua solução completa para administração de imóveis, documentos e contratos em um só lugar. Simplifique sua gestão imobiliária hoje.
-              </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
-                <Button
-                  size="lg"
-                  className="text-lg px-8 bg-white text-blue-600 hover:bg-blue-50"
-                  onClick={() => navigate("/dashboard-selection")}
-                >
-                  Teste Grátis
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="text-lg px-8 text-white border-white hover:bg-white/10"
-                >
-                  <Play className="w-5 h-5 mr-2" />
-                  Ver Demo
-                </Button>
-              </div>
-            </div>
-            <div className="flex-1">
-              <div className="relative">
-                <div className="absolute -inset-4 bg-blue-500/20 blur-xl rounded-xl"></div>
-                <img
-                  src="/placeholder.svg"
-                  alt="Dashboard Preview"
-                  className="relative rounded-xl shadow-2xl border border-white/10 w-full"
-                />
-              </div>
+        <div className="container mx-auto px-4 relative z-20">
+          <div className="text-center max-w-4xl mx-auto">
+            <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight">
+              Construímos Soluções para<br />
+              <span className="text-blue-300">Sua Gestão Imobiliária</span>
+            </h1>
+            <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
+              Sua solução completa para administração de imóveis, documentos e contratos em um só lugar. Simplifique sua gestão imobiliária hoje.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Button
+                size="lg"
+                className="text-lg px-8 bg-white text-blue-600 hover:bg-blue-50"
+                onClick={() => navigate("/dashboard-selection")}
+              >
+                Teste Grátis
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="text-lg px-8 text-white border-white hover:bg-white/10 group"
+              >
+                <div className="w-12 h-12 rounded-full border-2 border-white flex items-center justify-center mr-3 group-hover:bg-white/10">
+                  <Play className="w-5 h-5 text-white" />
+                </div>
+                Ver Demo
+              </Button>
             </div>
           </div>
         </div>
