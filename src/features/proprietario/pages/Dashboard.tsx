@@ -4,42 +4,42 @@ import { Building2, Home, Warehouse, TreePine } from "lucide-react";
 import { Bar, BarChart, Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useProperties } from "@/hooks/useProperties";
 
-// Dados de exemplo - em um caso real, viriam de uma API
-const propertyData = {
-  houses: 12,
-  apartments: 8,
-  commercial: 5,
-  rural: 3,
-  occupied: 23,
-  vacant: 5
+const propertyIcons = {
+  casa: Home,
+  apartamento: Building2,
+  comercial: Warehouse,
+  rural: TreePine,
+  terreno: TreePine
 };
 
-const monthlyRevenue = [
-  { month: 'Jan', receita: 45000 },
-  { month: 'Fev', receita: 42000 },
-  { month: 'Mar', receita: 48000 },
-  { month: 'Abr', receita: 51000 },
-  { month: 'Mai', receita: 53000 },
-  { month: 'Jun', receita: 49000 },
-];
-
-const revenueByProperty = [
-  { imovel: 'Ed. Central', online: 4500, offline: 2000, agente: 1500, marketing: 800 },
-  { imovel: 'Casa Jardins', online: 3800, offline: 2200, agente: 1200, marketing: 600 },
-  { imovel: 'Sala Corp.', online: 5200, offline: 1800, agente: 2000, marketing: 1000 },
-  { imovel: 'Apto. Park', online: 4200, offline: 2500, agente: 1800, marketing: 900 },
-];
-
-const propertyCards = [
-  { title: 'Casas', value: propertyData.houses, icon: Home, color: 'text-blue-600' },
-  { title: 'Apartamentos', value: propertyData.apartments, icon: Building2, color: 'text-green-600' },
-  { title: 'Comerciais', value: propertyData.commercial, icon: Warehouse, color: 'text-yellow-600' },
-  { title: 'Rurais', value: propertyData.rural, icon: TreePine, color: 'text-purple-600' },
-];
+const propertyColors = {
+  casa: 'text-blue-600',
+  apartamento: 'text-green-600',
+  comercial: 'text-yellow-600',
+  rural: 'text-purple-600',
+  terreno: 'text-orange-600'
+};
 
 export default function Dashboard() {
-  const [period, setPeriod] = useState('6m'); // 6m, 1y, all
+  const [period, setPeriod] = useState('6m');
+  const { stats, incomeByProperty, isLoading } = useProperties();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <p>Carregando dados...</p>
+      </div>
+    );
+  }
+
+  const propertyCards = Object.entries(stats.byType || {}).map(([type, quantity]) => ({
+    title: type.charAt(0).toUpperCase() + type.slice(1),
+    value: quantity,
+    icon: propertyIcons[type as keyof typeof propertyIcons] || Building2,
+    color: propertyColors[type as keyof typeof propertyColors] || 'text-gray-600'
+  }));
 
   return (
     <div className="space-y-6">
@@ -67,7 +67,7 @@ export default function Dashboard() {
             <CardTitle className="text-sm font-medium">Imóveis Ocupados</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{propertyData.occupied}</div>
+            <div className="text-2xl font-bold">{stats.occupied}</div>
           </CardContent>
         </Card>
         <Card>
@@ -75,7 +75,7 @@ export default function Dashboard() {
             <CardTitle className="text-sm font-medium">Imóveis Desocupados</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{propertyData.vacant}</div>
+            <div className="text-2xl font-bold">{stats.vacant}</div>
           </CardContent>
         </Card>
       </div>
@@ -88,15 +88,12 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent className="h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={revenueByProperty}>
+              <BarChart data={incomeByProperty}>
                 <XAxis dataKey="imovel" />
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="online" fill="#4F46E5" name="Online" />
-                <Bar dataKey="offline" fill="#10B981" name="Offline" />
-                <Bar dataKey="agente" fill="#F59E0B" name="Agente" />
-                <Bar dataKey="marketing" fill="#EC4899" name="Marketing" />
+                <Bar dataKey="receita" fill="#4F46E5" name="Receita" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -104,7 +101,7 @@ export default function Dashboard() {
 
         <Card className="col-span-1">
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Receita Mensal Total</CardTitle>
+            <CardTitle>Receita Total: R$ {stats.totalIncome.toLocaleString('pt-BR')}</CardTitle>
             <div className="space-x-2">
               <Button 
                 variant={period === '6m' ? 'default' : 'outline'} 
@@ -131,8 +128,8 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent className="h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={monthlyRevenue}>
-                <XAxis dataKey="month" />
+              <LineChart data={incomeByProperty}>
+                <XAxis dataKey="imovel" />
                 <YAxis />
                 <Tooltip />
                 <Legend />
@@ -141,7 +138,7 @@ export default function Dashboard() {
                   dataKey="receita" 
                   stroke="#4F46E5" 
                   strokeWidth={2}
-                  name="Receita Total"
+                  name="Receita"
                 />
               </LineChart>
             </ResponsiveContainer>
