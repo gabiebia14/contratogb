@@ -1,10 +1,10 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { Client } from "@gradio/client";
+
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+}
 
 const HF_TOKEN = Deno.env.get('HUGGING_FACE_ACCESS_TOKEN');
 
@@ -12,8 +12,25 @@ if (!HF_TOKEN) {
   console.error('HUGGING_FACE_ACCESS_TOKEN não está configurado');
 }
 
-// Usando um modelo mais estável e testado do Hugging Face
-const MODEL_URL = "Qwen/Qwen2.5-Turbo-1M-Demo";
+// Usando o modelo Mixtral que tem melhor performance com textos longos
+const MODEL_URL = "https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1";
+
+// Função para truncar o texto mantendo parágrafos completos
+function truncateText(text: string, maxLength: number): string {
+  if (text.length <= maxLength) return text;
+  
+  // Encontra o último parágrafo completo dentro do limite
+  const truncated = text.substring(0, maxLength);
+  const lastParagraph = truncated.lastIndexOf('\n\n');
+  
+  if (lastParagraph === -1) {
+    // Se não encontrar parágrafos, corta na última frase completa
+    const lastSentence = truncated.lastIndexOf('.');
+    return lastSentence === -1 ? truncated : truncated.substring(0, lastSentence + 1);
+  }
+  
+  return truncated.substring(0, lastParagraph) + '\n\n[Texto truncado devido ao tamanho...]';
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -45,7 +62,7 @@ serve(async (req) => {
         }
 
         texto = fileContent;
-        console.log('Tamanho do texto extraído:', texto.length);
+        console.log('Tamanho do texto original:', texto.length);
       } catch (error) {
         console.error('Erro ao processar arquivo:', error);
         throw new Error(`Erro ao processar arquivo: ${error.message}`);
@@ -66,54 +83,69 @@ serve(async (req) => {
       throw new Error('O texto do contrato é necessário');
     }
 
-    // Truncate the text if it exceeds the token limit
-    const maxTokens = 32768 - 2048; // Adjust based on your max_new_tokens
-    if (texto.length > maxTokens) {
-      console.log(`Texto excede o limite de tokens. Truncando para ${maxTokens} tokens.`);
-      texto = texto.slice(0, maxTokens);
-    }
+    // Limita o tamanho do texto para evitar exceder o limite de tokens
+    const MAX_TEXT_LENGTH = 12000; // Aproximadamente 3000 tokens
+    const textoTruncado = truncateText(texto, MAX_TEXT_LENGTH);
+
+    console.log('Tamanho do texto após truncamento:', textoTruncado.length);
+
+    const prompt = `<s>[INST] Você é um especialista jurídico brasileiro. Analise o seguinte contrato e forneça uma análise concisa e estruturada:
+
+${textoTruncado}
+
+Forneça uma análise que inclua:
+1. Principais cláusulas e implicações
+2. Riscos identificados
+3. Sugestões de melhorias
+4. Conformidade legal
+5. Recomendações [/INST]</s>`;
 
     console.log('Iniciando análise com o Hugging Face...');
 
-    const prompt = `<s>[INST] Você é um especialista jurídico brasileiro. Por favor, analise o seguinte contrato e forneça uma análise detalhada e estruturada:
+    const response = await fetch(MODEL_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${HF_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        inputs: prompt,
+        parameters: {
+          max_new_tokens: 1024,
+          temperature: 0.7,
+          top_p: 0.95,
+          return_full_text: false,
+        }
+      }),
+    });
 
-${texto}
+    console.log('Status da resposta:', response.status);
 
-Sua análise deve incluir:
-1. Principais cláusulas e suas implicações
-2. Possíveis riscos ou pontos de atenção
-3. Sugestões de melhorias
-4. Conformidade com a legislação vigente
-5. Recomendações gerais [/INST]</s>`;
-
-    const client = await Client.connect(MODEL_URL);
-
-    const result = await client.predict("/add_text", [
-      { text: prompt, files: [] }, 
-      []
-    ]);
-
-    console.log('Resposta recebida do Qwen');
-    if (!result?.data?.[1]?.[0]?.[1]) {
-      console.error('Resposta inesperada:', result);
-      throw new Error('O modelo não conseguiu gerar uma análise válida. Por favor, tente novamente.');
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Erro da API:', errorText);
+      throw new Error(`Erro na API do Hugging Face: ${response.status} - ${errorText}`);
     }
 
-    const análise = result.data[1][0][1];
-    if (typeof análise === 'string') {
-      return new Response(
-        JSON.stringify({ análise }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    } else if (typeof análise === 'object' && análise.text) {
-      return new Response(
-        JSON.stringify({ análise: análise.text }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    } else {
-      console.error('Formato de resposta inesperado:', análise);
-      throw new Error('Formato de resposta inesperado do modelo. Por favor, tente novamente.');
+    const result = await response.json();
+    console.log('Resposta recebida do modelo');
+
+    if (!result || !Array.isArray(result) || !result[0]?.generated_text) {
+      console.error('Formato inesperado:', result);
+      throw new Error('Formato de resposta inválido do modelo');
     }
+
+    let análise = result[0].generated_text.trim();
+    
+    // Adiciona aviso se o texto foi truncado
+    if (texto.length > MAX_TEXT_LENGTH) {
+      análise = "⚠️ Nota: Devido ao tamanho do documento, apenas uma parte foi analisada.\n\n" + análise;
+    }
+
+    return new Response(
+      JSON.stringify({ análise }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   } catch (error) {
     console.error('Erro na Edge Function:', error);
     return new Response(
