@@ -40,16 +40,16 @@ export default function DashboardLayout() {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <SidebarProvider defaultOpen={true}>
-        {/* Sidebar fixo */}
-        <div className="w-[280px] border-r bg-background min-h-screen fixed left-0 top-0 z-30">
-          <Sidebar collapsible="none" className="border-none">
+        {/* Sidebar fixo com altura total */}
+        <div className="w-[280px] fixed left-0 top-0 bottom-0 bg-background border-r z-30">
+          <Sidebar collapsible="none" className="border-none h-full">
             <SidebarHeader className="p-4">
               <Link to="/juridico" className="text-2xl font-bold flex items-center gap-2">
                 <span className="text-cyan-400">▲</span> ContractPro
               </Link>
             </SidebarHeader>
-            <SidebarContent className="h-[calc(100vh-80px)] overflow-y-auto">
-              <SidebarGroup>
+            <SidebarContent className="flex flex-col h-[calc(100vh-80px)]">
+              <SidebarGroup className="flex-1">
                 <SidebarGroupContent>
                   <SidebarMenu>
                     {menuItems.map((item) => (
@@ -87,7 +87,7 @@ export default function DashboardLayout() {
         </div>
 
         {/* Conteúdo principal com margem para o sidebar */}
-        <div className="flex-1 ml-[280px] w-[calc(100%-280px)]">
+        <div className="flex-1 ml-[280px]">
           <main className="min-h-screen">
             <div className="p-4 md:p-8">
               <div className="flex justify-end items-center mb-4 md:mb-8">
