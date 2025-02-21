@@ -15,23 +15,54 @@ serve(async (req) => {
     let texto = '';
     const contentType = req.headers.get('content-type') || '';
 
+    console.log('Content-Type recebido:', contentType);
+
     // Handle form data (file upload)
     if (contentType.includes('multipart/form-data')) {
-      const formData = await req.formData();
-      const file = formData.get('file') as File;
-      if (!file) {
-        throw new Error('Nenhum arquivo foi enviado');
+      try {
+        const formData = await req.formData();
+        const file = formData.get('file');
+        
+        if (!file) {
+          throw new Error('Nenhum arquivo foi enviado');
+        }
+
+        console.log('Arquivo recebido:', file.name, 'Tipo:', file.type);
+
+        // Verifica se é um arquivo de texto ou PDF
+        if (!file.type.includes('text/') && !file.type.includes('application/pdf')) {
+          throw new Error('Tipo de arquivo não suportado. Use apenas arquivos de texto ou PDF.');
+        }
+
+        // Lê o conteúdo do arquivo
+        const fileContent = await file.text();
+        if (!fileContent) {
+          throw new Error('Não foi possível ler o conteúdo do arquivo');
+        }
+
+        texto = fileContent;
+        console.log('Tamanho do texto extraído:', texto.length);
+      } catch (error) {
+        console.error('Erro ao processar arquivo:', error);
+        throw new Error(`Erro ao processar arquivo: ${error.message}`);
       }
-      texto = await file.text();
     } else {
       // Handle JSON data (text input)
-      const { texto: textoInput } = await req.json();
-      texto = textoInput;
+      try {
+        const json = await req.json();
+        texto = json.texto;
+        console.log('Tamanho do texto recebido via JSON:', texto?.length);
+      } catch (error) {
+        console.error('Erro ao processar JSON:', error);
+        throw new Error(`Erro ao processar entrada de texto: ${error.message}`);
+      }
     }
 
-    if (!texto) {
+    if (!texto?.trim()) {
       throw new Error('O texto do contrato é necessário');
     }
+
+    console.log('Iniciando chamada para Hugging Face API...');
 
     const response = await fetch(
       "https://api-inference.huggingface.co/models/Qwen/Qwen2.5-Turbo-1M",
@@ -56,22 +87,37 @@ Por favor, forneça uma análise detalhada incluindo:
 Responda de forma clara e estruturada.`,
         }),
       }
-    )
+    );
 
-    const result = await response.json()
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('Erro na resposta do Hugging Face:', response.status, errorData);
+      throw new Error(`Erro na API do Hugging Face: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('Resposta recebida do Hugging Face');
+
+    if (!result[0]?.generated_text) {
+      console.error('Resposta inesperada do Hugging Face:', result);
+      throw new Error('Resposta inválida do modelo');
+    }
 
     return new Response(
       JSON.stringify({ análise: result[0].generated_text }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    );
   } catch (error) {
-    console.error('Erro:', error)
+    console.error('Erro na Edge Function:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        details: error.stack 
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500
       }
-    )
+    );
   }
-})
+});
