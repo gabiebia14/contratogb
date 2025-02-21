@@ -87,19 +87,29 @@ Responda de forma clara e estruturada.`;
       [] // _chatbot
     ]);
 
-    console.log('Resposta recebida do Qwen');
+    console.log('Resposta recebida do Qwen:', JSON.stringify(result.data));
 
-    if (!result?.data) {
+    if (!result?.data?.[1]?.[0]?.[1]) {
+      console.error('Resposta inesperada:', result);
       throw new Error('Resposta inválida do modelo');
     }
 
-    // A resposta estará no segundo elemento do array retornado
-    const análise = result.data[1][0][1].text;
+    const análise = result.data[1][0][1];
 
-    return new Response(
-      JSON.stringify({ análise }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    if (typeof análise === 'string') {
+      return new Response(
+        JSON.stringify({ análise }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } else if (typeof análise === 'object' && análise.text) {
+      return new Response(
+        JSON.stringify({ análise: análise.text }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } else {
+      console.error('Formato de resposta inesperado:', análise);
+      throw new Error('Formato de resposta inesperado do modelo');
+    }
   } catch (error) {
     console.error('Erro na Edge Function:', error);
     return new Response(
