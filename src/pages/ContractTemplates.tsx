@@ -141,7 +141,7 @@ export default function ContractTemplates() {
               />
               <p className="text-xs text-gray-500 mt-1">
                 Use chaves duplas para campos dinâmicos.
-                Exemplos: {"{"}"{locador_nome}, {locatario_cpf}"}
+                Exemplo: {'{{locador_nome}}, {{locatario_cpf}}'}
               </p>
             </div>
 
