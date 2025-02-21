@@ -21,6 +21,13 @@ import GenerateContract from '@/features/juridico/pages/GenerateContract';
 import AnalisarContrato from '@/features/juridico/pages/AnalisarContrato';
 import CompararContratos from '@/features/juridico/pages/CompararContratos';
 
+// Import Proprietário pages
+import PropDashboard from '@/features/proprietario/pages/Dashboard';
+import Imoveis from '@/features/proprietario/pages/Imoveis';
+import Renda from '@/features/proprietario/pages/Renda';
+import Mapa from '@/features/proprietario/pages/Mapa';
+import Chat from '@/features/proprietario/pages/Chat';
+
 const queryClient = new QueryClient();
 
 function App() {
@@ -33,7 +40,7 @@ function App() {
           <Route path="/auth" element={<Auth />} />
           
           {/* Juridical Dashboard */}
-          <Route path="/juridico" element={<DashboardLayout />}>
+          <Route path="/juridico" element={<DashboardLayout dashboardType="juridico" />}>
             <Route index element={<Dashboard />} />
             <Route path="contracts" element={<ContractsPage />} />
             <Route path="contracts/:id" element={<ContractViewer />} />
@@ -47,8 +54,16 @@ function App() {
             <Route path="library" element={<Library />} />
           </Route>
 
-          {/* Placeholder routes for other dashboards */}
-          <Route path="/proprietario" element={<Navigate to="/em-construcao" />} />
+          {/* Proprietário Dashboard */}
+          <Route path="/proprietario" element={<DashboardLayout dashboardType="proprietario" />}>
+            <Route index element={<PropDashboard />} />
+            <Route path="imoveis" element={<Imoveis />} />
+            <Route path="renda" element={<Renda />} />
+            <Route path="mapa" element={<Mapa />} />
+            <Route path="chat" element={<Chat />} />
+          </Route>
+          
+          {/* Admin Dashboard */}
           <Route path="/admin" element={<Navigate to="/em-construcao" />} />
           
           <Route path="*" element={<NotFound />} />
