@@ -37,21 +37,46 @@ export default function Imoveis() {
       const char = line[i];
       
       if (char === '"') {
-        insideQuotes = !insideQuotes;
+        // Se encontrarmos aspas, invertemos o estado de insideQuotes
+        if (i > 0 && line[i-1] === '"') {
+          // Aspas duplas consecutivas são escapadas
+          currentValue = currentValue.slice(0, -1) + '"';
+        } else {
+          insideQuotes = !insideQuotes;
+        }
       } else if (char === ',' && !insideQuotes) {
+        // Só separamos por vírgula se não estivermos dentro de aspas
         values.push(currentValue.trim());
         currentValue = '';
       } else {
         currentValue += char;
       }
     }
-    values.push(currentValue.trim()); // Adiciona o último valor
-    return values;
+    // Adiciona o último valor
+    values.push(currentValue.trim());
+    
+    // Remove aspas do início e fim de cada valor
+    return values.map(value => value.replace(/^"(.*)"$/, '$1').trim());
+  };
+
+  const parseRenda = (rendaStr: string): number | null => {
+    if (!rendaStr) return null;
+    
+    // Remove R$, espaços e converte vírgula para ponto
+    const value = rendaStr
+      .replace(/R\$\s*/g, '')  // Remove R$ e espaços depois dele
+      .replace(/\./g, '')      // Remove pontos de milhar
+      .replace(/,/g, '.')      // Converte vírgula para ponto decimal
+      .trim();
+    
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? null : parsed;
   };
 
   const syncProperties = async () => {
     try {
       setSyncing(true);
+      console.log('Iniciando sincronização...');
       
       // Buscar dados do CSV
       const response = await fetch(SHEET_URL);
@@ -61,16 +86,17 @@ export default function Imoveis() {
       const rows = csvText.split('\n');
       const headers = parseCsvLine(rows[0]);
       
+      console.log('Headers:', headers);
+      
       const properties = rows.slice(1).map(row => {
         const values = parseCsvLine(row);
         const propertyData: Record<string, string> = {};
         
         headers.forEach((header, index) => {
-          // Remove aspas extras e espaços
-          const value = values[index]?.replace(/^["']|["']$/g, '').trim() || '';
-          propertyData[header.trim()] = value;
+          propertyData[header.trim()] = values[index] || '';
         });
         
+        console.log('Linha processada:', propertyData);
         return propertyData;
       });
 
@@ -83,16 +109,19 @@ export default function Imoveis() {
           type: normalizePropertyType(row['TIPO DE IMÓVEL']),
           quantity: parseInt(row['QUANTIDADE']) || 1,
           address: row['ENDEREÇO'],
-          income: row['RENDA'] ? parseFloat(row['RENDA'].replace('R$', '').replace(/\./g, '').replace(',', '.')) : null,
+          income: parseRenda(row['RENDA']),
           tenant: row['LOCATÁRIO(A)'] || null,
           observations: row['OBSERVAÇÕES'] || null,
           city: row['CIDADE']
         }))
       );
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao inserir dados:', error);
+        throw error;
+      }
 
-      loadProperties();
+      await loadProperties();
       toast.success('Dados sincronizados com sucesso!');
     } catch (error) {
       console.error('Erro ao sincronizar dados:', error);
