@@ -87,34 +87,28 @@ Por favor, forneça uma análise detalhada incluindo:
 
 Responda de forma clara e estruturada.`;
 
-    const result = await client.predict("/add_text", [
-      { text: prompt, files: [] }, // _input
-      [] // _chatbot
-    ]);
+    const result = await client.predict("/add_text", { 		
+      _input: { text: prompt, files: [] }, 		
+      _chatbot: [[{ text: prompt, files: [] }, { text: "", flushing: false }]]
+    });
 
-    console.log('Resposta recebida do Qwen');
+    console.log('Resposta recebida do Qwen:', JSON.stringify(result.data));
 
-    if (!result?.data?.[1]?.[0]?.[1]) {
-      console.error('Resposta inesperada:', result);
-      throw new Error('O modelo não conseguiu gerar uma análise válida. Por favor, tente novamente.');
+    if (!result?.data) {
+      throw new Error('Resposta inválida do modelo');
     }
 
-    const análise = result.data[1][0][1];
+    // A resposta estará no segundo elemento do array e conterá o texto gerado
+    const análise = result.data[1]?.[0]?.[1]?.text;
 
-    if (typeof análise === 'string') {
-      return new Response(
-        JSON.stringify({ análise }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    } else if (typeof análise === 'object' && análise.text) {
-      return new Response(
-        JSON.stringify({ análise: análise.text }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    } else {
-      console.error('Formato de resposta inesperado:', análise);
-      throw new Error('Formato de resposta inesperado do modelo. Por favor, tente novamente.');
+    if (!análise) {
+      throw new Error('O modelo não retornou uma análise válida');
     }
+
+    return new Response(
+      JSON.stringify({ análise }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   } catch (error) {
     console.error('Erro na Edge Function:', error);
     return new Response(
