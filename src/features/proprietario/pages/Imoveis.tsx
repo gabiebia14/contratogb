@@ -67,31 +67,18 @@ export default function Imoveis() {
 
   const clearAllProperties = async () => {
     try {
-      // Primeiro, vamos buscar todos os IDs existentes
-      const { data: existingData, error: fetchError } = await supabase
+      const { error: deleteError } = await supabase
         .from('properties')
-        .select('id');
+        .delete()
+        .gt('id', '00000000-0000-0000-0000-000000000000');
 
-      if (fetchError) {
-        throw fetchError;
+      if (deleteError) {
+        throw deleteError;
       }
 
-      if (existingData && existingData.length > 0) {
-        // Deletar todos os registros
-        const { error: deleteError } = await supabase
-          .from('properties')
-          .delete()
-          .in('id', existingData.map(item => item.id));
-
-        if (deleteError) {
-          throw deleteError;
-        }
-
-        await loadProperties(); // Recarrega a lista vazia
-        toast.success('Todos os imóveis foram removidos com sucesso!');
-      } else {
-        toast.info('Não há imóveis para remover.');
-      }
+      setProperties([]);
+      await loadProperties();
+      toast.success('Todos os imóveis foram removidos com sucesso!');
     } catch (error) {
       console.error('Erro ao limpar imóveis:', error);
       toast.error('Erro ao limpar os imóveis');
@@ -103,11 +90,19 @@ export default function Imoveis() {
       setSyncing(true);
       console.log('Iniciando sincronização...');
       
-      // Buscar dados do CSV
+      const { error: deleteError } = await supabase
+        .from('properties')
+        .delete()
+        .gt('id', '00000000-0000-0000-0000-000000000000');
+
+      if (deleteError) {
+        console.error('Erro ao limpar dados existentes:', deleteError);
+        throw deleteError;
+      }
+
       const response = await fetch(SHEET_URL);
       const csvText = await response.text();
       
-      // Converter CSV para array de objetos
       const rows = csvText.split('\n');
       const headers = parseCsvLine(rows[0]);
       
@@ -125,10 +120,6 @@ export default function Imoveis() {
         return propertyData;
       });
 
-      // Primeiro limpar todos os dados existentes
-      await clearAllProperties();
-
-      // Agora inserimos os novos dados
       const { error: insertError } = await supabase
         .from('properties')
         .insert(properties.map(row => ({
@@ -165,7 +156,6 @@ export default function Imoveis() {
 
       if (error) throw error;
 
-      // Normaliza os tipos de propriedade antes de definir o estado
       const normalizedProperties = (data || []).map(property => ({
         ...property,
         type: normalizePropertyType(property.type)
