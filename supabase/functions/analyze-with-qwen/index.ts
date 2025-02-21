@@ -65,7 +65,7 @@ serve(async (req) => {
     console.log('Iniciando chamada para Hugging Face API...');
 
     const response = await fetch(
-      "https://api-inference.huggingface.co/models/Qwen/Qwen2.5-Turbo-1M",
+      "https://api-inference.huggingface.co/models/Qwen/Qwen1.5-72B-Chat",
       {
         headers: {
           "Content-Type": "application/json",
