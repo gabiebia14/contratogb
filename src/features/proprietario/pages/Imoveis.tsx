@@ -1,11 +1,10 @@
-
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Property, PropertyType } from "@/types/properties";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Trash2 } from "lucide-react";
 
 export default function Imoveis() {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -66,6 +65,39 @@ export default function Imoveis() {
     return isNaN(parsed) ? null : parsed;
   };
 
+  const clearAllProperties = async () => {
+    try {
+      // Primeiro, vamos buscar todos os IDs existentes
+      const { data: existingData, error: fetchError } = await supabase
+        .from('properties')
+        .select('id');
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      if (existingData && existingData.length > 0) {
+        // Deletar todos os registros
+        const { error: deleteError } = await supabase
+          .from('properties')
+          .delete()
+          .in('id', existingData.map(item => item.id));
+
+        if (deleteError) {
+          throw deleteError;
+        }
+
+        await loadProperties(); // Recarrega a lista vazia
+        toast.success('Todos os imóveis foram removidos com sucesso!');
+      } else {
+        toast.info('Não há imóveis para remover.');
+      }
+    } catch (error) {
+      console.error('Erro ao limpar imóveis:', error);
+      toast.error('Erro ao limpar os imóveis');
+    }
+  };
+
   const syncProperties = async () => {
     try {
       setSyncing(true);
@@ -93,23 +125,8 @@ export default function Imoveis() {
         return propertyData;
       });
 
-      // Primeiro, vamos buscar todos os IDs existentes
-      const { data: existingData } = await supabase
-        .from('properties')
-        .select('id');
-
-      if (existingData && existingData.length > 0) {
-        // Se existem dados, deletamos todos
-        const { error: deleteError } = await supabase
-          .from('properties')
-          .delete()
-          .in('id', existingData.map(item => item.id));
-
-        if (deleteError) {
-          console.error('Erro ao deletar dados existentes:', deleteError);
-          throw deleteError;
-        }
-      }
+      // Primeiro limpar todos os dados existentes
+      await clearAllProperties();
 
       // Agora inserimos os novos dados
       const { error: insertError } = await supabase
@@ -171,14 +188,24 @@ export default function Imoveis() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Imóveis</h1>
-        <Button 
-          variant="outline"
-          onClick={syncProperties}
-          disabled={syncing}
-        >
-          <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
-          {syncing ? 'Sincronizando...' : 'Sincronizar com Planilha'}
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="destructive"
+            onClick={clearAllProperties}
+            disabled={syncing}
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Limpar Todos
+          </Button>
+          <Button 
+            variant="outline"
+            onClick={syncProperties}
+            disabled={syncing}
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
+            {syncing ? 'Sincronizando...' : 'Sincronizar com Planilha'}
+          </Button>
+        </div>
       </div>
 
       {loading ? (
