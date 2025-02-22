@@ -14,6 +14,7 @@ serve(async (req) => {
 
   try {
     const { url } = await req.json()
+    console.log('URL recebida:', url);
 
     if (!url) {
       throw new Error('URL é obrigatória')
@@ -25,30 +26,61 @@ serve(async (req) => {
       throw new Error('URL inválida do YouTube')
     }
 
-    // Usar a API do YouTube para obter informações do vídeo
-    const videoId = url.includes('youtu.be') 
-      ? url.split('/').pop() 
-      : new URL(url).searchParams.get('v');
+    // Extrair ID do vídeo
+    let videoId;
+    try {
+      if (url.includes('youtu.be')) {
+        videoId = url.split('/').pop()?.split('?')[0];
+      } else {
+        const urlObj = new URL(url);
+        videoId = urlObj.searchParams.get('v');
+      }
+    } catch (e) {
+      console.error('Erro ao extrair ID do vídeo:', e);
+      throw new Error('Não foi possível extrair o ID do vídeo da URL');
+    }
 
     if (!videoId) {
       throw new Error('ID do vídeo não encontrado na URL');
     }
 
-    // Usar um serviço público de conversão
+    console.log('ID do vídeo extraído:', videoId);
+
+    // Verificar se a chave API está disponível
+    const apiKey = Deno.env.get('RAPID_API_KEY');
+    if (!apiKey) {
+      throw new Error('Chave API não configurada');
+    }
+
+    // Usar o serviço de conversão
     const converterUrl = `https://youtube-mp36.p.rapidapi.com/dl?id=${videoId}`;
+    console.log('Fazendo requisição para:', converterUrl);
     
     const response = await fetch(converterUrl, {
       method: 'GET',
       headers: {
-        'X-RapidAPI-Key': Deno.env.get('RAPID_API_KEY') || '',
+        'X-RapidAPI-Key': apiKey,
         'X-RapidAPI-Host': 'youtube-mp36.p.rapidapi.com'
       }
     });
 
-    const data = await response.json();
+    // Verificar status da resposta
+    if (!response.ok) {
+      console.error('Erro na resposta da API:', response.status, response.statusText);
+      const text = await response.text();
+      console.error('Corpo da resposta:', text);
+      throw new Error(`Erro na API: ${response.status} ${response.statusText}`);
+    }
 
-    if (data.status === 'fail') {
-      throw new Error('Falha ao converter o vídeo');
+    const data = await response.json();
+    console.log('Resposta da API:', data);
+
+    if (!data || data.status === 'fail') {
+      throw new Error(data.msg || 'Falha ao converter o vídeo');
+    }
+
+    if (!data.link) {
+      throw new Error('Link de download não encontrado na resposta');
     }
 
     return new Response(
@@ -62,9 +94,10 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Erro na conversão:', error);
+    console.error('Erro completo:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       { 
         status: 400, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

@@ -19,21 +19,30 @@ export default function YouTubeConverter() {
     }
 
     setIsLoading(true);
+    toast.info('Iniciando processo de conversão...');
 
     try {
       const { data, error } = await supabase.functions.invoke('youtube-to-mp3', {
         body: { url }
       });
 
-      if (error) throw error;
-      if (!data?.downloadUrl) throw new Error('URL de download não encontrada');
+      if (error) {
+        console.error('Erro do Supabase:', error);
+        throw new Error(error.message);
+      }
 
-      // Redirecionar para o download
+      if (!data?.downloadUrl) {
+        console.error('Resposta sem URL de download:', data);
+        throw new Error('URL de download não encontrada na resposta');
+      }
+
+      // Iniciar o download
+      toast.success('Download iniciando...');
       window.location.href = data.downloadUrl;
-      toast.success('Download iniciado!');
     } catch (error) {
-      console.error('Erro:', error);
-      toast.error('Erro ao processar o vídeo: ' + (error as Error).message);
+      console.error('Erro detalhado:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      toast.error('Erro ao processar o vídeo: ' + errorMessage);
     } finally {
       setIsLoading(false);
     }
