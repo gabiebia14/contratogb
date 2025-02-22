@@ -11,7 +11,6 @@ export default function Dashboard() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Função para normalizar o tipo de propriedade
   const normalizePropertyType = (type: string): PropertyType => {
     switch (type.toLowerCase()) {
       case 'casa': return 'casa';
@@ -26,7 +25,6 @@ export default function Dashboard() {
     }
   };
 
-  // Função para carregar os imóveis
   const loadProperties = async () => {
     try {
       const { data, error } = await supabase
@@ -36,7 +34,6 @@ export default function Dashboard() {
 
       if (error) throw error;
 
-      // Normaliza os tipos de propriedade antes de definir o estado
       const normalizedProperties = (data || []).map(property => ({
         ...property,
         type: normalizePropertyType(property.type)
@@ -63,10 +60,11 @@ export default function Dashboard() {
     terrenos: properties.filter(p => p.type === 'terreno').reduce((acc, curr) => acc + (curr.quantity || 1), 0),
   };
 
-  // Calculando imóveis ocupados e desocupados
+  // Calculando totais de ocupação
   const occupancyStats = {
-    occupied: properties.filter(p => p.tenant).length,
-    vacant: properties.filter(p => !p.tenant).length
+    total: properties.reduce((acc, curr) => acc + (curr.quantity || 1), 0),
+    occupied: properties.filter(p => p.tenant).reduce((acc, curr) => acc + (curr.quantity || 1), 0),
+    vacant: properties.filter(p => !p.tenant).reduce((acc, curr) => acc + (curr.quantity || 1), 0)
   };
 
   // Dados para os cards de tipo de imóvel
@@ -84,11 +82,34 @@ export default function Dashboard() {
       imovel: p.address.length > 20 ? p.address.substring(0, 20) + '...' : p.address,
       renda: p.income || 0
     }))
-    .slice(0, 5); // Pegando apenas os 5 primeiros para não sobrecarregar o gráfico
+    .slice(0, 5);
 
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Dashboard</h1>
+
+      {/* Occupancy Status Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl">Visão Geral dos Imóveis</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 gap-4 text-center">
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">Total de Imóveis</p>
+              <p className="text-2xl font-bold text-primary">{occupancyStats.total}</p>
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">Ocupados</p>
+              <p className="text-2xl font-bold text-green-600">{occupancyStats.occupied}</p>
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">Desocupados</p>
+              <p className="text-2xl font-bold text-red-600">{occupancyStats.vacant}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Property Type Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -103,26 +124,6 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         ))}
-      </div>
-
-      {/* Occupancy Status Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Imóveis Ocupados</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{occupancyStats.occupied}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Imóveis Desocupados</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{occupancyStats.vacant}</div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Revenue Charts */}
