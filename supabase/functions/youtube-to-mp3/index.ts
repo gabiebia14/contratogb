@@ -1,6 +1,5 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -26,50 +25,44 @@ serve(async (req) => {
       throw new Error('URL inválida do YouTube')
     }
 
-    // Use pytube para baixar o áudio
-    const command = new Deno.Command('python3', {
-      args: [
-        '-c',
-        `
-import sys
-from pytube import YouTube
+    // Usar a API do YouTube para obter informações do vídeo
+    const videoId = url.includes('youtu.be') 
+      ? url.split('/').pop() 
+      : new URL(url).searchParams.get('v');
 
-try:
-    yt = YouTube('${url}')
-    audio_stream = yt.streams.filter(only_audio=True).first()
-    audio_data = audio_stream.download()
-    print(f"SUCCESS:{audio_data}")
-except Exception as e:
-    print(f"ERROR:{str(e)}")
-        `
-      ]
-    });
-
-    const { code, stdout, stderr } = await command.output();
-    const output = new TextDecoder().decode(stdout);
-
-    if (code !== 0 || output.startsWith('ERROR:')) {
-      throw new Error(output.replace('ERROR:', ''));
+    if (!videoId) {
+      throw new Error('ID do vídeo não encontrado na URL');
     }
 
-    const audioPath = output.replace('SUCCESS:', '').trim();
-    const audioData = await Deno.readFile(audioPath);
+    // Usar um serviço público de conversão
+    const converterUrl = `https://youtube-mp36.p.rapidapi.com/dl?id=${videoId}`;
+    
+    const response = await fetch(converterUrl, {
+      method: 'GET',
+      headers: {
+        'X-RapidAPI-Key': Deno.env.get('RAPID_API_KEY') || '',
+        'X-RapidAPI-Host': 'youtube-mp36.p.rapidapi.com'
+      }
+    });
 
-    // Limpar o arquivo temporário
-    await Deno.remove(audioPath);
+    const data = await response.json();
+
+    if (data.status === 'fail') {
+      throw new Error('Falha ao converter o vídeo');
+    }
 
     return new Response(
-      audioData,
+      JSON.stringify({ downloadUrl: data.link }),
       { 
         headers: { 
           ...corsHeaders,
-          'Content-Type': 'audio/mpeg',
-          'Content-Disposition': 'attachment; filename="audio.mp3"'
+          'Content-Type': 'application/json'
         } 
       }
     );
 
   } catch (error) {
+    console.error('Erro na conversão:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { 

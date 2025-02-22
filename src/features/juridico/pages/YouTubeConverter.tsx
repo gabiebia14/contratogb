@@ -26,25 +26,11 @@ export default function YouTubeConverter() {
       });
 
       if (error) throw error;
+      if (!data?.downloadUrl) throw new Error('URL de download não encontrada');
 
-      // Criar um Blob a partir dos dados recebidos
-      const blob = new Blob([data], { type: 'audio/mpeg' });
-      
-      // Criar uma URL para o Blob
-      const downloadUrl = window.URL.createObjectURL(blob);
-      
-      // Criar um elemento <a> temporário para download
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = 'audio.mp3'; // Nome do arquivo para download
-      document.body.appendChild(link);
-      link.click();
-      
-      // Limpar
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(downloadUrl);
-
-      toast.success('Áudio baixado com sucesso!');
+      // Redirecionar para o download
+      window.location.href = data.downloadUrl;
+      toast.success('Download iniciado!');
     } catch (error) {
       console.error('Erro:', error);
       toast.error('Erro ao processar o vídeo: ' + (error as Error).message);
