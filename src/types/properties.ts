@@ -1,5 +1,5 @@
 
-export type PropertyType = 'casa' | 'apartamento' | 'comercial' | 'terreno';
+export type PropertyType = 'casa' | 'apartamento' | 'comercial' | 'terreno' | 'rural';
 
 export interface Property {
   id: string;
