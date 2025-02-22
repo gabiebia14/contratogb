@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function YouTubeConverter() {
   const [url, setUrl] = useState('');
@@ -20,13 +21,33 @@ export default function YouTubeConverter() {
     setIsLoading(true);
 
     try {
-      // TODO: Implementar a lógica de conversão do YouTube para MP3
-      // Por enquanto, vamos apenas simular o processo
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const { data, error } = await supabase.functions.invoke('youtube-to-mp3', {
+        body: { url }
+      });
+
+      if (error) throw error;
+
+      // Criar um Blob a partir dos dados recebidos
+      const blob = new Blob([data], { type: 'audio/mpeg' });
+      
+      // Criar uma URL para o Blob
+      const downloadUrl = window.URL.createObjectURL(blob);
+      
+      // Criar um elemento <a> temporário para download
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = 'audio.mp3'; // Nome do arquivo para download
+      document.body.appendChild(link);
+      link.click();
+      
+      // Limpar
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+
       toast.success('Áudio baixado com sucesso!');
     } catch (error) {
-      toast.error('Erro ao processar o vídeo');
       console.error('Erro:', error);
+      toast.error('Erro ao processar o vídeo: ' + (error as Error).message);
     } finally {
       setIsLoading(false);
     }
