@@ -20,6 +20,7 @@ import Documents from '@/features/juridico/pages/Documents';
 import GenerateContract from '@/features/juridico/pages/GenerateContract';
 import AnalisarContrato from '@/features/juridico/pages/AnalisarContrato';
 import CompararContratos from '@/features/juridico/pages/CompararContratos';
+import YouTubeConverter from '@/features/juridico/pages/YouTubeConverter';
 
 // Import Proprietário pages
 import PropDashboard from '@/features/proprietario/pages/Dashboard';
@@ -51,6 +52,7 @@ function App() {
             <Route path="ai/chat" element={<AIChat />} />
             <Route path="ai/analisar" element={<AnalisarContrato />} />
             <Route path="ai/comparar" element={<CompararContratos />} />
+            <Route path="ai/youtube" element={<YouTubeConverter />} />
             <Route path="library" element={<Library />} />
           </Route>
 
