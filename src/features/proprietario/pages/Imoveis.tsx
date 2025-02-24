@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Property, PropertyType } from "@/types/properties";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { RefreshCw, Home, Building2, Store, Trees } from "lucide-react";
+import { Home, Building2, Store, Trees } from "lucide-react";
+import { PropertyCard } from "../components/PropertyCard";
+import { PropertyCategoryCard } from "../components/PropertyCategoryCard";
+import { SyncPropertiesButton } from "../components/SyncPropertiesButton";
 
 export default function Imoveis() {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -91,7 +92,7 @@ export default function Imoveis() {
       console.log('Headers:', headers);
       
       const propertiesToInsert = rows.slice(1)
-        .filter(row => row.trim()) // Remove linhas vazias
+        .filter(row => row.trim())
         .map(row => {
           const values = parseCsvLine(row);
           const propertyData: Record<string, string> = {};
@@ -165,36 +166,21 @@ export default function Imoveis() {
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Imóveis</h1>
         <div className="flex gap-2">
-          <Button 
-            variant="outline"
-            onClick={syncProperties}
-            disabled={syncing}
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
-            {syncing ? 'Sincronizando...' : 'Sincronizar com Planilha'}
-          </Button>
+          <SyncPropertiesButton onSync={syncProperties} isSyncing={syncing} />
         </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {categories.map((category) => (
-          <Card 
+          <PropertyCategoryCard
             key={category.type}
-            className={`cursor-pointer transition-all hover:scale-105 ${
-              selectedCategory === category.type ? 'border-primary shadow-lg' : ''
-            }`}
+            type={category.type}
+            label={category.label}
+            icon={category.icon}
+            count={category.count}
+            isSelected={selectedCategory === category.type}
             onClick={() => setSelectedCategory(category.type)}
-          >
-            <CardHeader className="p-4">
-              <div className="flex items-center justify-between">
-                <category.icon className="w-6 h-6" />
-                <span className="text-2xl font-bold">{category.count}</span>
-              </div>
-            </CardHeader>
-            <CardContent className="p-4 pt-0">
-              <h3 className="font-medium">{category.label}</h3>
-            </CardContent>
-          </Card>
+          />
         ))}
       </div>
 
@@ -205,29 +191,7 @@ export default function Imoveis() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredProperties.map((property) => (
-            <Card key={property.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <CardTitle className="text-lg">
-                  {property.type.charAt(0).toUpperCase() + property.type.slice(1)}
-                  {property.quantity > 1 && ` (${property.quantity})`}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <p><strong>Endereço:</strong> {property.address}</p>
-                  <p><strong>Cidade:</strong> {property.city}</p>
-                  {property.tenant && (
-                    <p><strong>Locatário:</strong> {property.tenant}</p>
-                  )}
-                  {property.income !== null && (
-                    <p><strong>Renda:</strong> R$ {property.income.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                  )}
-                  {property.observations && (
-                    <p><strong>Observações:</strong> {property.observations}</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <PropertyCard key={property.id} property={property} />
           ))}
         </div>
       )}
