@@ -1,18 +1,26 @@
-
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Property, PropertyType } from "@/types/properties";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Trash2 } from "lucide-react";
+import { RefreshCw, Home, Building2, Store, Trees } from "lucide-react";
 
 export default function Imoveis() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<PropertyType | 'todas'>('todas');
 
   const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsyn1gs9yeHktxDsKFl7uKgcaL7hEDpaRwdl7NHhJuXeikMInhcxG0137fPiVYyZ5AwK98Ny66W8l2/pub?gid=195841533&single=true&output=csv";
+
+  const categories = [
+    { type: 'todas' as const, label: 'Todas', icon: Home, count: properties.length },
+    { type: 'casa' as const, label: 'Casas', icon: Home, count: properties.filter(p => p.type === 'casa').length },
+    { type: 'apartamento' as const, label: 'Apartamentos', icon: Building2, count: properties.filter(p => p.type === 'apartamento').length },
+    { type: 'comercial' as const, label: 'Comercial', icon: Store, count: properties.filter(p => p.type === 'comercial').length },
+    { type: 'terreno' as const, label: 'Terrenos', icon: Trees, count: properties.filter(p => p.type === 'terreno').length },
+  ];
 
   const normalizePropertyType = (type: string): PropertyType => {
     switch (type.toLowerCase().trim()) {
@@ -148,6 +156,10 @@ export default function Imoveis() {
     loadProperties();
   }, []);
 
+  const filteredProperties = selectedCategory === 'todas' 
+    ? properties 
+    : properties.filter(property => property.type === selectedCategory);
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -164,13 +176,35 @@ export default function Imoveis() {
         </div>
       </div>
 
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        {categories.map((category) => (
+          <Card 
+            key={category.type}
+            className={`cursor-pointer transition-all hover:scale-105 ${
+              selectedCategory === category.type ? 'border-primary shadow-lg' : ''
+            }`}
+            onClick={() => setSelectedCategory(category.type)}
+          >
+            <CardHeader className="p-4">
+              <div className="flex items-center justify-between">
+                <category.icon className="w-6 h-6" />
+                <span className="text-2xl font-bold">{category.count}</span>
+              </div>
+            </CardHeader>
+            <CardContent className="p-4 pt-0">
+              <h3 className="font-medium">{category.label}</h3>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
       {loading ? (
         <div className="flex items-center justify-center h-64">
           <p>Carregando imóveis...</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {properties.map((property) => (
+          {filteredProperties.map((property) => (
             <Card key={property.id} className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <CardTitle className="text-lg">
