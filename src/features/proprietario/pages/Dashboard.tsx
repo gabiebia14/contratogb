@@ -18,7 +18,6 @@ export default function Dashboard() {
       case 'comercial': return 'comercial';
       case 'area':
       case 'área':
-      case 'rural': return 'rural';
       case 'lote':
       case 'terreno': return 'terreno';
       default: return 'casa';
@@ -58,7 +57,6 @@ export default function Dashboard() {
     apartments: properties.filter(p => p.type === 'apartamento').reduce((acc, curr) => acc + (curr.quantity || 1), 0),
     commercial: properties.filter(p => p.type === 'comercial').reduce((acc, curr) => acc + (curr.quantity || 1), 0),
     terrenos: properties.filter(p => p.type === 'terreno').reduce((acc, curr) => acc + (curr.quantity || 1), 0),
-    rural: properties.filter(p => p.type === 'rural').reduce((acc, curr) => acc + (curr.quantity || 1), 0),
   };
 
   // Calculando totais de ocupação
@@ -73,8 +71,7 @@ export default function Dashboard() {
     { title: 'Casas', value: propertyStats.houses, icon: Home, color: 'text-blue-600' },
     { title: 'Apartamentos', value: propertyStats.apartments, icon: Building2, color: 'text-green-600' },
     { title: 'Comerciais', value: propertyStats.commercial, icon: Warehouse, color: 'text-yellow-600' },
-    { title: 'Terrenos', value: propertyStats.terrenos, icon: Warehouse, color: 'text-purple-600' },
-    { title: 'Áreas Rurais', value: propertyStats.rural, icon: TreePine, color: 'text-emerald-600' },
+    { title: 'Terrenos', value: propertyStats.terrenos, icon: TreePine, color: 'text-emerald-600' },
   ];
 
   // Calculando receita por imóvel
@@ -114,7 +111,7 @@ export default function Dashboard() {
       </Card>
 
       {/* Property Type Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {propertyCards.map((card) => (
           <Card key={card.title}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
