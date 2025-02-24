@@ -17,23 +17,28 @@ export default function Imoveis() {
 
   const categories = [
     { type: 'todas' as const, label: 'Todas', icon: Home, count: properties.length },
-    { type: 'casa' as const, label: 'Casas', icon: Home, count: properties.filter(p => p.type === 'casa').length },
-    { type: 'apartamento' as const, label: 'Apartamentos', icon: Building2, count: properties.filter(p => p.type === 'apartamento').length },
     { type: 'comercial' as const, label: 'Comercial', icon: Store, count: properties.filter(p => p.type === 'comercial').length },
-    { type: 'terreno' as const, label: 'Terrenos', icon: Trees, count: properties.filter(p => p.type === 'terreno').length },
+    { type: 'casa' as const, label: 'Casa', icon: Home, count: properties.filter(p => p.type === 'casa').length },
+    { type: 'apartamento' as const, label: 'Apartamento', icon: Building2, count: properties.filter(p => p.type === 'apartamento').length },
+    { type: 'terreno' as const, label: 'Terreno', icon: Trees, count: properties.filter(p => p.type === 'terreno').length },
   ];
 
   const normalizePropertyType = (type: string): PropertyType => {
     switch (type.toLowerCase().trim()) {
-      case 'casa': return 'casa';
-      case 'apartamento': return 'apartamento';
-      case 'comercial': return 'comercial';
+      case 'comercial':
+        return 'comercial';
+      case 'casa':
+        return 'casa';
+      case 'apartamento':
+        return 'apartamento';
       case 'area':
       case 'área':
       case 'lote':
-      case 'rural':
-      case 'terreno': return 'terreno';
-      default: return 'casa';
+      case 'terreno':
+        return 'terreno';
+      default:
+        console.warn(`Tipo de imóvel não reconhecido: ${type}, usando 'terreno' como padrão`);
+        return 'terreno';
     }
   };
 
