@@ -6,23 +6,21 @@ import { Home, Building2, Store, Trees } from "lucide-react";
 import { PropertyCard } from "../components/PropertyCard";
 import { PropertyCategoryCard } from "../components/PropertyCategoryCard";
 import { SyncPropertiesButton } from "../components/SyncPropertiesButton";
-import { MonthFilter } from "../components/MonthFilter";
 
 export default function Imoveis() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<PropertyType | 'todas'>('todas');
-  const [selectedMonth, setSelectedMonth] = useState("all");
 
   const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsyn1gs9yeHktxDsKFl7uKgcaL7hEDpaRwdl7NHhJuXeikMInhcxG0137fPiVYyZ5AwK98Ny66W8l2/pub?gid=195841533&single=true&output=csv";
 
   const categories = [
-    { type: 'todas' as const, label: 'Todas', icon: Home, count: getFilteredProperties().length },
-    { type: 'casa' as const, label: 'Casas', icon: Home, count: getFilteredProperties().filter(p => p.type === 'casa').length },
-    { type: 'apartamento' as const, label: 'Apartamentos', icon: Building2, count: getFilteredProperties().filter(p => p.type === 'apartamento').length },
-    { type: 'comercial' as const, label: 'Comercial', icon: Store, count: getFilteredProperties().filter(p => p.type === 'comercial').length },
-    { type: 'terreno' as const, label: 'Terrenos', icon: Trees, count: getFilteredProperties().filter(p => p.type === 'terreno').length },
+    { type: 'todas' as const, label: 'Todas', icon: Home, count: properties.length },
+    { type: 'casa' as const, label: 'Casas', icon: Home, count: properties.filter(p => p.type === 'casa').length },
+    { type: 'apartamento' as const, label: 'Apartamentos', icon: Building2, count: properties.filter(p => p.type === 'apartamento').length },
+    { type: 'comercial' as const, label: 'Comercial', icon: Store, count: properties.filter(p => p.type === 'comercial').length },
+    { type: 'terreno' as const, label: 'Terrenos', icon: Trees, count: properties.filter(p => p.type === 'terreno').length },
   ];
 
   const normalizePropertyType = (type: string): PropertyType => {
@@ -159,36 +157,15 @@ export default function Imoveis() {
     loadProperties();
   }, []);
 
-  function getFilteredProperties() {
-    let filtered = properties;
-
-    if (selectedCategory !== 'todas') {
-      filtered = filtered.filter(property => property.type === selectedCategory);
-    }
-
-    if (selectedMonth !== "all") {
-      filtered = filtered.filter(property => {
-        const propertyMonth = new Date(property.created_at).getMonth() + 1;
-        const monthString = propertyMonth.toString().padStart(2, '0');
-        return monthString === selectedMonth;
-      });
-    }
-
-    return filtered;
-  }
-
-  const filteredProperties = getFilteredProperties();
-  const totalIncome = filteredProperties.reduce((sum, property) => sum + (property.income || 0), 0);
+  const filteredProperties = selectedCategory === 'todas' 
+    ? properties 
+    : properties.filter(property => property.type === selectedCategory);
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Imóveis</h1>
-        <div className="flex gap-4 items-center">
-          <MonthFilter
-            selectedMonth={selectedMonth}
-            onMonthChange={setSelectedMonth}
-          />
+        <div className="flex gap-2">
           <SyncPropertiesButton onSync={syncProperties} isSyncing={syncing} />
         </div>
       </div>
@@ -206,17 +183,6 @@ export default function Imoveis() {
           />
         ))}
       </div>
-
-      {totalIncome > 0 && (
-        <div className="bg-muted p-4 rounded-lg">
-          <p className="text-lg font-semibold">
-            Renda Total {selectedMonth !== "all" && "do Mês"}: 
-            <span className="text-primary ml-2">
-              R$ {totalIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </span>
-          </p>
-        </div>
-      )}
 
       {loading ? (
         <div className="flex items-center justify-center h-64">
