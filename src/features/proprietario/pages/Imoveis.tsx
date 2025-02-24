@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Property, PropertyType } from "@/types/properties";
 import { supabase } from "@/integrations/supabase/client";
@@ -171,8 +172,14 @@ export default function Imoveis() {
 
       const normalizedProperties = (data || []).map(property => ({
         ...property,
-        type: normalizePropertyType(property.type)
-      }));
+        type: normalizePropertyType(property.type),
+        incomes: Array.isArray(property.incomes) 
+          ? property.incomes.map((income: any) => ({
+              value: Number(income.value),
+              tenant: String(income.tenant)
+            }))
+          : []
+      })) as Property[];
 
       setProperties(normalizedProperties);
     } catch (error) {
