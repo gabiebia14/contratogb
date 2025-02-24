@@ -105,13 +105,38 @@ export default function Imoveis() {
           headers.forEach((header, index) => {
             propertyData[header.trim()] = values[index] || '';
           });
+
+          const incomes = [];
+          
+          const renda1 = parseRenda(propertyData['RENDA 1 (VALOR)']);
+          if (renda1 !== null) {
+            incomes.push({
+              value: renda1,
+              tenant: propertyData['RENDA 1 (INQUILINO)'] || 'Não informado'
+            });
+          }
+
+          const renda2 = parseRenda(propertyData['RENDA 2 (VALOR)']);
+          if (renda2 !== null) {
+            incomes.push({
+              value: renda2,
+              tenant: propertyData['RENDA 2 (INQUILINO)'] || 'Não informado'
+            });
+          }
+
+          const renda3 = parseRenda(propertyData['RENDA 3(VALOR)']);
+          if (renda3 !== null) {
+            incomes.push({
+              value: renda3,
+              tenant: propertyData['RENDA3 (INQUILINO)'] || 'Não informado'
+            });
+          }
           
           return {
             type: normalizePropertyType(propertyData['TIPO DE IMÓVEL']),
             quantity: parseInt(propertyData['QUANTIDADE']) || 1,
             address: propertyData['ENDEREÇO'],
-            income: parseRenda(propertyData['RENDA']),
-            tenant: propertyData['LOCATÁRIO(A)'] || null,
+            incomes: incomes,
             observations: propertyData['OBSERVAÇÕES'] || null,
             city: propertyData['CIDADE']
           };
