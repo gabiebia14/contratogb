@@ -35,7 +35,8 @@ export default function Dashboard() {
 
       const normalizedProperties = (data || []).map(property => ({
         ...property,
-        type: normalizePropertyType(property.type)
+        type: normalizePropertyType(property.type),
+        incomes: Array.isArray(property.incomes) ? property.incomes : []
       }));
 
       setProperties(normalizedProperties);
@@ -62,8 +63,8 @@ export default function Dashboard() {
   // Calculando totais de ocupação
   const occupancyStats = {
     total: properties.reduce((acc, curr) => acc + (curr.quantity || 1), 0),
-    occupied: properties.filter(p => p.tenant).reduce((acc, curr) => acc + (curr.quantity || 1), 0),
-    vacant: properties.filter(p => !p.tenant).reduce((acc, curr) => acc + (curr.quantity || 1), 0)
+    occupied: properties.filter(p => p.incomes.length > 0).reduce((acc, curr) => acc + (curr.quantity || 1), 0),
+    vacant: properties.filter(p => p.incomes.length === 0).reduce((acc, curr) => acc + (curr.quantity || 1), 0)
   };
 
   // Dados para os cards de tipo de imóvel
@@ -76,10 +77,10 @@ export default function Dashboard() {
 
   // Calculando receita por imóvel
   const revenueByProperty = properties
-    .filter(p => p.income)
+    .filter(p => p.incomes.length > 0)
     .map(p => ({
       imovel: p.address.length > 20 ? p.address.substring(0, 20) + '...' : p.address,
-      renda: p.income || 0
+      renda: p.incomes.reduce((sum, income) => sum + income.value, 0)
     }))
     .slice(0, 5);
 

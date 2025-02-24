@@ -254,11 +254,10 @@ export type Database = {
           city: string
           created_at: string
           id: string
-          income: number | null
+          incomes: Json[]
           observations: string | null
           quantity: number
-          tenant: string | null
-          type: Database["public"]["Enums"]["property_type"]
+          type: string
           updated_at: string
         }
         Insert: {
@@ -266,11 +265,10 @@ export type Database = {
           city: string
           created_at?: string
           id?: string
-          income?: number | null
+          incomes?: Json[]
           observations?: string | null
           quantity?: number
-          tenant?: string | null
-          type: Database["public"]["Enums"]["property_type"]
+          type: string
           updated_at?: string
         }
         Update: {
@@ -278,12 +276,50 @@ export type Database = {
           city?: string
           created_at?: string
           id?: string
-          income?: number | null
+          incomes?: Json[]
           observations?: string | null
           quantity?: number
-          tenant?: string | null
-          type?: Database["public"]["Enums"]["property_type"]
+          type?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      properties_backup: {
+        Row: {
+          address: string | null
+          city: string | null
+          created_at: string | null
+          id: string | null
+          income: number | null
+          observations: string | null
+          quantity: number | null
+          tenant: string | null
+          type: Database["public"]["Enums"]["property_type"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          created_at?: string | null
+          id?: string | null
+          income?: number | null
+          observations?: string | null
+          quantity?: number | null
+          tenant?: string | null
+          type?: Database["public"]["Enums"]["property_type"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          created_at?: string | null
+          id?: string | null
+          income?: number | null
+          observations?: string | null
+          quantity?: number | null
+          tenant?: string | null
+          type?: Database["public"]["Enums"]["property_type"] | null
+          updated_at?: string | null
         }
         Relationships: []
       }
