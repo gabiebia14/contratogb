@@ -1,220 +1,14 @@
 
-import { useEffect, useState } from "react";
-import { Property, PropertyType, RawPropertyData } from "@/types/properties";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { Home, Building2, Store, Trees } from "lucide-react";
+import { useState, useEffect } from "react";
+import { PropertyType } from "@/types/properties";
 import { PropertyCard } from "../components/PropertyCard";
-import { PropertyCategoryCard } from "../components/PropertyCategoryCard";
+import { PropertyCategories } from "../components/PropertyCategories";
 import { SyncPropertiesButton } from "../components/SyncPropertiesButton";
+import { useProperties } from "../hooks/useProperties";
 
 export default function Imoveis() {
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [syncing, setSyncing] = useState(false);
+  const { properties, loading, syncing, loadProperties, syncProperties } = useProperties();
   const [selectedCategory, setSelectedCategory] = useState<PropertyType | 'todas'>('todas');
-
-  const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQptFGMW8iN8o7XTx2JmufTOyNhQGshbjQj79uj7F6xp7otPGGHocLuGYxaWfsl9AK-AWieURS2ccCm/pub?gid=0&single=true&output=csv";
-
-  // Função auxiliar para calcular a quantidade total por tipo
-  const calculateTotalQuantityByType = (propertyType: PropertyType | 'todas') => {
-    if (propertyType === 'todas') {
-      return properties.reduce((acc, property) => acc + property.quantity, 0);
-    }
-    return properties
-      .filter(property => property.type === propertyType)
-      .reduce((acc, property) => acc + property.quantity, 0);
-  };
-
-  const categories = [
-    { 
-      type: 'todas' as const, 
-      label: 'Todas', 
-      icon: Home, 
-      count: calculateTotalQuantityByType('todas')
-    },
-    { 
-      type: 'comercial' as const, 
-      label: 'Comercial', 
-      icon: Store, 
-      count: calculateTotalQuantityByType('comercial')
-    },
-    { 
-      type: 'casa' as const, 
-      label: 'Casa', 
-      icon: Home, 
-      count: calculateTotalQuantityByType('casa')
-    },
-    { 
-      type: 'apartamento' as const, 
-      label: 'Apartamento', 
-      icon: Building2, 
-      count: calculateTotalQuantityByType('apartamento')
-    },
-    { 
-      type: 'area' as const, 
-      label: 'Área', 
-      icon: Trees, 
-      count: calculateTotalQuantityByType('area')
-    },
-    { 
-      type: 'lote' as const, 
-      label: 'Lote', 
-      icon: Trees, 
-      count: calculateTotalQuantityByType('lote')
-    }
-  ];
-
-  const normalizePropertyType = (type: string): PropertyType => {
-    switch (type.toLowerCase().trim()) {
-      case 'comercial':
-        return 'comercial';
-      case 'casa':
-        return 'casa';
-      case 'apartamento':
-        return 'apartamento';
-      case 'area':
-      case 'área':
-        return 'area';
-      case 'lote':
-        return 'lote';
-      default:
-        console.warn(`Tipo de imóvel não reconhecido: ${type}, usando 'casa' como padrão`);
-        return 'casa';
-    }
-  };
-
-  const parseCsvLine = (line: string) => {
-    const values = [];
-    let currentValue = '';
-    let insideQuotes = false;
-
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i];
-      
-      if (char === '"') {
-        if (i > 0 && line[i-1] === '"') {
-          currentValue = currentValue.slice(0, -1) + '"';
-        } else {
-          insideQuotes = !insideQuotes;
-        }
-      } else if (char === ',' && !insideQuotes) {
-        values.push(currentValue.trim());
-        currentValue = '';
-      } else {
-        currentValue += char;
-      }
-    }
-    values.push(currentValue.trim());
-    return values.map(value => value.replace(/^"(.*)"$/, '$1').trim());
-  };
-
-  const parseRenda = (rendaStr: string): number | null => {
-    if (!rendaStr) return null;
-    
-    const value = rendaStr
-      .replace(/R\$\s*/g, '')
-      .replace(/\./g, '')
-      .replace(/,/g, '.')
-      .trim();
-    
-    const parsed = parseFloat(value);
-    return isNaN(parsed) ? null : parsed;
-  };
-
-  const syncProperties = async () => {
-    try {
-      setSyncing(true);
-      console.log('Iniciando sincronização...');
-
-      const response = await fetch(SHEET_URL);
-      if (!response.ok) {
-        throw new Error('Falha ao buscar dados da planilha');
-      }
-
-      const csvText = await response.text();
-      const rows = csvText.split('\n');
-      const headers = parseCsvLine(rows[0]);
-      
-      console.log('Headers:', headers);
-      
-      const propertiesToInsert = rows.slice(1)
-        .filter(row => row.trim())
-        .map(row => {
-          const values = parseCsvLine(row);
-          const propertyData: Record<string, string> = {};
-          
-          headers.forEach((header, index) => {
-            propertyData[header.trim()] = values[index] || '';
-          });
-
-          return {
-            type: normalizePropertyType(propertyData['TIPO DE IMÓVEL']),
-            quantity: parseInt(propertyData['QUANTIDADE']) || 1,
-            address: propertyData['ENDEREÇO'],
-            income_type: propertyData['TIPO DE RENDA'] || null,
-            observations: propertyData['OBSERVAÇÕES'] || null,
-            income1_value: parseRenda(propertyData['RENDA 1 (VALOR)']),
-            income1_tenant: propertyData['RENDA 1 (INQUILINO)'] || null,
-            income2_value: parseRenda(propertyData['RENDA 2 (VALOR)']),
-            income2_tenant: propertyData['RENDA 2 (INQUILINO)'] || null,
-            income3_value: parseRenda(propertyData['RENDA3(VALOR)']),
-            income3_tenant: propertyData['RENDA3 (INQUILINO)'] || null,
-            city: propertyData['CIDADE']
-          };
-        });
-
-      // Primeiro, deletar todos os registros existentes
-      const { error: deleteError } = await supabase
-        .from('properties')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
-
-      if (deleteError) {
-        throw deleteError;
-      }
-
-      // Depois, inserir os novos registros
-      const { error: insertError } = await supabase
-        .from('properties')
-        .insert(propertiesToInsert);
-
-      if (insertError) {
-        throw insertError;
-      }
-
-      await loadProperties();
-      toast.success('Dados sincronizados com sucesso!');
-    } catch (error) {
-      console.error('Erro ao sincronizar dados:', error);
-      toast.error('Erro ao sincronizar dados da planilha');
-    } finally {
-      setSyncing(false);
-    }
-  };
-
-  const loadProperties = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('properties')
-        .select('*')
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-
-      const normalizedProperties = (data as RawPropertyData[]).map(property => ({
-        ...property,
-        type: normalizePropertyType(property.type)
-      }));
-
-      setProperties(normalizedProperties);
-    } catch (error) {
-      console.error('Erro ao carregar imóveis:', error);
-      toast.error('Erro ao carregar os imóveis');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   useEffect(() => {
     loadProperties();
@@ -233,19 +27,11 @@ export default function Imoveis() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        {categories.map((category) => (
-          <PropertyCategoryCard
-            key={category.type}
-            type={category.type}
-            label={category.label}
-            icon={category.icon}
-            count={category.count}
-            isSelected={selectedCategory === category.type}
-            onClick={() => setSelectedCategory(category.type)}
-          />
-        ))}
-      </div>
+      <PropertyCategories
+        properties={properties}
+        selectedCategory={selectedCategory}
+        onCategorySelect={setSelectedCategory}
+      />
 
       {loading ? (
         <div className="flex items-center justify-center h-64">
