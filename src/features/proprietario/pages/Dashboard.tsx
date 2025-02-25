@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building2, Home, TreePine, Warehouse } from "lucide-react";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from 'recharts';
@@ -77,14 +78,39 @@ export default function Dashboard() {
             (property.income3_value || 0)) * property.quantity;
   };
 
-  // Calculando receita por imóvel
-  const revenueByProperty = properties
-    .filter(hasIncome)
-    .map(p => ({
-      imovel: p.address.length > 20 ? p.address.substring(0, 20) + '...' : p.address,
-      renda: calculatePropertyIncome(p)
-    }))
-    .slice(0, 5);
+  // Calculando receita por tipo de imóvel
+  const revenueByType = [
+    {
+      tipo: 'Casa',
+      renda: properties
+        .filter(p => p.type === 'casa')
+        .reduce((acc, p) => acc + calculatePropertyIncome(p), 0)
+    },
+    {
+      tipo: 'Apartamento',
+      renda: properties
+        .filter(p => p.type === 'apartamento')
+        .reduce((acc, p) => acc + calculatePropertyIncome(p), 0)
+    },
+    {
+      tipo: 'Comercial',
+      renda: properties
+        .filter(p => p.type === 'comercial')
+        .reduce((acc, p) => acc + calculatePropertyIncome(p), 0)
+    },
+    {
+      tipo: 'Área',
+      renda: properties
+        .filter(p => p.type === 'area')
+        .reduce((acc, p) => acc + calculatePropertyIncome(p), 0)
+    },
+    {
+      tipo: 'Lote',
+      renda: properties
+        .filter(p => p.type === 'lote')
+        .reduce((acc, p) => acc + calculatePropertyIncome(p), 0)
+    }
+  ].sort((a, b) => b.renda - a.renda); // Ordenando por maior renda
 
   // Dados para os cards de tipo de imóvel
   const propertyCards = [
@@ -137,18 +163,33 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Revenue Charts */}
+      {/* Revenue Chart */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="col-span-1">
           <CardHeader>
-            <CardTitle>Receita por Imóvel</CardTitle>
+            <CardTitle>Receita por Tipo de Imóvel</CardTitle>
           </CardHeader>
           <CardContent className="h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={revenueByProperty}>
-                <XAxis dataKey="imovel" />
-                <YAxis />
-                <Tooltip />
+              <BarChart data={revenueByType}>
+                <XAxis dataKey="tipo" />
+                <YAxis 
+                  tickFormatter={(value) => 
+                    new Intl.NumberFormat('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL',
+                      maximumFractionDigits: 0
+                    }).format(value)
+                  }
+                />
+                <Tooltip 
+                  formatter={(value: number) => 
+                    new Intl.NumberFormat('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL'
+                    }).format(value)
+                  }
+                />
                 <Legend />
                 <Bar dataKey="renda" fill="#4F46E5" name="Renda Mensal" />
               </BarChart>
