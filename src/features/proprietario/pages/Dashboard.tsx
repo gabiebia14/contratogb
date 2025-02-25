@@ -1,6 +1,7 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building2, Home, TreePine, Warehouse, DollarSign, Building } from "lucide-react";
-import { BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, Bar, LabelList } from 'recharts';
+import { BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, Bar, LabelList, Cell } from 'recharts';
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Property, PropertyType, RawPropertyData } from "@/types/properties";
