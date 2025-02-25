@@ -1,7 +1,6 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building2, Home, TreePine, Warehouse } from "lucide-react";
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from 'recharts';
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Property, PropertyType, RawPropertyData } from "@/types/properties";
@@ -50,7 +49,6 @@ export default function Dashboard() {
     loadProperties();
   }, []);
 
-  // Calculando as estatísticas dos imóveis
   const propertyStats = {
     houses: properties.filter(p => p.type === 'casa').reduce((acc, curr) => acc + (curr.quantity || 1), 0),
     apartments: properties.filter(p => p.type === 'apartamento').reduce((acc, curr) => acc + (curr.quantity || 1), 0),
@@ -59,26 +57,22 @@ export default function Dashboard() {
     lotes: properties.filter(p => p.type === 'lote').reduce((acc, curr) => acc + (curr.quantity || 1), 0),
   };
 
-  // Função auxiliar para verificar se um imóvel tem renda
   const hasIncome = (property: Property) => {
     return property.income1_value || property.income2_value || property.income3_value;
   };
 
-  // Calculando totais de ocupação
   const occupancyStats = {
     total: properties.reduce((acc, curr) => acc + (curr.quantity || 1), 0),
     occupied: properties.filter(hasIncome).reduce((acc, curr) => acc + (curr.quantity || 1), 0),
     vacant: properties.filter(p => !hasIncome(p)).reduce((acc, curr) => acc + (curr.quantity || 1), 0)
   };
 
-  // Função para calcular a renda total de um imóvel
   const calculatePropertyIncome = (property: Property) => {
     return ((property.income1_value || 0) + 
             (property.income2_value || 0) + 
             (property.income3_value || 0)) * property.quantity;
   };
 
-  // Calculando receita por tipo de imóvel
   const revenueByType = [
     {
       tipo: 'Casa',
@@ -110,9 +104,25 @@ export default function Dashboard() {
         .filter(p => p.type === 'lote')
         .reduce((acc, p) => acc + calculatePropertyIncome(p), 0)
     }
-  ].sort((a, b) => b.renda - a.renda); // Ordenando por maior renda
+  ].sort((a, b) => b.renda - a.renda);
 
-  // Dados para os cards de tipo de imóvel
+  const COLORS = {
+    'Casa': '#4F46E5',
+    'Apartamento': '#10B981',
+    'Comercial': '#F59E0B',
+    'Área': '#06B6D4',
+    'Lote': '#8B5CF6'
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
+  const totalRevenue = revenueByType.reduce((acc, item) => acc + item.renda, 0);
+
   const propertyCards = [
     { title: 'Casas', value: propertyStats.houses, icon: Home, color: 'text-blue-600' },
     { title: 'Apartamentos', value: propertyStats.apartments, icon: Building2, color: 'text-green-600' },
@@ -125,7 +135,6 @@ export default function Dashboard() {
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Dashboard</h1>
 
-      {/* Occupancy Status Card */}
       <Card>
         <CardHeader>
           <CardTitle className="text-xl">Visão Geral dos Imóveis</CardTitle>
@@ -148,7 +157,6 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
-      {/* Property Type Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {propertyCards.map((card) => (
           <Card key={card.title}>
@@ -163,36 +171,65 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Revenue Chart */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="col-span-1">
           <CardHeader>
-            <CardTitle>Receita por Tipo de Imóvel</CardTitle>
+            <CardTitle className="text-xl">Receita por Tipo de Imóvel</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Faturamento Total: {formatCurrency(totalRevenue)}
+            </p>
           </CardHeader>
           <CardContent className="h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={revenueByType}>
-                <XAxis dataKey="tipo" />
-                <YAxis 
-                  tickFormatter={(value) => 
-                    new Intl.NumberFormat('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL',
-                      maximumFractionDigits: 0
-                    }).format(value)
-                  }
-                />
-                <Tooltip 
-                  formatter={(value: number) => 
-                    new Intl.NumberFormat('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL'
-                    }).format(value)
-                  }
+              <PieChart>
+                <Pie
+                  data={revenueByType}
+                  dataKey="renda"
+                  nameKey="tipo"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={120}
+                  label={({
+                    cx,
+                    cy,
+                    midAngle,
+                    innerRadius,
+                    outerRadius,
+                    value,
+                    index
+                  }) => {
+                    const RADIAN = Math.PI / 180;
+                    const radius = 25 + innerRadius + (outerRadius - innerRadius);
+                    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                    const percent = ((value / totalRevenue) * 100).toFixed(1);
+
+                    return (
+                      <text
+                        x={x}
+                        y={y}
+                        fill={COLORS[revenueByType[index].tipo as keyof typeof COLORS]}
+                        textAnchor={x > cx ? 'start' : 'end'}
+                        dominantBaseline="central"
+                        className="text-xs"
+                      >
+                        {`${percent}%`}
+                      </text>
+                    );
+                  }}
+                >
+                  {revenueByType.map((entry, index) => (
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={COLORS[entry.tipo as keyof typeof COLORS]} 
+                    />
+                  ))}
+                </Pie>
+                <Tooltip
+                  formatter={(value: number) => formatCurrency(value)}
                 />
                 <Legend />
-                <Bar dataKey="renda" fill="#4F46E5" name="Renda Mensal" />
-              </BarChart>
+              </PieChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
