@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Property } from "@/types/properties";
+import { Property, RawPropertyData } from "@/types/properties";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Building2, Coins, Home, Store, Trees } from "lucide-react";
@@ -36,7 +36,16 @@ export default function Renda() {
 
       if (error) throw error;
 
-      setProperties(data as Property[]);
+      // Converter os dados brutos para o formato correto
+      const formattedProperties: Property[] = (data as RawPropertyData[]).map(property => ({
+        ...property,
+        incomes: property.incomes.map(income => ({
+          value: typeof income.value === 'string' ? parseFloat(income.value) : income.value,
+          tenant: income.tenant
+        }))
+      }));
+
+      setProperties(formattedProperties);
     } catch (error) {
       console.error('Erro ao carregar imóveis:', error);
       toast.error('Erro ao carregar os imóveis');
