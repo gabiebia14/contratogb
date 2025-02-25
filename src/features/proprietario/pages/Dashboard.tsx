@@ -77,7 +77,7 @@ export default function Dashboard() {
     { title: 'Casas', value: propertyStats.houses, icon: Home, color: 'text-blue-600' },
     { title: 'Apartamentos', value: propertyStats.apartments, icon: Building2, color: 'text-green-600' },
     { title: 'Comerciais', value: propertyStats.commercial, icon: Warehouse, color: 'text-yellow-600' },
-    { title: 'Terrenos', value: propertyStats.terrenos, icon: TreePine, color: 'text-emerald-600' },
+    { title: 'Área/Lotes', value: propertyStats.terrenos, icon: TreePine, color: 'text-emerald-600' },
   ];
 
   // Calculando receita por imóvel
