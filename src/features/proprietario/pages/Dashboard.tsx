@@ -1,5 +1,6 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, Home, TreePine, Warehouse } from "lucide-react";
+import { Building2, Home, TreePine, Warehouse, DollarSign, Building } from "lucide-react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -73,6 +74,10 @@ export default function Dashboard() {
             (property.income3_value || 0)) * property.quantity;
   };
 
+  const totalIncome = properties.reduce((acc, property) => {
+    return acc + calculatePropertyIncome(property);
+  }, 0);
+
   const revenueByType = [
     {
       tipo: 'Casa',
@@ -123,54 +128,98 @@ export default function Dashboard() {
 
   const totalRevenue = revenueByType.reduce((acc, item) => acc + item.renda, 0);
 
-  const propertyCards = [
-    { title: 'Casas', value: propertyStats.houses, icon: Home, color: 'text-blue-600' },
-    { title: 'Apartamentos', value: propertyStats.apartments, icon: Building2, color: 'text-green-600' },
-    { title: 'Comerciais', value: propertyStats.commercial, icon: Warehouse, color: 'text-yellow-600' },
-    { title: 'Áreas', value: propertyStats.areas, icon: TreePine, color: 'text-emerald-600' },
-    { title: 'Lotes', value: propertyStats.lotes, icon: TreePine, color: 'text-purple-600' }
+  const propertyCategories = [
+    { 
+      title: 'Casas', 
+      value: propertyStats.houses, 
+      icon: Home, 
+      color: 'bg-blue-100 text-blue-700',
+      borderColor: 'border-blue-200'
+    },
+    { 
+      title: 'Apartamentos', 
+      value: propertyStats.apartments, 
+      icon: Building2, 
+      color: 'bg-green-100 text-green-700',
+      borderColor: 'border-green-200'
+    },
+    { 
+      title: 'Comerciais', 
+      value: propertyStats.commercial, 
+      icon: Warehouse, 
+      color: 'bg-yellow-100 text-yellow-700',
+      borderColor: 'border-yellow-200'
+    },
+    { 
+      title: 'Áreas', 
+      value: propertyStats.areas, 
+      icon: TreePine, 
+      color: 'bg-emerald-100 text-emerald-700',
+      borderColor: 'border-emerald-200'
+    },
+    { 
+      title: 'Lotes', 
+      value: propertyStats.lotes, 
+      icon: TreePine, 
+      color: 'bg-purple-100 text-purple-700',
+      borderColor: 'border-purple-200'
+    }
   ];
 
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Dashboard</h1>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl">Visão Geral dos Imóveis</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Total de Imóveis</p>
-              <p className="text-2xl font-bold text-primary">{occupancyStats.total}</p>
-            </div>
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Ocupados</p>
-              <p className="text-2xl font-bold text-green-600">{occupancyStats.occupied}</p>
-            </div>
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Desocupados</p>
-              <p className="text-2xl font-bold text-red-600">{occupancyStats.vacant}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* New Overview Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building className="h-5 w-5" />
+              Total de Imóveis
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-4xl font-bold">{occupancyStats.total}</div>
+            <p className="text-blue-100 mt-2">
+              {occupancyStats.occupied} ocupados • {occupancyStats.vacant} vagos
+            </p>
+          </CardContent>
+        </Card>
 
+        <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5" />
+              Renda Total Mensal
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-4xl font-bold">{formatCurrency(totalIncome)}</div>
+            <p className="text-green-100 mt-2">
+              Média por imóvel: {formatCurrency(totalIncome / occupancyStats.total)}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Updated Property Categories */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        {propertyCards.map((card) => (
-          <Card key={card.title}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
-              <card.icon className={`w-4 h-4 ${card.color}`} />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{card.value}</div>
+        {propertyCategories.map((category) => (
+          <Card 
+            key={category.title}
+            className={`border-2 ${category.borderColor}`}
+          >
+            <CardContent className={`${category.color} p-6 rounded-lg flex flex-col items-center justify-center space-y-2`}>
+              <category.icon className="h-8 w-8" />
+              <h3 className="font-semibold text-lg">{category.title}</h3>
+              <p className="text-3xl font-bold">{category.value}</p>
             </CardContent>
           </Card>
         ))}
       </div>
 
+      {/* Revenue Chart */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="col-span-1">
           <CardHeader>
