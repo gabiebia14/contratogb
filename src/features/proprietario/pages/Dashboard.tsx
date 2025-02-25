@@ -1,7 +1,6 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building2, Home, TreePine, Warehouse, DollarSign, Building } from "lucide-react";
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, Bar, LabelList } from 'recharts';
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Property, PropertyType, RawPropertyData } from "@/types/properties";
@@ -170,7 +169,6 @@ export default function Dashboard() {
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Dashboard</h1>
 
-      {/* New Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
           <CardHeader>
@@ -203,7 +201,6 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Updated Property Categories */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {propertyCategories.map((category) => (
           <Card 
@@ -219,70 +216,67 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Revenue Chart */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="col-span-1">
-          <CardHeader>
-            <CardTitle className="text-xl">Receita por Tipo de Imóvel</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Faturamento Total: {formatCurrency(totalRevenue)}
-            </p>
-          </CardHeader>
-          <CardContent className="h-[400px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={revenueByType}
+      <Card className="col-span-2">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5" />
+            Receita por Tipo de Imóvel
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Faturamento Total: {formatCurrency(totalRevenue)}
+          </p>
+        </CardHeader>
+        <CardContent className="h-[400px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={revenueByType} margin={{ top: 20, right: 30, left: 40, bottom: 20 }}>
+              <XAxis 
+                dataKey="tipo" 
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis 
+                tickFormatter={(value) => 
+                  new Intl.NumberFormat('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL',
+                    notation: 'compact',
+                    maximumFractionDigits: 1
+                  }).format(value)
+                }
+                axisLine={false}
+                tickLine={false}
+              />
+              <Tooltip
+                formatter={(value: number) => formatCurrency(value)}
+                contentStyle={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  borderRadius: '8px',
+                  border: '1px solid #e2e8f0'
+                }}
+              />
+              <Legend />
+              <Bar 
+                dataKey="renda" 
+                name="Renda Mensal"
+                radius={[4, 4, 0, 0]}
+              >
+                {revenueByType.map((entry, index) => (
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={COLORS[entry.tipo as keyof typeof COLORS]} 
+                  />
+                ))}
+                <LabelList
                   dataKey="renda"
-                  nameKey="tipo"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={120}
-                  label={({
-                    cx,
-                    cy,
-                    midAngle,
-                    innerRadius,
-                    outerRadius,
-                    value,
-                    index
-                  }) => {
-                    const RADIAN = Math.PI / 180;
-                    const radius = 25 + innerRadius + (outerRadius - innerRadius);
-                    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                    const y = cy + radius * Math.sin(-midAngle * RADIAN);
-                    const percent = ((value / totalRevenue) * 100).toFixed(1);
-
-                    return (
-                      <text
-                        x={x}
-                        y={y}
-                        fill={COLORS[revenueByType[index].tipo as keyof typeof COLORS]}
-                        textAnchor={x > cx ? 'start' : 'end'}
-                        dominantBaseline="central"
-                        className="text-xs"
-                      >
-                        {`${percent}%`}
-                      </text>
-                    );
-                  }}
-                >
-                  {revenueByType.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={COLORS[entry.tipo as keyof typeof COLORS]} 
-                    />
-                  ))}
-                </Pie>
-                <Tooltip
+                  position="top"
                   formatter={(value: number) => formatCurrency(value)}
+                  style={{ fontSize: '12px' }}
                 />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
     </div>
   );
 }
