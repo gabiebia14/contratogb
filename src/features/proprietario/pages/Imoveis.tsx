@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { Property, PropertyType } from "@/types/properties";
+import { Property, PropertyType, RawPropertyData } from "@/types/properties";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Home, Building2, Store, Trees } from "lucide-react";
@@ -170,16 +170,16 @@ export default function Imoveis() {
 
       if (error) throw error;
 
-      const normalizedProperties = (data || []).map(property => ({
+      const normalizedProperties = (data as RawPropertyData[]).map(property => ({
         ...property,
         type: normalizePropertyType(property.type),
         incomes: Array.isArray(property.incomes) 
-          ? property.incomes.map((income: any) => ({
-              value: Number(income.value),
-              tenant: String(income.tenant)
+          ? property.incomes.map(income => ({
+              value: typeof income.value === 'string' ? parseFloat(income.value) : income.value,
+              tenant: income.tenant
             }))
           : []
-      })) as Property[];
+      }));
 
       setProperties(normalizedProperties);
     } catch (error) {

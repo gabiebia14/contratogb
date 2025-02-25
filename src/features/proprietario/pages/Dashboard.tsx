@@ -4,7 +4,7 @@ import { Building2, Home, TreePine, Warehouse } from "lucide-react";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Property, PropertyType, RentalIncome } from "@/types/properties";
+import { Property, PropertyType, RawPropertyData } from "@/types/properties";
 import { toast } from "sonner";
 
 export default function Dashboard() {
@@ -33,16 +33,16 @@ export default function Dashboard() {
 
       if (error) throw error;
 
-      const normalizedProperties = (data || []).map(property => ({
+      const normalizedProperties = (data as RawPropertyData[]).map(property => ({
         ...property,
         type: normalizePropertyType(property.type),
         incomes: Array.isArray(property.incomes) 
-          ? property.incomes.map((income: any) => ({
-              value: Number(income.value),
-              tenant: String(income.tenant)
+          ? property.incomes.map(income => ({
+              value: typeof income.value === 'string' ? parseFloat(income.value) : income.value,
+              tenant: income.tenant
             }))
           : []
-      })) as Property[];
+      }));
 
       setProperties(normalizedProperties);
     } catch (error) {

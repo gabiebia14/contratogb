@@ -18,6 +18,19 @@ export interface Property {
   updated_at: string;
 }
 
+// Type for raw Supabase data
+export interface RawPropertyData {
+  id: string;
+  type: string;
+  quantity: number;
+  address: string;
+  incomes: Array<{ value: number | string; tenant: string; }>;
+  observations: string | null;
+  city: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface PropertyImport {
   'TIPO DE IMÓVEL': string;
   'QUANTIDADE': string;
