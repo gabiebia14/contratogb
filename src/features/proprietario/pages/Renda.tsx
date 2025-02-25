@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Property, RawPropertyData } from "@/types/properties";
+import { Property, PropertyType, RawPropertyData } from "@/types/properties";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Building2, Coins, Home, Store, Trees } from "lucide-react";
@@ -39,6 +39,7 @@ export default function Renda() {
       // Converter os dados brutos para o formato correto
       const formattedProperties: Property[] = (data as RawPropertyData[]).map(property => ({
         ...property,
+        type: property.type as PropertyType, // Conversão explícita para PropertyType
         incomes: property.incomes.map(income => ({
           value: typeof income.value === 'string' ? parseFloat(income.value) : income.value,
           tenant: income.tenant
