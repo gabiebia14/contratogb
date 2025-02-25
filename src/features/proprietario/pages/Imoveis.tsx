@@ -174,6 +174,17 @@ export default function Imoveis() {
           };
         });
 
+      // Primeiro, deletar todos os registros existentes
+      const { error: deleteError } = await supabase
+        .from('properties')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Deleta todos os registros
+
+      if (deleteError) {
+        throw deleteError;
+      }
+
+      // Depois, inserir os novos registros
       const { error: insertError } = await supabase
         .from('properties')
         .insert(propertiesToInsert);
