@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Property, PropertyType, RawPropertyData } from "@/types/properties";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,7 +20,8 @@ export default function Imoveis() {
     { type: 'comercial' as const, label: 'Comercial', icon: Store, count: properties.filter(p => p.type === 'comercial').length },
     { type: 'casa' as const, label: 'Casa', icon: Home, count: properties.filter(p => p.type === 'casa').length },
     { type: 'apartamento' as const, label: 'Apartamento', icon: Building2, count: properties.filter(p => p.type === 'apartamento').length },
-    { type: 'terreno' as const, label: 'Terreno', icon: Trees, count: properties.filter(p => p.type === 'terreno').length },
+    { type: 'area' as const, label: 'Área', icon: Trees, count: properties.filter(p => p.type === 'area').length },
+    { type: 'lote' as const, label: 'Lote', icon: Trees, count: properties.filter(p => p.type === 'lote').length }
   ];
 
   const normalizePropertyType = (type: string): PropertyType => {
@@ -34,12 +34,12 @@ export default function Imoveis() {
         return 'apartamento';
       case 'area':
       case 'área':
+        return 'area';
       case 'lote':
-      case 'terreno':
-        return 'terreno';
+        return 'lote';
       default:
-        console.warn(`Tipo de imóvel não reconhecido: ${type}, usando 'terreno' como padrão`);
-        return 'terreno';
+        console.warn(`Tipo de imóvel não reconhecido: ${type}, usando 'casa' como padrão`);
+        return 'casa';
     }
   };
 
@@ -207,7 +207,7 @@ export default function Imoveis() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {categories.map((category) => (
           <PropertyCategoryCard
             key={category.type}
