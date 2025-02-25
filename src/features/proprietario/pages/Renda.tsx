@@ -15,8 +15,11 @@ export default function Renda() {
     return properties
       .filter(property => type === 'todas' || property.type === type)
       .reduce((total, property) => {
-        const propertyIncome = property.incomes.reduce((sum, income) => sum + income.value, 0);
-        return total + propertyIncome;
+        const propertyIncome = 
+          (property.income1_value || 0) + 
+          (property.income2_value || 0) + 
+          (property.income3_value || 0);
+        return total + (propertyIncome * property.quantity);
       }, 0);
   };
 
@@ -24,7 +27,14 @@ export default function Renda() {
   const calculateTenantsCountByType = (type: string) => {
     return properties
       .filter(property => type === 'todas' || property.type === type)
-      .reduce((total, property) => total + property.incomes.length, 0);
+      .reduce((total, property) => {
+        const tenantCount = [
+          property.income1_tenant,
+          property.income2_tenant,
+          property.income3_tenant
+        ].filter(tenant => tenant !== null).length;
+        return total + (tenantCount * property.quantity);
+      }, 0);
   };
 
   const loadProperties = async () => {
@@ -39,11 +49,7 @@ export default function Renda() {
       // Converter os dados brutos para o formato correto
       const formattedProperties: Property[] = (data as RawPropertyData[]).map(property => ({
         ...property,
-        type: property.type as PropertyType, // Conversão explícita para PropertyType
-        incomes: property.incomes.map(income => ({
-          value: typeof income.value === 'string' ? parseFloat(income.value) : income.value,
-          tenant: income.tenant
-        }))
+        type: property.type as PropertyType
       }));
 
       setProperties(formattedProperties);
@@ -83,6 +89,11 @@ export default function Renda() {
     );
   }
 
+  // Função auxiliar para verificar se um imóvel tem alguma renda
+  const hasIncome = (property: Property) => {
+    return property.income1_value || property.income2_value || property.income3_value;
+  };
+
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Renda</h1>
@@ -116,24 +127,40 @@ export default function Renda() {
       <div className="mt-8">
         <h2 className="text-2xl font-semibold mb-4">Detalhamento por Imóvel</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {properties.filter(property => property.incomes.length > 0).map((property) => (
+          {properties.filter(hasIncome).map((property) => (
             <Card key={property.id}>
               <CardHeader>
                 <CardTitle className="text-lg">{property.address}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {property.incomes.map((income, index) => (
-                    <div key={index} className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">{income.tenant}</span>
-                      <span className="font-medium">{formatCurrency(income.value)}</span>
+                  {property.income1_value && property.income1_tenant && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">{property.income1_tenant}</span>
+                      <span className="font-medium">{formatCurrency(property.income1_value)}</span>
                     </div>
-                  ))}
+                  )}
+                  {property.income2_value && property.income2_tenant && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">{property.income2_tenant}</span>
+                      <span className="font-medium">{formatCurrency(property.income2_value)}</span>
+                    </div>
+                  )}
+                  {property.income3_value && property.income3_tenant && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">{property.income3_tenant}</span>
+                      <span className="font-medium">{formatCurrency(property.income3_value)}</span>
+                    </div>
+                  )}
                   <div className="pt-2 border-t">
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium">Total</span>
                       <span className="font-bold">
-                        {formatCurrency(property.incomes.reduce((sum, income) => sum + income.value, 0))}
+                        {formatCurrency(
+                          ((property.income1_value || 0) +
+                           (property.income2_value || 0) +
+                           (property.income3_value || 0)) * property.quantity
+                        )}
                       </span>
                     </div>
                   </div>

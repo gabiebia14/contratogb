@@ -254,7 +254,13 @@ export type Database = {
           city: string
           created_at: string
           id: string
-          incomes: Json[]
+          income_type: string | null
+          income1_tenant: string | null
+          income1_value: number | null
+          income2_tenant: string | null
+          income2_value: number | null
+          income3_tenant: string | null
+          income3_value: number | null
           observations: string | null
           quantity: number
           type: string
@@ -265,7 +271,13 @@ export type Database = {
           city: string
           created_at?: string
           id?: string
-          incomes?: Json[]
+          income_type?: string | null
+          income1_tenant?: string | null
+          income1_value?: number | null
+          income2_tenant?: string | null
+          income2_value?: number | null
+          income3_tenant?: string | null
+          income3_value?: number | null
           observations?: string | null
           quantity?: number
           type: string
@@ -276,7 +288,13 @@ export type Database = {
           city?: string
           created_at?: string
           id?: string
-          incomes?: Json[]
+          income_type?: string | null
+          income1_tenant?: string | null
+          income1_value?: number | null
+          income2_tenant?: string | null
+          income2_value?: number | null
+          income3_tenant?: string | null
+          income3_value?: number | null
           observations?: string | null
           quantity?: number
           type?: string
