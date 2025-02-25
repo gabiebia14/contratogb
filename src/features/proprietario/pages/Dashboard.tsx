@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building2, Home, TreePine, Warehouse } from "lucide-react";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from 'recharts';
@@ -34,13 +33,7 @@ export default function Dashboard() {
 
       const normalizedProperties = (data as RawPropertyData[]).map(property => ({
         ...property,
-        type: normalizePropertyType(property.type),
-        incomes: Array.isArray(property.incomes) 
-          ? property.incomes.map(income => ({
-              value: typeof income.value === 'string' ? parseFloat(income.value) : income.value,
-              tenant: income.tenant
-            }))
-          : []
+        type: normalizePropertyType(property.type)
       }));
 
       setProperties(normalizedProperties);
@@ -65,12 +58,33 @@ export default function Dashboard() {
     lotes: properties.filter(p => p.type === 'lote').reduce((acc, curr) => acc + (curr.quantity || 1), 0),
   };
 
+  // Função auxiliar para verificar se um imóvel tem renda
+  const hasIncome = (property: Property) => {
+    return property.income1_value || property.income2_value || property.income3_value;
+  };
+
   // Calculando totais de ocupação
   const occupancyStats = {
     total: properties.reduce((acc, curr) => acc + (curr.quantity || 1), 0),
-    occupied: properties.filter(p => p.incomes.length > 0).reduce((acc, curr) => acc + (curr.quantity || 1), 0),
-    vacant: properties.filter(p => p.incomes.length === 0).reduce((acc, curr) => acc + (curr.quantity || 1), 0)
+    occupied: properties.filter(hasIncome).reduce((acc, curr) => acc + (curr.quantity || 1), 0),
+    vacant: properties.filter(p => !hasIncome(p)).reduce((acc, curr) => acc + (curr.quantity || 1), 0)
   };
+
+  // Função para calcular a renda total de um imóvel
+  const calculatePropertyIncome = (property: Property) => {
+    return ((property.income1_value || 0) + 
+            (property.income2_value || 0) + 
+            (property.income3_value || 0)) * property.quantity;
+  };
+
+  // Calculando receita por imóvel
+  const revenueByProperty = properties
+    .filter(hasIncome)
+    .map(p => ({
+      imovel: p.address.length > 20 ? p.address.substring(0, 20) + '...' : p.address,
+      renda: calculatePropertyIncome(p)
+    }))
+    .slice(0, 5);
 
   // Dados para os cards de tipo de imóvel
   const propertyCards = [
@@ -80,15 +94,6 @@ export default function Dashboard() {
     { title: 'Áreas', value: propertyStats.areas, icon: TreePine, color: 'text-emerald-600' },
     { title: 'Lotes', value: propertyStats.lotes, icon: TreePine, color: 'text-purple-600' }
   ];
-
-  // Calculando receita por imóvel
-  const revenueByProperty = properties
-    .filter(p => p.incomes.length > 0)
-    .map(p => ({
-      imovel: p.address.length > 20 ? p.address.substring(0, 20) + '...' : p.address,
-      renda: p.incomes.reduce((sum, income) => sum + income.value, 0)
-    }))
-    .slice(0, 5);
 
   return (
     <div className="space-y-6">

@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Property, PropertyType, RawPropertyData } from "@/types/properties";
 import { supabase } from "@/integrations/supabase/client";
@@ -166,7 +165,7 @@ export default function Imoveis() {
             });
           }
 
-          const renda3 = parseRenda(propertyData['RENDA 3(VALOR)']);
+          const renda3 = parseRenda(propertyData['RENDA3(VALOR)']);
           if (renda3 !== null) {
             incomes.push({
               value: renda3,
@@ -224,13 +223,7 @@ export default function Imoveis() {
 
       const normalizedProperties = (data as RawPropertyData[]).map(property => ({
         ...property,
-        type: normalizePropertyType(property.type),
-        incomes: Array.isArray(property.incomes) 
-          ? property.incomes.map(income => ({
-              value: typeof income.value === 'string' ? parseFloat(income.value) : income.value,
-              tenant: income.tenant
-            }))
-          : []
+        type: normalizePropertyType(property.type)
       }));
 
       setProperties(normalizedProperties);

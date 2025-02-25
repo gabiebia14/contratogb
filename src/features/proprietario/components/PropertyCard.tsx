@@ -7,7 +7,16 @@ interface PropertyCardProps {
 }
 
 export function PropertyCard({ property }: PropertyCardProps) {
-  const totalIncome = property.incomes.reduce((sum, income) => sum + income.value, 0);
+  const totalIncome = (property.income1_value || 0) + 
+                     (property.income2_value || 0) + 
+                     (property.income3_value || 0);
+
+  const formatCurrency = (value: number) => {
+    return value.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    });
+  };
 
   return (
     <Card className="hover:shadow-lg transition-shadow">
@@ -24,23 +33,31 @@ export function PropertyCard({ property }: PropertyCardProps) {
             <p><strong>Cidade:</strong> {property.city}</p>
           </div>
 
-          {property.incomes.length > 0 && (
+          {totalIncome > 0 && (
             <div className="space-y-2">
               <p className="font-semibold">Rendas:</p>
-              {property.incomes.map((income, index) => (
-                <div key={index} className="pl-4 border-l-2 border-primary">
-                  <p>
-                    <strong>Inquilino:</strong> {income.tenant}
-                  </p>
-                  <p>
-                    <strong>Valor:</strong> R$ {income.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </p>
+              {property.income1_value && property.income1_tenant && (
+                <div className="pl-4 border-l-2 border-primary">
+                  <p><strong>Inquilino:</strong> {property.income1_tenant}</p>
+                  <p><strong>Valor:</strong> {formatCurrency(property.income1_value)}</p>
                 </div>
-              ))}
-              {property.incomes.length > 1 && (
+              )}
+              {property.income2_value && property.income2_tenant && (
+                <div className="pl-4 border-l-2 border-primary">
+                  <p><strong>Inquilino:</strong> {property.income2_tenant}</p>
+                  <p><strong>Valor:</strong> {formatCurrency(property.income2_value)}</p>
+                </div>
+              )}
+              {property.income3_value && property.income3_tenant && (
+                <div className="pl-4 border-l-2 border-primary">
+                  <p><strong>Inquilino:</strong> {property.income3_tenant}</p>
+                  <p><strong>Valor:</strong> {formatCurrency(property.income3_value)}</p>
+                </div>
+              )}
+              {(property.income1_value || property.income2_value || property.income3_value) && (
                 <div className="mt-2 pt-2 border-t">
                   <p className="font-semibold">
-                    Total: R$ {totalIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    Total: {formatCurrency(totalIncome)}
                   </p>
                 </div>
               )}
