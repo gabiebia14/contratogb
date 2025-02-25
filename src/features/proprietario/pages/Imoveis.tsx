@@ -13,7 +13,7 @@ export default function Imoveis() {
   const [syncing, setSyncing] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<PropertyType | 'todas'>('todas');
 
-  const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsyn1gs9yeHktxDsKFl7uKgcaL7hEDpaRwdl7NHhJuXeikMInhcxG0137fPiVYyZ5AwK98Ny66W8l2/pub?gid=195841533&single=true&output=csv";
+  const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQptFGMW8iN8o7XTx2JmufTOyNhQGshbjQj79uj7F6xp7otPGGHocLuGYxaWfsl9AK-AWieURS2ccCm/pub?gid=0&single=true&output=csv";
 
   const categories = [
     { type: 'todas' as const, label: 'Todas', icon: Home, count: properties.length },
