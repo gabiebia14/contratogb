@@ -1,5 +1,5 @@
 
-export type PropertyType = 'casa' | 'apartamento' | 'comercial' | 'terreno';
+export type PropertyType = 'casa' | 'apartamento' | 'comercial' | 'area' | 'lote';
 
 export interface RentalIncome {
   value: number;
