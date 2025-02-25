@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Property, PropertyType, RawPropertyData } from "@/types/properties";
 import { supabase } from "@/integrations/supabase/client";
@@ -147,38 +148,18 @@ export default function Imoveis() {
             propertyData[header.trim()] = values[index] || '';
           });
 
-          const incomes = [];
-          
-          const renda1 = parseRenda(propertyData['RENDA 1 (VALOR)']);
-          if (renda1 !== null) {
-            incomes.push({
-              value: renda1,
-              tenant: propertyData['RENDA 1 (INQUILINO)'] || 'Não informado'
-            });
-          }
-
-          const renda2 = parseRenda(propertyData['RENDA 2 (VALOR)']);
-          if (renda2 !== null) {
-            incomes.push({
-              value: renda2,
-              tenant: propertyData['RENDA 2 (INQUILINO)'] || 'Não informado'
-            });
-          }
-
-          const renda3 = parseRenda(propertyData['RENDA3(VALOR)']);
-          if (renda3 !== null) {
-            incomes.push({
-              value: renda3,
-              tenant: propertyData['RENDA3 (INQUILINO)'] || 'Não informado'
-            });
-          }
-          
           return {
             type: normalizePropertyType(propertyData['TIPO DE IMÓVEL']),
             quantity: parseInt(propertyData['QUANTIDADE']) || 1,
             address: propertyData['ENDEREÇO'],
-            incomes: incomes,
+            income_type: propertyData['TIPO DE RENDA'] || null,
             observations: propertyData['OBSERVAÇÕES'] || null,
+            income1_value: parseRenda(propertyData['RENDA 1 (VALOR)']),
+            income1_tenant: propertyData['RENDA 1 (INQUILINO)'] || null,
+            income2_value: parseRenda(propertyData['RENDA 2 (VALOR)']),
+            income2_tenant: propertyData['RENDA 2 (INQUILINO)'] || null,
+            income3_value: parseRenda(propertyData['RENDA3(VALOR)']),
+            income3_tenant: propertyData['RENDA3 (INQUILINO)'] || null,
             city: propertyData['CIDADE']
           };
         });
