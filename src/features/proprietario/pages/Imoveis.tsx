@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Property, PropertyType, RawPropertyData } from "@/types/properties";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,12 +17,42 @@ export default function Imoveis() {
   const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQptFGMW8iN8o7XTx2JmufTOyNhQGshbjQj79uj7F6xp7otPGGHocLuGYxaWfsl9AK-AWieURS2ccCm/pub?gid=0&single=true&output=csv";
 
   const categories = [
-    { type: 'todas' as const, label: 'Todas', icon: Home, count: properties.length },
-    { type: 'comercial' as const, label: 'Comercial', icon: Store, count: properties.filter(p => p.type === 'comercial').length },
-    { type: 'casa' as const, label: 'Casa', icon: Home, count: properties.filter(p => p.type === 'casa').length },
-    { type: 'apartamento' as const, label: 'Apartamento', icon: Building2, count: properties.filter(p => p.type === 'apartamento').length },
-    { type: 'area' as const, label: 'Área', icon: Trees, count: properties.filter(p => p.type === 'area').length },
-    { type: 'lote' as const, label: 'Lote', icon: Trees, count: properties.filter(p => p.type === 'lote').length }
+    { 
+      type: 'todas' as const, 
+      label: 'Todas', 
+      icon: Home, 
+      count: properties.reduce((acc, p) => acc + (p.quantity || 1), 0)
+    },
+    { 
+      type: 'comercial' as const, 
+      label: 'Comercial', 
+      icon: Store, 
+      count: properties.filter(p => p.type === 'comercial').reduce((acc, p) => acc + (p.quantity || 1), 0)
+    },
+    { 
+      type: 'casa' as const, 
+      label: 'Casa', 
+      icon: Home, 
+      count: properties.filter(p => p.type === 'casa').reduce((acc, p) => acc + (p.quantity || 1), 0)
+    },
+    { 
+      type: 'apartamento' as const, 
+      label: 'Apartamento', 
+      icon: Building2, 
+      count: properties.filter(p => p.type === 'apartamento').reduce((acc, p) => acc + (p.quantity || 1), 0)
+    },
+    { 
+      type: 'area' as const, 
+      label: 'Área', 
+      icon: Trees, 
+      count: properties.filter(p => p.type === 'area').reduce((acc, p) => acc + (p.quantity || 1), 0)
+    },
+    { 
+      type: 'lote' as const, 
+      label: 'Lote', 
+      icon: Trees, 
+      count: properties.filter(p => p.type === 'lote').reduce((acc, p) => acc + (p.quantity || 1), 0)
+    }
   ];
 
   const normalizePropertyType = (type: string): PropertyType => {
