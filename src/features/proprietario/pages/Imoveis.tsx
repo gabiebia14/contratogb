@@ -16,42 +16,52 @@ export default function Imoveis() {
 
   const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQptFGMW8iN8o7XTx2JmufTOyNhQGshbjQj79uj7F6xp7otPGGHocLuGYxaWfsl9AK-AWieURS2ccCm/pub?gid=0&single=true&output=csv";
 
+  // Função auxiliar para calcular a quantidade total por tipo
+  const calculateTotalQuantityByType = (propertyType: PropertyType | 'todas') => {
+    if (propertyType === 'todas') {
+      return properties.reduce((acc, property) => acc + property.quantity, 0);
+    }
+    return properties
+      .filter(property => property.type === propertyType)
+      .reduce((acc, property) => acc + property.quantity, 0);
+  };
+
   const categories = [
     { 
       type: 'todas' as const, 
       label: 'Todas', 
       icon: Home, 
-      count: properties.reduce((acc, p) => acc + (p.quantity || 1), 0)
+      count: calculateTotalQuantityByType('todas')
     },
     { 
       type: 'comercial' as const, 
       label: 'Comercial', 
       icon: Store, 
-      count: properties.filter(p => p.type === 'comercial').reduce((acc, p) => acc + (p.quantity || 1), 0)
+      count: calculateTotalQuantityByType('comercial')
     },
     { 
       type: 'casa' as const, 
       label: 'Casa', 
       icon: Home, 
-      count: properties.filter(p => p.type === 'casa').reduce((acc, p) => acc + (p.quantity || 1), 0)
+      count: calculateTotalQuantityByType('casa')
     },
     { 
       type: 'apartamento' as const, 
       label: 'Apartamento', 
       icon: Building2, 
-      count: properties.filter(p => p.type === 'apartamento').reduce((acc, p) => acc + (p.quantity || 1), 0)
+      count: calculateTotalQuantityByType('apartamento')
     },
     { 
       type: 'area' as const, 
       label: 'Área', 
       icon: Trees, 
-      count: properties.filter(p => p.type === 'area').reduce((acc, p) => acc + (p.quantity || 1), 0)
+      count: calculateTotalQuantityByType('area')
     },
     { 
       type: 'lote' as const, 
       label: 'Lote', 
       icon: Trees, 
-      count: properties.filter(p => p.type === 'lote').reduce((acc, p) => acc + (p.quantity || 1), 0)
+      count: calculateTotalQuantityByType('lote')
     }
   ];
 
@@ -178,7 +188,7 @@ export default function Imoveis() {
       const { error: deleteError } = await supabase
         .from('properties')
         .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // Deleta todos os registros
+        .neq('id', '00000000-0000-0000-0000-000000000000');
 
       if (deleteError) {
         throw deleteError;
