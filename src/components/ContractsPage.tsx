@@ -72,38 +72,57 @@ const ContractsPage = () => {
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
+      console.log('Arquivo selecionado:', file.name);
       setSelectedFile(file);
 
       try {
+        console.log('Iniciando leitura do arquivo...');
         const text = await file.text();
+        console.log('Conteúdo do arquivo:', text.substring(0, 500) + '...'); // Primeiros 500 caracteres
         
+        console.log('Processando contrato com Gemini...');
         const processedContent = await processContract(text);
+        console.log('Conteúdo processado:', processedContent.substring(0, 500) + '...');
         
         if (processedContent.includes("{locatario_nome}")) {
+          console.log('Template detectado');
           toast.info("Template de contrato detectado - preencha as informações manualmente");
         } else {
+          console.log('Tentando extrair informações...');
           const nameMatch = processedContent.match(/Locatário:?\s*([^\n,]+)/i);
           const cpfMatch = processedContent.match(/CPF:?\s*([0-9.-]+)/i);
           const dateMatch = processedContent.match(/vigência:?\s*(\d{2}\/\d{2}\/\d{4})\s*(?:a|até)\s*(\d{2}\/\d{2}\/\d{4})/i);
 
+          console.log('Matches encontrados:', { nameMatch, cpfMatch, dateMatch });
+
           if (nameMatch) {
-            setTenantName(nameMatch[1].trim());
+            const extractedName = nameMatch[1].trim();
+            console.log('Nome extraído:', extractedName);
+            setTenantName(extractedName);
           }
           if (cpfMatch) {
-            setTenantDocument(cpfMatch[1].trim());
+            const extractedCPF = cpfMatch[1].trim();
+            console.log('CPF extraído:', extractedCPF);
+            setTenantDocument(extractedCPF);
           }
           if (dateMatch) {
-            const startDate = new Date(dateMatch[1].split('/').reverse().join('-'));
-            const endDate = new Date(dateMatch[2].split('/').reverse().join('-'));
-            
-            setLeaseStart(startDate.toISOString().split('T')[0]);
-            setLeaseEnd(endDate.toISOString().split('T')[0]);
+            try {
+              const startDate = new Date(dateMatch[1].split('/').reverse().join('-'));
+              const endDate = new Date(dateMatch[2].split('/').reverse().join('-'));
+              
+              console.log('Datas extraídas:', { startDate, endDate });
+              
+              setLeaseStart(startDate.toISOString().split('T')[0]);
+              setLeaseEnd(endDate.toISOString().split('T')[0]);
+            } catch (dateError) {
+              console.error('Erro ao processar datas:', dateError);
+            }
           }
 
           toast.success("Informações extraídas do contrato!");
         }
       } catch (error) {
-        console.error('Erro ao processar contrato:', error);
+        console.error('Erro detalhado ao processar contrato:', error);
         toast.error("Não foi possível extrair informações automaticamente");
       }
     }
@@ -364,7 +383,7 @@ const ContractsPage = () => {
                     <Input
                       id="file"
                       type="file"
-                      accept=".pdf"
+                      accept=".pdf,.txt,.doc,.docx"
                       onChange={handleFileChange}
                     />
                   </div>
