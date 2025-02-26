@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Download, Search, Loader2, Building2, Calendar } from 'lucide-react';
+import { FileText, Download, Search, Loader2, Building2, Calendar, Brain } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -17,6 +18,7 @@ const ContractsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showAIDialog, setShowAIDialog] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>('');
   const [contractTitle, setContractTitle] = useState('');
@@ -26,6 +28,7 @@ const ContractsPage = () => {
   const [leaseStart, setLeaseStart] = useState('');
   const [leaseEnd, setLeaseEnd] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [fileToProcess, setFileToProcess] = useState<File | null>(null);
   const { processContract } = useContractGemini();
 
   const { data: contracts, isLoading: contractsLoading, refetch: refetchContracts } = useQuery({
@@ -69,62 +72,61 @@ const ContractsPage = () => {
     }
   });
 
+  const processWithAI = async (file: File) => {
+    console.log('Iniciando leitura do arquivo...');
+    const text = await file.text();
+    console.log('Conteúdo do arquivo:', text.substring(0, 500) + '...');
+    
+    console.log('Processando contrato com Gemini...');
+    const processedContent = await processContract(text);
+    console.log('Conteúdo processado:', processedContent.substring(0, 500) + '...');
+    
+    if (processedContent.includes("{locatario_nome}")) {
+      console.log('Template detectado');
+      toast.info("Template de contrato detectado - preencha as informações manualmente");
+    } else {
+      console.log('Tentando extrair informações...');
+      const nameMatch = processedContent.match(/Locatário:?\s*([^\n,]+)/i);
+      const cpfMatch = processedContent.match(/CPF:?\s*([0-9.-]+)/i);
+      const dateMatch = processedContent.match(/vigência:?\s*(\d{2}\/\d{2}\/\d{4})\s*(?:a|até)\s*(\d{2}\/\d{2}\/\d{4})/i);
+
+      console.log('Matches encontrados:', { nameMatch, cpfMatch, dateMatch });
+
+      if (nameMatch) {
+        const extractedName = nameMatch[1].trim();
+        console.log('Nome extraído:', extractedName);
+        setTenantName(extractedName);
+      }
+      if (cpfMatch) {
+        const extractedCPF = cpfMatch[1].trim();
+        console.log('CPF extraído:', extractedCPF);
+        setTenantDocument(extractedCPF);
+      }
+      if (dateMatch) {
+        try {
+          const startDate = new Date(dateMatch[1].split('/').reverse().join('-'));
+          const endDate = new Date(dateMatch[2].split('/').reverse().join('-'));
+          
+          console.log('Datas extraídas:', { startDate, endDate });
+          
+          setLeaseStart(startDate.toISOString().split('T')[0]);
+          setLeaseEnd(endDate.toISOString().split('T')[0]);
+        } catch (dateError) {
+          console.error('Erro ao processar datas:', dateError);
+        }
+      }
+
+      toast.success("Informações extraídas do contrato!");
+    }
+  };
+
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
       console.log('Arquivo selecionado:', file.name);
       setSelectedFile(file);
-
-      try {
-        console.log('Iniciando leitura do arquivo...');
-        const text = await file.text();
-        console.log('Conteúdo do arquivo:', text.substring(0, 500) + '...'); // Primeiros 500 caracteres
-        
-        console.log('Processando contrato com Gemini...');
-        const processedContent = await processContract(text);
-        console.log('Conteúdo processado:', processedContent.substring(0, 500) + '...');
-        
-        if (processedContent.includes("{locatario_nome}")) {
-          console.log('Template detectado');
-          toast.info("Template de contrato detectado - preencha as informações manualmente");
-        } else {
-          console.log('Tentando extrair informações...');
-          const nameMatch = processedContent.match(/Locatário:?\s*([^\n,]+)/i);
-          const cpfMatch = processedContent.match(/CPF:?\s*([0-9.-]+)/i);
-          const dateMatch = processedContent.match(/vigência:?\s*(\d{2}\/\d{2}\/\d{4})\s*(?:a|até)\s*(\d{2}\/\d{2}\/\d{4})/i);
-
-          console.log('Matches encontrados:', { nameMatch, cpfMatch, dateMatch });
-
-          if (nameMatch) {
-            const extractedName = nameMatch[1].trim();
-            console.log('Nome extraído:', extractedName);
-            setTenantName(extractedName);
-          }
-          if (cpfMatch) {
-            const extractedCPF = cpfMatch[1].trim();
-            console.log('CPF extraído:', extractedCPF);
-            setTenantDocument(extractedCPF);
-          }
-          if (dateMatch) {
-            try {
-              const startDate = new Date(dateMatch[1].split('/').reverse().join('-'));
-              const endDate = new Date(dateMatch[2].split('/').reverse().join('-'));
-              
-              console.log('Datas extraídas:', { startDate, endDate });
-              
-              setLeaseStart(startDate.toISOString().split('T')[0]);
-              setLeaseEnd(endDate.toISOString().split('T')[0]);
-            } catch (dateError) {
-              console.error('Erro ao processar datas:', dateError);
-            }
-          }
-
-          toast.success("Informações extraídas do contrato!");
-        }
-      } catch (error) {
-        console.error('Erro detalhado ao processar contrato:', error);
-        toast.error("Não foi possível extrair informações automaticamente");
-      }
+      setFileToProcess(file);
+      setShowAIDialog(true);
     }
   };
 
@@ -399,6 +401,40 @@ const ContractsPage = () => {
             </Dialog>
           </div>
         </div>
+
+        <AlertDialog open={showAIDialog} onOpenChange={setShowAIDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <Brain className="w-5 h-5" />
+                Usar IA para extrair informações?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Nossa IA pode tentar extrair automaticamente informações como nome do locatário, CPF e datas do contrato. Deseja prosseguir?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setShowAIDialog(false)}>
+                Não, preencher manualmente
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={async () => {
+                  if (fileToProcess) {
+                    try {
+                      await processWithAI(fileToProcess);
+                    } catch (error) {
+                      console.error('Erro ao processar com IA:', error);
+                      toast.error("Erro ao processar com IA");
+                    }
+                  }
+                  setShowAIDialog(false);
+                }}
+              >
+                Sim, processar com IA
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {filteredContracts?.length === 0 ? (
           <div className="text-center py-12">
