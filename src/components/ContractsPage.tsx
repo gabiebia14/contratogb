@@ -19,7 +19,7 @@ const ContractsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
   const [showUploadDialog, setShowUploadDialog] = useState(false);
-  const [showAIDialog, setShowAIDialog] = useState(false);
+  const [processingAI, setProcessingAI] = useState(false);
   const [showContractForm, setShowContractForm] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>('');
@@ -83,19 +83,21 @@ const ContractsPage = () => {
     setLeaseStart('');
     setLeaseEnd('');
     setShowUploadDialog(false);
-    setShowAIDialog(false);
+    setProcessingAI(false);
     setShowContractForm(false);
   };
 
   const handleFileSelected = async (files: File[]) => {
     if (files.length > 0) {
       setSelectedFile(files[0]);
-      setShowAIDialog(true);
+      setProcessingAI(true);
+      await processWithAI(files[0]);
     }
   };
 
   const processWithAI = async (file: File) => {
     try {
+      toast.loading("Processando contrato com IA...");
       console.log('Iniciando leitura do arquivo...');
       const text = await file.text();
       
@@ -128,10 +130,11 @@ const ContractsPage = () => {
         }
         toast.success("Informações extraídas do contrato!");
       }
-      setShowContractForm(true);
     } catch (error) {
       console.error('Erro ao processar com IA:', error);
       toast.error("Erro ao processar com IA");
+    } finally {
+      setProcessingAI(false);
       setShowContractForm(true);
     }
   };
@@ -299,6 +302,12 @@ const ContractsPage = () => {
                       title="Selecione o contrato para upload"
                       description="Arraste ou clique para selecionar o arquivo do contrato (PDF, DOC, DOCX, TXT)"
                     />
+                    {processingAI && (
+                      <div className="mt-4 flex items-center justify-center gap-2 text-primary">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Processando contrato com IA...</span>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="grid gap-4 py-4">
