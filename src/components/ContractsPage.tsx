@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { FileText, Download, Search, Loader2, Building2, Calendar, Brain } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useQuery } from '@tanstack/react-query';
 import { Property } from '@/types/properties';
 import { useContractGemini } from '@/hooks/useContractGemini';
+import FileUploadArea from '@/components/ocr/FileUploadArea';
 
 const ContractsPage = () => {
   const navigate = useNavigate();
@@ -178,6 +179,30 @@ const ContractsPage = () => {
       toast.error('Erro ao adicionar contrato');
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleDownload = async (filePath: string) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('property_contracts')
+        .download(filePath);
+
+      if (error) {
+        throw error;
+      }
+
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filePath.split('/').pop() || 'contrato';
+      document.body.appendChild(a);
+      a.click();
+      URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Erro ao fazer download:', error);
+      toast.error('Erro ao fazer download do arquivo');
     }
   };
 
