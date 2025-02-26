@@ -1,14 +1,12 @@
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { GoogleAIFileManager } from "@google/generative-ai/server";
 
 const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(apiKey);
-const fileManager = new GoogleAIFileManager(apiKey);
 
 export const useContractGemini = () => {
   const model = genAI.getGenerativeModel({
-    model: "gemini-2.0-flash-thinking-exp-01-21",
+    model: "gemini-2.0-flash-exp",
     systemInstruction: `Você é um assistente especialista em automação e edição de modelos de contrato. Sua função é processar modelos carregados, localizar a cláusula de Partes Contratantes, e substituir automaticamente os dados existentes pelos parâmetros dinâmicos previamente definidos.
 
 Fluxo de Trabalho
@@ -64,11 +62,10 @@ Email: {fiadora_email} ou {fiador_email}`,
   });
 
   const generationConfig = {
-    temperature: 0.7,
+    temperature: 1,
     topP: 0.95,
-    topK: 64,
-    maxOutputTokens: 65536,
-    responseMimeType: "text/plain",
+    topK: 40,
+    maxOutputTokens: 8192,
   };
 
   const processContract = async (content: string) => {

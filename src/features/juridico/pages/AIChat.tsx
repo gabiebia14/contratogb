@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -86,29 +87,36 @@ export default function AIChat() {
         }]);
       }
 
-      let formData = new FormData();
+      const formData = new FormData();
       
       if (selectedFile) {
         formData.append('file', selectedFile);
       }
-      formData.append('content', input.trim());
+      
+      if (input.trim()) {
+        formData.append('content', input.trim());
+      }
 
-      const { data, error } = await supabase.functions.invoke('process-contract', {
-        body: formData
+      const response = await supabase.functions.invoke('process-contract', {
+        body: formData,
+        headers: {
+          'Accept': 'application/json',
+        }
       });
 
-      if (error) {
-        console.error('Erro na função:', error);
-        throw error;
+      if (response.error) {
+        console.error('Erro na função:', response.error);
+        toast.error('Erro ao processar contrato. Por favor, tente novamente.');
+        return;
       }
 
       setInput('');
       setSelectedFile(null);
 
-      if (data) {
+      if (response.data) {
         setMessages(prev => [...prev, { 
           role: 'assistant', 
-          content: data.text || 'Não foi possível processar a resposta.'
+          content: response.data.text || 'Não foi possível processar a resposta.'
         }]);
       }
     } catch (error) {
@@ -140,6 +148,7 @@ export default function AIChat() {
               variant="outline" 
               onClick={handleUploadClick}
               className="cursor-pointer"
+              disabled={loading}
             >
               <Upload className="w-4 h-4 mr-2" />
               Upload
