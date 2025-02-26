@@ -100,6 +100,7 @@ const ContractsPage = () => {
         .from('contracts')
         .insert([{
           title: contractTitle,
+          content: '', // Adicionando campo content obrigatório
           property_id: selectedPropertyId,
           file_path: filePath,
           contract_type: contractType,
