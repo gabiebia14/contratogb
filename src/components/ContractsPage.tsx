@@ -1,79 +1,171 @@
 
 import React, { useState, useEffect } from 'react';
-import { FileText, Download, Search, Loader2 } from 'lucide-react';
+import { FileText, Download, Search, Loader2, Building2, Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useQuery } from '@tanstack/react-query';
+import { Property } from '@/types/properties';
 
 const ContractsPage = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
-  const [contracts, setContracts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string>('');
+  const [contractTitle, setContractTitle] = useState('');
+  const [contractType, setContractType] = useState('lease');
+  const [tenantName, setTenantName] = useState('');
+  const [tenantDocument, setTenantDocument] = useState('');
+  const [leaseStart, setLeaseStart] = useState('');
+  const [leaseEnd, setLeaseEnd] = useState('');
+  const [uploading, setUploading] = useState(false);
 
-  useEffect(() => {
-    const fetchContracts = async () => {
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('contracts')
-          .select(`
-            *,
-            template:contract_templates(name),
-            document:processed_documents(file_name)
-          `)
-          .order('created_at', { ascending: false });
+  const { data: contracts, isLoading: contractsLoading, refetch: refetchContracts } = useQuery({
+    queryKey: ['contracts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('contracts')
+        .select(`
+          *,
+          template:contract_templates(name),
+          document:processed_documents(file_name),
+          property:properties(address, city)
+        `)
+        .order('created_at', { ascending: false });
 
-        if (error) {
-          console.error('Error fetching contracts:', error);
-          toast({
-            title: "Erro ao carregar contratos",
-            description: "Não foi possível carregar a lista de contratos.",
-            variant: "destructive",
-          });
-        } else {
-          console.log('Contratos carregados:', data);
-          setContracts(data || []);
-        }
-      } catch (error) {
-        console.error('Error:', error);
-      } finally {
-        setLoading(false);
+      if (error) {
+        console.error('Error fetching contracts:', error);
+        toast.error("Erro ao carregar contratos");
+        throw error;
       }
-    };
 
-    fetchContracts();
+      return data || [];
+    }
+  });
 
-    // Inscrever para atualizações em tempo real
-    const contractsSubscription = supabase
-      .channel('contracts_channel')
-      .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'contracts' 
-        }, 
-        (payload) => {
-          console.log('Mudança detectada:', payload);
-          // Recarregar os contratos quando houver mudanças
-          fetchContracts();
-        }
-      )
-      .subscribe();
+  const { data: properties } = useQuery({
+    queryKey: ['properties'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('properties')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    return () => {
-      contractsSubscription.unsubscribe();
-    };
-  }, [toast]);
+      if (error) {
+        console.error('Error fetching properties:', error);
+        toast.error("Erro ao carregar imóveis");
+        throw error;
+      }
 
-  const handleViewContract = (contractId: string) => {
-    navigate(`/juridico/contracts/${contractId}`);
+      return data as Property[];
+    }
+  });
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      setSelectedFile(event.target.files[0]);
+    }
   };
 
-  const filteredContracts = contracts.filter(contract => {
-    const matchesSearch = contract.title.toLowerCase().includes(searchTerm.toLowerCase());
+  const handleUpload = async () => {
+    if (!selectedFile || !selectedPropertyId || !contractTitle) {
+      toast.error("Preencha todos os campos obrigatórios");
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      // Upload do arquivo para o storage
+      const fileExt = selectedFile.name.split('.').pop();
+      const filePath = `${selectedPropertyId}/${crypto.randomUUID()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('property_contracts')
+        .upload(filePath, selectedFile);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      // Criar registro do contrato no banco
+      const { error: contractError } = await supabase
+        .from('contracts')
+        .insert([{
+          title: contractTitle,
+          property_id: selectedPropertyId,
+          file_path: filePath,
+          contract_type: contractType,
+          tenant_name: tenantName,
+          tenant_document: tenantDocument,
+          lease_start: leaseStart || null,
+          lease_end: leaseEnd || null,
+          status: 'active'
+        }]);
+
+      if (contractError) {
+        throw contractError;
+      }
+
+      toast.success('Contrato adicionado com sucesso!');
+      setShowAddDialog(false);
+      refetchContracts();
+      resetForm();
+    } catch (error) {
+      console.error('Erro ao fazer upload:', error);
+      toast.error('Erro ao adicionar contrato');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setSelectedFile(null);
+    setSelectedPropertyId('');
+    setContractTitle('');
+    setContractType('lease');
+    setTenantName('');
+    setTenantDocument('');
+    setLeaseStart('');
+    setLeaseEnd('');
+  };
+
+  const handleDownload = async (filePath: string) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('property_contracts')
+        .download(filePath);
+
+      if (error) {
+        throw error;
+      }
+
+      // Criar URL do blob e iniciar download
+      const url = window.URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filePath.split('/').pop() || 'contrato.pdf';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Erro ao baixar arquivo:', error);
+      toast.error('Erro ao baixar contrato');
+    }
+  };
+
+  const filteredContracts = contracts?.filter(contract => {
+    const matchesSearch = contract.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         contract.property?.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         contract.tenant_name?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'todos' || contract.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -106,7 +198,7 @@ const ContractsPage = () => {
     }
   };
 
-  if (loading) {
+  if (contractsLoading) {
     return (
       <div className="flex justify-center items-center h-64">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -141,16 +233,122 @@ const ContractsPage = () => {
               <option value="expired">Expirado</option>
               <option value="cancelled">Cancelado</option>
             </select>
-            <button 
-              onClick={() => navigate('/juridico/new-contract')}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
-            >
-              Novo Contrato
-            </button>
+
+            <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+              <DialogTrigger asChild>
+                <Button>
+                  Adicionar Contrato
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Adicionar Novo Contrato</DialogTitle>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="title">Título do Contrato</Label>
+                    <Input
+                      id="title"
+                      value={contractTitle}
+                      onChange={(e) => setContractTitle(e.target.value)}
+                      placeholder="Ex: Contrato de Locação - Apartamento Centro"
+                    />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="property">Imóvel</Label>
+                    <Select value={selectedPropertyId} onValueChange={setSelectedPropertyId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o imóvel" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {properties?.map((property) => (
+                          <SelectItem key={property.id} value={property.id}>
+                            {property.address} - {property.city}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="type">Tipo de Contrato</Label>
+                    <Select value={contractType} onValueChange={setContractType}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="lease">Locação</SelectItem>
+                        <SelectItem value="sale">Venda</SelectItem>
+                        <SelectItem value="other">Outro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="tenant">Nome do Locatário/Comprador</Label>
+                    <Input
+                      id="tenant"
+                      value={tenantName}
+                      onChange={(e) => setTenantName(e.target.value)}
+                      placeholder="Nome completo"
+                    />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="document">Documento (CPF/CNPJ)</Label>
+                    <Input
+                      id="document"
+                      value={tenantDocument}
+                      onChange={(e) => setTenantDocument(e.target.value)}
+                      placeholder="000.000.000-00"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="start">Data Início</Label>
+                      <Input
+                        id="start"
+                        type="date"
+                        value={leaseStart}
+                        onChange={(e) => setLeaseStart(e.target.value)}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="end">Data Fim</Label>
+                      <Input
+                        id="end"
+                        type="date"
+                        value={leaseEnd}
+                        onChange={(e) => setLeaseEnd(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="file">Arquivo do Contrato (PDF)</Label>
+                    <Input
+                      id="file"
+                      type="file"
+                      accept=".pdf"
+                      onChange={handleFileChange}
+                    />
+                  </div>
+
+                  <Button 
+                    onClick={handleUpload}
+                    disabled={uploading || !selectedFile || !selectedPropertyId || !contractTitle}
+                  >
+                    {uploading ? 'Enviando...' : 'Adicionar Contrato'}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
-        {filteredContracts.length === 0 ? (
+        {filteredContracts?.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-500">Nenhum contrato encontrado.</p>
           </div>
@@ -160,8 +358,9 @@ const ContractsPage = () => {
               <thead className="text-left text-gray-500 text-sm">
                 <tr>
                   <th className="pb-4">Nome</th>
-                  <th className="pb-4">Modelo</th>
-                  <th className="pb-4">Data</th>
+                  <th className="pb-4">Imóvel</th>
+                  <th className="pb-4">Locatário</th>
+                  <th className="pb-4">Período</th>
                   <th className="pb-4">Status</th>
                   <th className="pb-4">Ações</th>
                 </tr>
@@ -177,8 +376,22 @@ const ContractsPage = () => {
                         {contract.title}
                       </div>
                     </td>
-                    <td className="py-4">{contract.template?.name}</td>
-                    <td className="py-4">{new Date(contract.created_at).toLocaleDateString()}</td>
+                    <td className="py-4">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="w-4 h-4 text-gray-400" />
+                        {contract.property?.address}
+                      </div>
+                    </td>
+                    <td className="py-4">{contract.tenant_name || '-'}</td>
+                    <td className="py-4">
+                      {contract.lease_start && (
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-gray-400" />
+                          {new Date(contract.lease_start).toLocaleDateString()} até{' '}
+                          {contract.lease_end ? new Date(contract.lease_end).toLocaleDateString() : 'N/A'}
+                        </div>
+                      )}
+                    </td>
                     <td className="py-4">
                       <span className={`px-2 py-1 rounded-full text-sm ${getStatusStyle(contract.status)}`}>
                         {getStatusLabel(contract.status)}
@@ -186,15 +399,22 @@ const ContractsPage = () => {
                     </td>
                     <td className="py-4">
                       <div className="flex gap-2">
-                        <button className="p-2 hover:bg-gray-100 rounded-lg" title="Download">
-                          <Download size={20} className="text-gray-500" />
-                        </button>
-                        <button 
-                          onClick={() => handleViewContract(contract.id)}
-                          className="text-indigo-600 hover:text-indigo-800"
+                        {contract.file_path && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDownload(contract.file_path)}
+                            title="Download"
+                          >
+                            <Download size={20} className="text-gray-500" />
+                          </Button>
+                        )}
+                        <Button 
+                          variant="link"
+                          onClick={() => navigate(`/juridico/contracts/${contract.id}`)}
                         >
                           Ver detalhes
-                        </button>
+                        </Button>
                       </div>
                     </td>
                   </tr>

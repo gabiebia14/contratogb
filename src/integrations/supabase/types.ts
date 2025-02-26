@@ -57,15 +57,21 @@ export type Database = {
       contracts: {
         Row: {
           content: string
+          contract_type: string | null
           created_at: string | null
           document_id: string | null
           file_path: string | null
           generated_at: string | null
           id: string
+          lease_end: string | null
+          lease_start: string | null
           metadata: Json | null
           preview_url: string | null
+          property_id: string | null
           status: Database["public"]["Enums"]["contract_status"] | null
           template_id: string | null
+          tenant_document: string | null
+          tenant_name: string | null
           title: string
           updated_at: string | null
           user_id: string | null
@@ -74,15 +80,21 @@ export type Database = {
         }
         Insert: {
           content: string
+          contract_type?: string | null
           created_at?: string | null
           document_id?: string | null
           file_path?: string | null
           generated_at?: string | null
           id?: string
+          lease_end?: string | null
+          lease_start?: string | null
           metadata?: Json | null
           preview_url?: string | null
+          property_id?: string | null
           status?: Database["public"]["Enums"]["contract_status"] | null
           template_id?: string | null
+          tenant_document?: string | null
+          tenant_name?: string | null
           title: string
           updated_at?: string | null
           user_id?: string | null
@@ -91,15 +103,21 @@ export type Database = {
         }
         Update: {
           content?: string
+          contract_type?: string | null
           created_at?: string | null
           document_id?: string | null
           file_path?: string | null
           generated_at?: string | null
           id?: string
+          lease_end?: string | null
+          lease_start?: string | null
           metadata?: Json | null
           preview_url?: string | null
+          property_id?: string | null
           status?: Database["public"]["Enums"]["contract_status"] | null
           template_id?: string | null
+          tenant_document?: string | null
+          tenant_name?: string | null
           title?: string
           updated_at?: string | null
           user_id?: string | null
@@ -112,6 +130,13 @@ export type Database = {
             columns: ["document_id"]
             isOneToOne: false
             referencedRelation: "processed_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
             referencedColumns: ["id"]
           },
           {
