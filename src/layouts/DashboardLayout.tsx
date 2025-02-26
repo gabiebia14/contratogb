@@ -2,7 +2,21 @@
 import { useState, useEffect } from 'react';
 import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, SidebarMenu, 
   SidebarMenuItem, SidebarMenuButton, SidebarGroup, SidebarGroupContent } from "@/components/ui/sidebar";
-import { Layout, Home, DollarSign, Building2, MapPin, MessageSquare, Menu as MenuIcon } from 'lucide-react';
+import { 
+  Layout, 
+  Home, 
+  DollarSign, 
+  Building2, 
+  MapPin, 
+  MessageSquare, 
+  Menu as MenuIcon,
+  FileText,
+  Plus,
+  FolderOpen,
+  MessageCircle,
+  Book,
+  Settings
+} from 'lucide-react';
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
