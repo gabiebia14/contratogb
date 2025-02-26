@@ -135,10 +135,11 @@ export default function Renda() {
     : properties.filter(hasIncome);
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Renda</h1>
+    <div className="space-y-4 p-2 md:space-y-6 md:p-0">
+      <h1 className="text-2xl md:text-3xl font-bold">Renda</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Grid de categorias - Ajustado para melhor visualização mobile */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2 md:gap-4">
         {categories.map((category) => {
           const income = calculateIncomeByType(category.type);
           const tenantsCount = calculateTenantsCountByType(category.type);
@@ -154,14 +155,14 @@ export default function Renda() {
                 selectedType === category.type ? null : category.type
               )}
             >
-              <CardHeader className={`bg-gradient-to-br ${category.gradient} text-white rounded-t-lg`}>
-                <CardTitle className="flex items-center justify-between">
+              <CardHeader className={`bg-gradient-to-br ${category.gradient} text-white rounded-t-lg p-3 md:p-6`}>
+                <CardTitle className="flex items-center justify-between text-base md:text-lg">
                   <span>{category.label}</span>
-                  <Icon className="h-5 w-5" />
+                  <Icon className="h-4 w-4 md:h-5 md:w-5" />
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pt-4">
-                <div className="text-2xl font-bold">{formatCurrency(income)}</div>
+              <CardContent className="p-3 md:p-6">
+                <div className="text-lg md:text-2xl font-bold truncate">{formatCurrency(income)}</div>
                 <p className="text-xs text-muted-foreground">
                   {tenantsCount} {tenantsCount === 1 ? 'inquilino' : 'inquilinos'}
                 </p>
@@ -171,43 +172,57 @@ export default function Renda() {
         })}
       </div>
 
-      {/* Lista detalhada de rendas por imóvel */}
-      <div className="mt-8">
-        <h2 className="text-2xl font-semibold mb-4">
+      {/* Lista detalhada de rendas por imóvel - Ajustada para mobile */}
+      <div className="mt-4 md:mt-8">
+        <h2 className="text-xl md:text-2xl font-semibold mb-2 md:mb-4">
           {selectedType 
             ? `Imóveis ${categories.find(c => c.type === selectedType)?.label}`
             : 'Todos os Imóveis com Renda'}
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-4">
           {filteredProperties.map((property) => (
-            <Card key={property.id}>
-              <CardHeader>
-                <CardTitle className="text-lg">{property.address}</CardTitle>
+            <Card key={property.id} className="overflow-hidden">
+              <CardHeader className="p-3 md:p-6">
+                <CardTitle className="text-base md:text-lg line-clamp-1">
+                  {property.address}
+                </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-3 md:p-6 pt-0">
                 <div className="space-y-2">
                   {property.income1_value && property.income1_tenant && (
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">{property.income1_tenant}</span>
-                      <span className="font-medium">{formatCurrency(property.income1_value)}</span>
+                      <span className="text-xs md:text-sm text-muted-foreground truncate pr-2">
+                        {property.income1_tenant}
+                      </span>
+                      <span className="text-sm md:text-base font-medium">
+                        {formatCurrency(property.income1_value)}
+                      </span>
                     </div>
                   )}
                   {property.income2_value && property.income2_tenant && (
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">{property.income2_tenant}</span>
-                      <span className="font-medium">{formatCurrency(property.income2_value)}</span>
+                      <span className="text-xs md:text-sm text-muted-foreground truncate pr-2">
+                        {property.income2_tenant}
+                      </span>
+                      <span className="text-sm md:text-base font-medium">
+                        {formatCurrency(property.income2_value)}
+                      </span>
                     </div>
                   )}
                   {property.income3_value && property.income3_tenant && (
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">{property.income3_tenant}</span>
-                      <span className="font-medium">{formatCurrency(property.income3_value)}</span>
+                      <span className="text-xs md:text-sm text-muted-foreground truncate pr-2">
+                        {property.income3_tenant}
+                      </span>
+                      <span className="text-sm md:text-base font-medium">
+                        {formatCurrency(property.income3_value)}
+                      </span>
                     </div>
                   )}
                   <div className="pt-2 border-t">
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium">Total</span>
-                      <span className="font-bold">
+                      <span className="text-sm md:text-base font-bold">
                         {formatCurrency(
                           ((property.income1_value || 0) +
                            (property.income2_value || 0) +
