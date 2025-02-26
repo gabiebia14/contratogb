@@ -2,11 +2,12 @@
 import { useState, useEffect } from 'react';
 import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, SidebarMenu, 
   SidebarMenuItem, SidebarMenuButton, SidebarGroup, SidebarGroupContent } from "@/components/ui/sidebar";
-import { Layout, Home, DollarSign, Building2, MapPin, MessageSquare, Menu as MenuIcon, FileText, Plus, Settings, FolderOpen, MessageCircle, Book } from 'lucide-react';
+import { Layout, Home, DollarSign, Building2, MapPin, MessageSquare, Menu as MenuIcon } from 'lucide-react';
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/integrations/supabase/client';
+import { cn } from '@/lib/utils';
 
 interface DashboardLayoutProps {
   dashboardType: 'juridico' | 'proprietario';
@@ -55,8 +56,9 @@ export default function DashboardLayout({ dashboardType }: DashboardLayoutProps)
 
   return (
     <div className="flex min-h-screen bg-gray-50">
+      {/* Sidebar - Visível apenas em desktop */}
       <SidebarProvider defaultOpen={true}>
-        <div className="w-[280px] fixed left-0 top-0 bottom-0 bg-background border-r z-30">
+        <div className="hidden lg:block w-[280px] fixed left-0 top-0 bottom-0 bg-background border-r z-30">
           <Sidebar collapsible="none" className="border-none h-full">
             <SidebarHeader className="p-4">
               <Link to={`/${dashboardType}`} className="text-2xl font-bold flex items-center gap-2">
@@ -105,8 +107,9 @@ export default function DashboardLayout({ dashboardType }: DashboardLayoutProps)
           </Sidebar>
         </div>
 
-        <div className="flex-1 ml-[280px]">
-          <main className="min-h-screen">
+        {/* Conteúdo Principal */}
+        <div className="flex-1 lg:ml-[280px]">
+          <main className="min-h-screen pb-20 lg:pb-0"> {/* Adicionado padding-bottom para o menu mobile */}
             <div className="p-4 md:p-8">
               <div className="flex justify-end items-center mb-4 md:mb-8">
                 <div className="flex items-center gap-4">
@@ -124,6 +127,33 @@ export default function DashboardLayout({ dashboardType }: DashboardLayoutProps)
               </div>
             </div>
           </main>
+
+          {/* Menu inferior mobile */}
+          {dashboardType === 'proprietario' && (
+            <nav className="fixed bottom-0 left-0 right-0 bg-white border-t lg:hidden">
+              <div className="flex justify-around items-center h-16">
+                {currentMenuItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = location.pathname === item.path;
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      className={cn(
+                        "flex flex-col items-center justify-center flex-1 py-1 text-xs",
+                        isActive 
+                          ? "text-cyan-500" 
+                          : "text-gray-500 hover:text-gray-700"
+                      )}
+                    >
+                      <Icon className="h-5 w-5 mb-1" />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </nav>
+          )}
         </div>
       </SidebarProvider>
     </div>
