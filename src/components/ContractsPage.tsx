@@ -17,8 +17,9 @@ const ContractsPage = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
-  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [showAIDialog, setShowAIDialog] = useState(false);
+  const [showContractForm, setShowContractForm] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>('');
   const [contractTitle, setContractTitle] = useState('');
@@ -28,7 +29,6 @@ const ContractsPage = () => {
   const [leaseStart, setLeaseStart] = useState('');
   const [leaseEnd, setLeaseEnd] = useState('');
   const [uploading, setUploading] = useState(false);
-  const [fileToProcess, setFileToProcess] = useState<File | null>(null);
   const { processContract } = useContractGemini();
 
   const { data: contracts, isLoading: contractsLoading, refetch: refetchContracts } = useQuery({
@@ -72,61 +72,66 @@ const ContractsPage = () => {
     }
   });
 
-  const processWithAI = async (file: File) => {
-    console.log('Iniciando leitura do arquivo...');
-    const text = await file.text();
-    console.log('Conteúdo do arquivo:', text.substring(0, 500) + '...');
-    
-    console.log('Processando contrato com Gemini...');
-    const processedContent = await processContract(text);
-    console.log('Conteúdo processado:', processedContent.substring(0, 500) + '...');
-    
-    if (processedContent.includes("{locatario_nome}")) {
-      console.log('Template detectado');
-      toast.info("Template de contrato detectado - preencha as informações manualmente");
-    } else {
-      console.log('Tentando extrair informações...');
-      const nameMatch = processedContent.match(/Locatário:?\s*([^\n,]+)/i);
-      const cpfMatch = processedContent.match(/CPF:?\s*([0-9.-]+)/i);
-      const dateMatch = processedContent.match(/vigência:?\s*(\d{2}\/\d{2}\/\d{4})\s*(?:a|até)\s*(\d{2}\/\d{2}\/\d{4})/i);
+  const resetForm = () => {
+    setSelectedFile(null);
+    setSelectedPropertyId('');
+    setContractTitle('');
+    setContractType('lease');
+    setTenantName('');
+    setTenantDocument('');
+    setLeaseStart('');
+    setLeaseEnd('');
+    setShowUploadDialog(false);
+    setShowAIDialog(false);
+    setShowContractForm(false);
+  };
 
-      console.log('Matches encontrados:', { nameMatch, cpfMatch, dateMatch });
-
-      if (nameMatch) {
-        const extractedName = nameMatch[1].trim();
-        console.log('Nome extraído:', extractedName);
-        setTenantName(extractedName);
-      }
-      if (cpfMatch) {
-        const extractedCPF = cpfMatch[1].trim();
-        console.log('CPF extraído:', extractedCPF);
-        setTenantDocument(extractedCPF);
-      }
-      if (dateMatch) {
-        try {
-          const startDate = new Date(dateMatch[1].split('/').reverse().join('-'));
-          const endDate = new Date(dateMatch[2].split('/').reverse().join('-'));
-          
-          console.log('Datas extraídas:', { startDate, endDate });
-          
-          setLeaseStart(startDate.toISOString().split('T')[0]);
-          setLeaseEnd(endDate.toISOString().split('T')[0]);
-        } catch (dateError) {
-          console.error('Erro ao processar datas:', dateError);
-        }
-      }
-
-      toast.success("Informações extraídas do contrato!");
+  const handleFileSelected = async (files: File[]) => {
+    if (files.length > 0) {
+      setSelectedFile(files[0]);
+      setShowAIDialog(true);
     }
   };
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-      const file = event.target.files[0];
-      console.log('Arquivo selecionado:', file.name);
-      setSelectedFile(file);
-      setFileToProcess(file);
-      setShowAIDialog(true);
+  const processWithAI = async (file: File) => {
+    try {
+      console.log('Iniciando leitura do arquivo...');
+      const text = await file.text();
+      
+      console.log('Processando contrato com Gemini...');
+      const processedContent = await processContract(text);
+      
+      if (processedContent.includes("{locatario_nome}")) {
+        toast.info("Template de contrato detectado - preencha as informações manualmente");
+      } else {
+        const nameMatch = processedContent.match(/Locatário:?\s*([^\n,]+)/i);
+        const cpfMatch = processedContent.match(/CPF:?\s*([0-9.-]+)/i);
+        const dateMatch = processedContent.match(/vigência:?\s*(\d{2}\/\d{2}\/\d{4})\s*(?:a|até)\s*(\d{2}\/\d{2}\/\d{4})/i);
+
+        if (nameMatch) {
+          setTenantName(nameMatch[1].trim());
+        }
+        if (cpfMatch) {
+          setTenantDocument(cpfMatch[1].trim());
+        }
+        if (dateMatch) {
+          try {
+            const startDate = new Date(dateMatch[1].split('/').reverse().join('-'));
+            const endDate = new Date(dateMatch[2].split('/').reverse().join('-'));
+            
+            setLeaseStart(startDate.toISOString().split('T')[0]);
+            setLeaseEnd(endDate.toISOString().split('T')[0]);
+          } catch (dateError) {
+            console.error('Erro ao processar datas:', dateError);
+          }
+        }
+        toast.success("Informações extraídas do contrato!");
+      }
+      setShowContractForm(true);
+    } catch (error) {
+      console.error('Erro ao processar com IA:', error);
+      toast.error("Erro ao processar com IA");
+      setShowContractForm(true);
     }
   };
 
@@ -146,15 +151,13 @@ const ContractsPage = () => {
         .from('property_contracts')
         .upload(filePath, selectedFile);
 
-      if (uploadError) {
-        throw uploadError;
-      }
+      if (uploadError) throw uploadError;
 
       const { error: contractError } = await supabase
         .from('contracts')
         .insert([{
           title: contractTitle,
-          content: '', // Adicionando campo content obrigatório
+          content: '',
           property_id: selectedPropertyId,
           file_path: filePath,
           contract_type: contractType,
@@ -165,54 +168,16 @@ const ContractsPage = () => {
           status: 'active'
         }]);
 
-      if (contractError) {
-        throw contractError;
-      }
+      if (contractError) throw contractError;
 
       toast.success('Contrato adicionado com sucesso!');
-      setShowAddDialog(false);
-      refetchContracts();
       resetForm();
+      refetchContracts();
     } catch (error) {
       console.error('Erro ao fazer upload:', error);
       toast.error('Erro ao adicionar contrato');
     } finally {
       setUploading(false);
-    }
-  };
-
-  const resetForm = () => {
-    setSelectedFile(null);
-    setSelectedPropertyId('');
-    setContractTitle('');
-    setContractType('lease');
-    setTenantName('');
-    setTenantDocument('');
-    setLeaseStart('');
-    setLeaseEnd('');
-  };
-
-  const handleDownload = async (filePath: string) => {
-    try {
-      const { data, error } = await supabase.storage
-        .from('property_contracts')
-        .download(filePath);
-
-      if (error) {
-        throw error;
-      }
-
-      const url = window.URL.createObjectURL(data);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filePath.split('/').pop() || 'contrato.pdf';
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (error) {
-      console.error('Erro ao baixar arquivo:', error);
-      toast.error('Erro ao baixar contrato');
     }
   };
 
@@ -288,7 +253,10 @@ const ContractsPage = () => {
               <option value="cancelled">Cancelado</option>
             </select>
 
-            <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+            <Dialog open={showUploadDialog} onOpenChange={(open) => {
+              if (!open) resetForm();
+              setShowUploadDialog(open);
+            }}>
               <DialogTrigger asChild>
                 <Button>
                   Adicionar Contrato
@@ -298,105 +266,106 @@ const ContractsPage = () => {
                 <DialogHeader>
                   <DialogTitle>Adicionar Novo Contrato</DialogTitle>
                 </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="title">Título do Contrato</Label>
-                    <Input
-                      id="title"
-                      value={contractTitle}
-                      onChange={(e) => setContractTitle(e.target.value)}
-                      placeholder="Ex: Contrato de Locação - Apartamento Centro"
+                
+                {!showContractForm ? (
+                  <div className="py-4">
+                    <FileUploadArea 
+                      onFilesSelected={handleFileSelected}
+                      title="Selecione o contrato para upload"
+                      description="Arraste ou clique para selecionar o arquivo do contrato (PDF, DOC, DOCX, TXT)"
                     />
                   </div>
-
-                  <div className="grid gap-2">
-                    <Label htmlFor="property">Imóvel</Label>
-                    <Select value={selectedPropertyId} onValueChange={setSelectedPropertyId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o imóvel" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {properties?.map((property) => (
-                          <SelectItem key={property.id} value={property.id}>
-                            {property.address} - {property.city}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="grid gap-2">
-                    <Label htmlFor="type">Tipo de Contrato</Label>
-                    <Select value={contractType} onValueChange={setContractType}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o tipo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="lease">Locação</SelectItem>
-                        <SelectItem value="sale">Venda</SelectItem>
-                        <SelectItem value="other">Outro</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="grid gap-2">
-                    <Label htmlFor="tenant">Nome do Locatário/Comprador</Label>
-                    <Input
-                      id="tenant"
-                      value={tenantName}
-                      onChange={(e) => setTenantName(e.target.value)}
-                      placeholder="Nome completo"
-                    />
-                  </div>
-
-                  <div className="grid gap-2">
-                    <Label htmlFor="document">Documento (CPF/CNPJ)</Label>
-                    <Input
-                      id="document"
-                      value={tenantDocument}
-                      onChange={(e) => setTenantDocument(e.target.value)}
-                      placeholder="000.000.000-00"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
+                ) : (
+                  <div className="grid gap-4 py-4">
                     <div className="grid gap-2">
-                      <Label htmlFor="start">Data Início</Label>
+                      <Label htmlFor="title">Título do Contrato</Label>
                       <Input
-                        id="start"
-                        type="date"
-                        value={leaseStart}
-                        onChange={(e) => setLeaseStart(e.target.value)}
+                        id="title"
+                        value={contractTitle}
+                        onChange={(e) => setContractTitle(e.target.value)}
+                        placeholder="Ex: Contrato de Locação - Apartamento Centro"
                       />
                     </div>
+
                     <div className="grid gap-2">
-                      <Label htmlFor="end">Data Fim</Label>
+                      <Label htmlFor="property">Imóvel</Label>
+                      <Select value={selectedPropertyId} onValueChange={setSelectedPropertyId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o imóvel" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {properties?.map((property) => (
+                            <SelectItem key={property.id} value={property.id}>
+                              {property.address} - {property.city}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="type">Tipo de Contrato</Label>
+                      <Select value={contractType} onValueChange={setContractType}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o tipo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="lease">Locação</SelectItem>
+                          <SelectItem value="sale">Venda</SelectItem>
+                          <SelectItem value="other">Outro</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="tenant">Nome do Locatário/Comprador</Label>
                       <Input
-                        id="end"
-                        type="date"
-                        value={leaseEnd}
-                        onChange={(e) => setLeaseEnd(e.target.value)}
+                        id="tenant"
+                        value={tenantName}
+                        onChange={(e) => setTenantName(e.target.value)}
+                        placeholder="Nome completo"
                       />
                     </div>
-                  </div>
 
-                  <div className="grid gap-2">
-                    <Label htmlFor="file">Arquivo do Contrato (PDF)</Label>
-                    <Input
-                      id="file"
-                      type="file"
-                      accept=".pdf,.txt,.doc,.docx"
-                      onChange={handleFileChange}
-                    />
-                  </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="document">Documento (CPF/CNPJ)</Label>
+                      <Input
+                        id="document"
+                        value={tenantDocument}
+                        onChange={(e) => setTenantDocument(e.target.value)}
+                        placeholder="000.000.000-00"
+                      />
+                    </div>
 
-                  <Button 
-                    onClick={handleUpload}
-                    disabled={uploading || !selectedFile || !selectedPropertyId || !contractTitle}
-                  >
-                    {uploading ? 'Enviando...' : 'Adicionar Contrato'}
-                  </Button>
-                </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="start">Data Início</Label>
+                        <Input
+                          id="start"
+                          type="date"
+                          value={leaseStart}
+                          onChange={(e) => setLeaseStart(e.target.value)}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="end">Data Fim</Label>
+                        <Input
+                          id="end"
+                          type="date"
+                          value={leaseEnd}
+                          onChange={(e) => setLeaseEnd(e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <Button 
+                      onClick={handleUpload}
+                      disabled={uploading || !selectedFile || !selectedPropertyId || !contractTitle}
+                    >
+                      {uploading ? 'Enviando...' : 'Adicionar Contrato'}
+                    </Button>
+                  </div>
+                )}
               </DialogContent>
             </Dialog>
           </div>
@@ -414,18 +383,16 @@ const ContractsPage = () => {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setShowAIDialog(false)}>
+              <AlertDialogCancel onClick={() => {
+                setShowAIDialog(false);
+                setShowContractForm(true);
+              }}>
                 Não, preencher manualmente
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={async () => {
-                  if (fileToProcess) {
-                    try {
-                      await processWithAI(fileToProcess);
-                    } catch (error) {
-                      console.error('Erro ao processar com IA:', error);
-                      toast.error("Erro ao processar com IA");
-                    }
+                  if (selectedFile) {
+                    await processWithAI(selectedFile);
                   }
                   setShowAIDialog(false);
                 }}
