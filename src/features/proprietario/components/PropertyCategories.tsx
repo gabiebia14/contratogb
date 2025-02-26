@@ -55,7 +55,7 @@ export function PropertyCategories({
   onCategorySelect 
 }: PropertyCategoriesProps) {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-4">
+    <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-6 gap-1.5 md:gap-4">
       {categories.map((category) => (
         <PropertyCategoryCard
           key={category.type}

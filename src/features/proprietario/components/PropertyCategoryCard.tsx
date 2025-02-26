@@ -29,14 +29,14 @@ export function PropertyCategoryCard({
       }`}
       onClick={onClick}
     >
-      <CardHeader className={`p-3 md:p-4 bg-gradient-to-br ${gradient} text-white rounded-t-lg`}>
+      <CardHeader className={`p-2 md:p-3 bg-gradient-to-br ${gradient} text-white rounded-t-lg`}>
         <div className="flex items-center justify-between">
-          <Icon className="w-4 h-4 md:w-5 md:h-5" />
-          <span className="text-lg md:text-xl font-bold">{count}</span>
+          <Icon className="w-3.5 h-3.5 md:w-4 md:h-4" />
+          <span className="text-base md:text-lg font-bold">{count}</span>
         </div>
       </CardHeader>
-      <CardContent className="p-3 md:p-4">
-        <h3 className="text-sm font-medium">{label}</h3>
+      <CardContent className="p-2 md:p-3">
+        <h3 className="text-xs md:text-sm font-medium truncate">{label}</h3>
       </CardContent>
     </Card>
   );
