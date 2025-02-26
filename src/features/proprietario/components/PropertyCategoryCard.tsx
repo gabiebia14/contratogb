@@ -7,6 +7,7 @@ interface PropertyCategoryCardProps {
   type: PropertyType | 'todas';
   label: string;
   icon: LucideIcon;
+  gradient: string;
   count: number;
   isSelected: boolean;
   onClick: () => void;
@@ -16,6 +17,7 @@ export function PropertyCategoryCard({
   type, 
   label, 
   icon: Icon, 
+  gradient,
   count, 
   isSelected, 
   onClick 
@@ -23,18 +25,18 @@ export function PropertyCategoryCard({
   return (
     <Card 
       className={`cursor-pointer transition-all hover:scale-105 ${
-        isSelected ? 'border-primary shadow-lg' : ''
+        isSelected ? 'ring-2 ring-primary ring-offset-2' : ''
       }`}
       onClick={onClick}
     >
-      <CardHeader className="p-4">
+      <CardHeader className={`p-3 md:p-4 bg-gradient-to-br ${gradient} text-white rounded-t-lg`}>
         <div className="flex items-center justify-between">
-          <Icon className="w-6 h-6" />
-          <span className="text-2xl font-bold">{count}</span>
+          <Icon className="w-4 h-4 md:w-5 md:h-5" />
+          <span className="text-lg md:text-xl font-bold">{count}</span>
         </div>
       </CardHeader>
-      <CardContent className="p-4 pt-0">
-        <h3 className="font-medium">{label}</h3>
+      <CardContent className="p-3 md:p-4">
+        <h3 className="text-sm font-medium">{label}</h3>
       </CardContent>
     </Card>
   );

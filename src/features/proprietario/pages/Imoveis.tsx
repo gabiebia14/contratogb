@@ -19,9 +19,9 @@ export default function Imoveis() {
     : properties.filter(property => property.type === selectedCategory);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 p-2 md:space-y-6 md:p-0">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Imóveis</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">Imóveis</h1>
         <div className="flex gap-2">
           <SyncPropertiesButton onSync={syncProperties} isSyncing={syncing} />
         </div>
@@ -38,7 +38,7 @@ export default function Imoveis() {
           <p>Carregando imóveis...</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-4">
           {filteredProperties.map((property) => (
             <PropertyCard key={property.id} property={property} />
           ))}

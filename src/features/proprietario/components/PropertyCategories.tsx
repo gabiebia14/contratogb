@@ -10,59 +10,60 @@ interface PropertyCategoriesProps {
   onCategorySelect: (category: PropertyType | 'todas') => void;
 }
 
+const categories = [
+  { 
+    type: 'todas' as const, 
+    label: 'Todas', 
+    icon: Home,
+    gradient: "from-gray-500 to-gray-600"
+  },
+  { 
+    type: 'comercial' as const, 
+    label: 'Comercial', 
+    icon: Store,
+    gradient: "from-emerald-500 to-emerald-600"
+  },
+  { 
+    type: 'casa' as const, 
+    label: 'Casa', 
+    icon: Home,
+    gradient: "from-blue-500 to-blue-600"
+  },
+  { 
+    type: 'apartamento' as const, 
+    label: 'Apartamento', 
+    icon: Building2,
+    gradient: "from-purple-500 to-purple-600"
+  },
+  { 
+    type: 'area' as const, 
+    label: 'Área', 
+    icon: Trees,
+    gradient: "from-amber-500 to-amber-600"
+  },
+  { 
+    type: 'lote' as const, 
+    label: 'Lote', 
+    icon: Trees,
+    gradient: "from-orange-500 to-orange-600"
+  }
+];
+
 export function PropertyCategories({ 
   properties, 
   selectedCategory, 
   onCategorySelect 
 }: PropertyCategoriesProps) {
-  const categories = [
-    { 
-      type: 'todas' as const, 
-      label: 'Todas', 
-      icon: Home, 
-      count: calculateTotalQuantityByType(properties, 'todas')
-    },
-    { 
-      type: 'comercial' as const, 
-      label: 'Comercial', 
-      icon: Store, 
-      count: calculateTotalQuantityByType(properties, 'comercial')
-    },
-    { 
-      type: 'casa' as const, 
-      label: 'Casa', 
-      icon: Home, 
-      count: calculateTotalQuantityByType(properties, 'casa')
-    },
-    { 
-      type: 'apartamento' as const, 
-      label: 'Apartamento', 
-      icon: Building2, 
-      count: calculateTotalQuantityByType(properties, 'apartamento')
-    },
-    { 
-      type: 'area' as const, 
-      label: 'Área', 
-      icon: Trees, 
-      count: calculateTotalQuantityByType(properties, 'area')
-    },
-    { 
-      type: 'lote' as const, 
-      label: 'Lote', 
-      icon: Trees, 
-      count: calculateTotalQuantityByType(properties, 'lote')
-    }
-  ];
-
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-4">
       {categories.map((category) => (
         <PropertyCategoryCard
           key={category.type}
           type={category.type}
           label={category.label}
           icon={category.icon}
-          count={category.count}
+          gradient={category.gradient}
+          count={calculateTotalQuantityByType(properties, category.type)}
           isSelected={selectedCategory === category.type}
           onClick={() => onCategorySelect(category.type)}
         />
