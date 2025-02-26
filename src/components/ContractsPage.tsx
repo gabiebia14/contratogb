@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { FileText, Download, Search, Loader2, Building2, Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useQuery } from '@tanstack/react-query';
 import { Property } from '@/types/properties';
+import { useContractGemini } from '@/hooks/useContractGemini';
 
 const ContractsPage = () => {
   const navigate = useNavigate();
@@ -26,6 +26,7 @@ const ContractsPage = () => {
   const [leaseStart, setLeaseStart] = useState('');
   const [leaseEnd, setLeaseEnd] = useState('');
   const [uploading, setUploading] = useState(false);
+  const { processContract } = useContractGemini();
 
   const { data: contracts, isLoading: contractsLoading, refetch: refetchContracts } = useQuery({
     queryKey: ['contracts'],
@@ -68,9 +69,43 @@ const ContractsPage = () => {
     }
   });
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
-      setSelectedFile(event.target.files[0]);
+      const file = event.target.files[0];
+      setSelectedFile(file);
+
+      try {
+        const text = await file.text();
+        
+        const processedContent = await processContract(text);
+        
+        if (processedContent.includes("{locatario_nome}")) {
+          toast.info("Template de contrato detectado - preencha as informações manualmente");
+        } else {
+          const nameMatch = processedContent.match(/Locatário:?\s*([^\n,]+)/i);
+          const cpfMatch = processedContent.match(/CPF:?\s*([0-9.-]+)/i);
+          const dateMatch = processedContent.match(/vigência:?\s*(\d{2}\/\d{2}\/\d{4})\s*(?:a|até)\s*(\d{2}\/\d{2}\/\d{4})/i);
+
+          if (nameMatch) {
+            setTenantName(nameMatch[1].trim());
+          }
+          if (cpfMatch) {
+            setTenantDocument(cpfMatch[1].trim());
+          }
+          if (dateMatch) {
+            const startDate = new Date(dateMatch[1].split('/').reverse().join('-'));
+            const endDate = new Date(dateMatch[2].split('/').reverse().join('-'));
+            
+            setLeaseStart(startDate.toISOString().split('T')[0]);
+            setLeaseEnd(endDate.toISOString().split('T')[0]);
+          }
+
+          toast.success("Informações extraídas do contrato!");
+        }
+      } catch (error) {
+        console.error('Erro ao processar contrato:', error);
+        toast.error("Não foi possível extrair informações automaticamente");
+      }
     }
   };
 
@@ -83,7 +118,6 @@ const ContractsPage = () => {
     setUploading(true);
 
     try {
-      // Upload do arquivo para o storage
       const fileExt = selectedFile.name.split('.').pop();
       const filePath = `${selectedPropertyId}/${crypto.randomUUID()}.${fileExt}`;
 
@@ -95,7 +129,6 @@ const ContractsPage = () => {
         throw uploadError;
       }
 
-      // Criar registro do contrato no banco
       const { error: contractError } = await supabase
         .from('contracts')
         .insert([{
@@ -148,7 +181,6 @@ const ContractsPage = () => {
         throw error;
       }
 
-      // Criar URL do blob e iniciar download
       const url = window.URL.createObjectURL(data);
       const a = document.createElement('a');
       a.href = url;
