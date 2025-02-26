@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { FileText, Download, Search, Loader2, Building2, Calendar, Brain } from 'lucide-react';
+import { FileText, Download, Search, Loader2, Building2, Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -404,38 +403,6 @@ const ContractsPage = () => {
             </Dialog>
           </div>
         </div>
-
-        <AlertDialog open={showAIDialog} onOpenChange={setShowAIDialog}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle className="flex items-center gap-2">
-                <Brain className="w-5 h-5" />
-                Usar IA para extrair informações?
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                Nossa IA pode tentar extrair automaticamente informações como nome do locatário, CPF e datas do contrato. Deseja prosseguir?
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => {
-                setShowAIDialog(false);
-                setShowContractForm(true);
-              }}>
-                Não, preencher manualmente
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={async () => {
-                  if (selectedFile) {
-                    await processWithAI(selectedFile);
-                  }
-                  setShowAIDialog(false);
-                }}
-              >
-                Sim, processar com IA
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
 
         {filteredContracts?.length === 0 ? (
           <div className="text-center py-12">
