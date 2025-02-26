@@ -70,9 +70,12 @@ export default function DashboardLayout({ dashboardType }: DashboardLayoutProps)
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar - Visível apenas em desktop */}
+      {/* Sidebar - Desktop e Mobile para área jurídica */}
       <SidebarProvider defaultOpen={true}>
-        <div className="hidden lg:block w-[280px] fixed left-0 top-0 bottom-0 bg-background border-r z-30">
+        <div className={cn(
+          "w-[280px] fixed left-0 top-0 bottom-0 bg-background border-r z-30",
+          dashboardType === 'juridico' ? 'block' : 'hidden lg:block'
+        )}>
           <Sidebar collapsible="none" className="border-none h-full">
             <SidebarHeader className="p-4">
               <Link to={`/${dashboardType}`} className="text-2xl font-bold flex items-center gap-2">
@@ -122,8 +125,11 @@ export default function DashboardLayout({ dashboardType }: DashboardLayoutProps)
         </div>
 
         {/* Conteúdo Principal */}
-        <div className="flex-1 lg:ml-[280px]">
-          <main className="min-h-screen pb-20 lg:pb-0"> {/* Adicionado padding-bottom para o menu mobile */}
+        <div className={cn(
+          "flex-1",
+          dashboardType === 'juridico' ? 'ml-[280px]' : 'lg:ml-[280px]'
+        )}>
+          <main className="min-h-screen pb-20 lg:pb-0">
             <div className="p-4 md:p-8">
               <div className="flex justify-end items-center mb-4 md:mb-8">
                 <div className="flex items-center gap-4">
@@ -142,7 +148,7 @@ export default function DashboardLayout({ dashboardType }: DashboardLayoutProps)
             </div>
           </main>
 
-          {/* Menu inferior mobile */}
+          {/* Menu inferior mobile - apenas para área do proprietário */}
           {dashboardType === 'proprietario' && (
             <nav className="fixed bottom-0 left-0 right-0 bg-white border-t lg:hidden">
               <div className="flex justify-around items-center h-16">
