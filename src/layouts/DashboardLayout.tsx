@@ -33,6 +33,7 @@ const menuItems = {
     { path: '/juridico/contracts', icon: FileText, label: 'Contratos' },
     { path: '/juridico/gerar-contrato', icon: Plus, label: 'Novo Contrato' },
     { path: '/juridico/templates', icon: FolderOpen, label: 'Modelos de Contratos' },
+    { path: '/juridico/imoveis', icon: Building2, label: 'Imóveis' },
     { path: '/juridico/ai', icon: MessageCircle, label: 'IA' },
     { path: '/juridico/documentos', icon: FileText, label: 'Documentos' },
     { path: '/juridico/library', icon: Book, label: 'Biblioteca' },
