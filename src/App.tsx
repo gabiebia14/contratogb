@@ -13,6 +13,18 @@ import Renda from "@/features/proprietario/pages/Renda";
 import Mapa from "@/features/proprietario/pages/Mapa";
 import Chat from "@/features/proprietario/pages/Chat";
 
+// Páginas do Jurídico
+import JuridicoDashboard from "@/features/juridico/pages/Dashboard";
+import Contracts from "@/features/juridico/pages/Contracts";
+import ContractForm from "@/features/juridico/pages/ContractForm";
+import ContractTemplates from "@/features/juridico/pages/ContractTemplates";
+import JuridicoImoveis from "@/features/juridico/pages/Imoveis";
+import AIChat from "@/features/juridico/pages/AIChat";
+import Documents from "@/features/juridico/pages/Documents";
+import Library from "@/features/juridico/pages/Library";
+import Settings from "@/features/juridico/pages/Settings";
+import Tutorial from "@/features/juridico/pages/Tutorial";
+
 const router = createBrowserRouter([
   {
     path: "/",
@@ -49,6 +61,52 @@ const router = createBrowserRouter([
       {
         path: "chat",
         element: <Chat />,
+      },
+    ],
+  },
+  {
+    path: "/juridico",
+    element: <DashboardLayout dashboardType="juridico" />,
+    children: [
+      {
+        path: "",
+        element: <JuridicoDashboard />,
+      },
+      {
+        path: "contracts",
+        element: <Contracts />,
+      },
+      {
+        path: "gerar-contrato",
+        element: <ContractForm />,
+      },
+      {
+        path: "templates",
+        element: <ContractTemplates />,
+      },
+      {
+        path: "imoveis",
+        element: <JuridicoImoveis />,
+      },
+      {
+        path: "ai",
+        element: <AIChat />,
+      },
+      {
+        path: "documentos",
+        element: <Documents />,
+      },
+      {
+        path: "library",
+        element: <Library />,
+      },
+      {
+        path: "settings",
+        element: <Settings />,
+      },
+      {
+        path: "tutorial",
+        element: <Tutorial />,
       },
     ],
   },
