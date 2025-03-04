@@ -1,5 +1,5 @@
 
-import { Building2 } from 'lucide-react';
+import { Building2, Upload } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -15,10 +15,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { useNavigate } from 'react-router-dom';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import FileUploadArea from '@/components/ocr/FileUploadArea';
 
 export default function JuridicoImoveis() {
-  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<PropertyType | 'todas'>('todas');
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
@@ -40,23 +46,6 @@ export default function JuridicoImoveis() {
     }
   });
 
-  const { data: contracts } = useQuery({
-    queryKey: ['property-contracts'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('contracts')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        toast.error('Erro ao carregar contratos');
-        throw error;
-      }
-
-      return data;
-    }
-  });
-
   const filteredProperties = properties?.filter(property => {
     const matchesSearch = 
       property.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -66,6 +55,35 @@ export default function JuridicoImoveis() {
     
     return matchesSearch && matchesType;
   });
+
+  const handleFileUpload = async (files: File[]) => {
+    if (!selectedProperty || files.length === 0) return;
+
+    const file = files[0];
+    if (file.type !== 'application/pdf') {
+      toast.error('Por favor, selecione um arquivo PDF');
+      return;
+    }
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${selectedProperty.id}/${crypto.randomUUID()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('property_contracts')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        toast.error('Erro ao fazer upload do contrato');
+        throw uploadError;
+      }
+
+      toast.success('Contrato anexado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao fazer upload:', error);
+      toast.error('Erro ao fazer upload do contrato');
+    }
+  };
 
   const categories = [
     { type: 'todas', label: 'Todas', count: properties?.length || 0 },
@@ -123,92 +141,49 @@ export default function JuridicoImoveis() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProperties?.map((property) => {
-            const propertyContracts = contracts?.filter(c => c.property_id === property.id) || [];
-            const activeContract = propertyContracts.find(c => c.status === 'active');
-            
-            return (
-              <Card key={property.id} className="p-6 hover:shadow-lg transition-shadow">
-                <div className="space-y-2">
-                  <h3 className="font-semibold capitalize">{property.type}</h3>
-                  <p className="text-sm text-gray-600">{property.address}</p>
-                  <p className="text-sm text-gray-500">{property.city}</p>
-                  {property.observations && (
-                    <p className="text-sm text-gray-500 mt-2">{property.observations}</p>
-                  )}
-                  
-                  {activeContract && (
-                    <div className="mt-4 p-3 bg-green-50 rounded-lg">
-                      <p className="text-sm font-medium text-green-800">Contrato Ativo</p>
-                      <p className="text-sm text-green-600">
-                        Locatário: {activeContract.tenant_name}
-                      </p>
-                      {activeContract.lease_start && (
-                        <p className="text-sm text-green-600">
-                          Período: {new Date(activeContract.lease_start).toLocaleDateString()} até{' '}
-                          {activeContract.lease_end ? new Date(activeContract.lease_end).toLocaleDateString() : 'N/A'}
-                        </p>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="flex justify-end gap-2 mt-4">
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="outline">
-                          Histórico de Contratos ({propertyContracts.length})
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Histórico de Contratos - {property.address}</DialogTitle>
-                        </DialogHeader>
-                        <div className="mt-4">
-                          {propertyContracts.length === 0 ? (
-                            <p className="text-gray-500">Nenhum contrato registrado.</p>
-                          ) : (
-                            <div className="space-y-4">
-                              {propertyContracts.map((contract) => (
-                                <div
-                                  key={contract.id}
-                                  className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-                                >
-                                  <div className="flex justify-between items-start">
-                                    <div>
-                                      <h4 className="font-medium">{contract.title}</h4>
-                                      <p className="text-sm text-gray-600">
-                                        Locatário: {contract.tenant_name}
-                                      </p>
-                                      {contract.lease_start && (
-                                        <p className="text-sm text-gray-500">
-                                          Período: {new Date(contract.lease_start).toLocaleDateString()} até{' '}
-                                          {contract.lease_end ? new Date(contract.lease_end).toLocaleDateString() : 'N/A'}
-                                        </p>
-                                      )}
-                                    </div>
-                                    <Button
-                                      variant="link"
-                                      onClick={() => navigate(`/juridico/contracts/${contract.id}`)}
-                                    >
-                                      Ver Contrato
-                                    </Button>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
+          {filteredProperties?.map((property) => (
+            <Card key={property.id} className="p-6 hover:shadow-lg transition-shadow">
+              <div className="space-y-2">
+                <h3 className="font-semibold capitalize">{property.type}</h3>
+                <p className="text-sm text-gray-600">{property.address}</p>
+                <p className="text-sm text-gray-500">{property.city}</p>
+                {property.observations && (
+                  <p className="text-sm text-gray-500 mt-2">{property.observations}</p>
+                )}
+                <div className="flex justify-end gap-2 mt-4">
+                  <Sheet>
+                    <SheetTrigger asChild>
+                      <Button 
+                        variant="outline"
+                        onClick={() => setSelectedProperty(property)}
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        Anexar Contrato
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent>
+                      <SheetHeader>
+                        <SheetTitle>Anexar Contrato</SheetTitle>
+                      </SheetHeader>
+                      <div className="mt-6">
+                        <h3 className="font-semibold mb-2">Imóvel:</h3>
+                        <p className="text-sm text-gray-600">{property.address}</p>
+                        <p className="text-sm text-gray-500">{property.city}</p>
+                        
+                        <div className="mt-6">
+                          <FileUploadArea onFilesSelected={handleFileUpload} />
                         </div>
-                      </DialogContent>
-                    </Dialog>
-                    
-                    <Button variant="outline" onClick={() => navigate('/juridico/contracts')}>
-                      Adicionar Contrato
-                    </Button>
-                  </div>
+                      </div>
+                    </SheetContent>
+                  </Sheet>
+                  
+                  <Button variant="outline">
+                    Ver Detalhes
+                  </Button>
                 </div>
-              </Card>
-            );
-          })}
+              </div>
+            </Card>
+          ))}
         </div>
       )}
 
