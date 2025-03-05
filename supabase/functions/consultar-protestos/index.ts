@@ -47,37 +47,60 @@ serve(async (req) => {
     };
 
     console.log("Enviando requisição para API CENPROT");
+    console.log("Payload:", JSON.stringify(requestBody));
     
-    // Fazendo a requisição para a API
-    const response = await fetch(CENPROT_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify(requestBody)
-    });
+    // Configurando a requisição com timeout mais longo e opções adicionais
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos de timeout
+    
+    try {
+      // Fazendo a requisição para a API com mais opções
+      const response = await fetch(CENPROT_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        },
+        body: JSON.stringify(requestBody),
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      // Verificando status de resposta
+      console.log(`Status da resposta API CENPROT: ${response.status}`);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Erro na resposta da API CENPROT: ${response.status} - ${errorText}`);
+        throw new Error(`Falha na comunicação com CENPROT: ${response.status} ${response.statusText}`);
+      }
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Erro na resposta da API CENPROT: ${response.status} - ${errorText}`);
-      throw new Error(`Falha na comunicação com CENPROT: ${response.status} ${response.statusText}`);
+      const cenprotData = await response.json();
+      console.log("Resposta recebida da API CENPROT:", JSON.stringify(cenprotData));
+
+      // Adaptando os dados recebidos para o formato esperado pela interface
+      const formattedData = transformCenprotData(cenprotData, cpf || cnpj);
+
+      return new Response(
+        JSON.stringify(formattedData),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } catch (fetchError) {
+      console.error(`Erro específico na requisição fetch: ${fetchError.message}`);
+      throw new Error(`Erro na comunicação com API CENPROT: ${fetchError.message}`);
+    } finally {
+      clearTimeout(timeoutId);
     }
-
-    const cenprotData = await response.json();
-    console.log("Resposta recebida da API CENPROT:", cenprotData);
-
-    // Adaptando os dados recebidos para o formato esperado pela interface
-    const formattedData = transformCenprotData(cenprotData, cpf || cnpj);
-
-    return new Response(
-      JSON.stringify(formattedData),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
   } catch (error) {
     console.error('Erro na consulta de protestos:', error);
     return new Response(
-      JSON.stringify({ error: `Falha na consulta: ${error.message || 'Erro desconhecido'}` }),
+      JSON.stringify({ 
+        error: `Falha na consulta: ${error.message || 'Erro desconhecido'}`,
+        timestamp: new Date().toISOString(),
+        details: "A API do CENPROT pode estar indisponível ou suas credenciais podem estar incorretas." 
+      }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
