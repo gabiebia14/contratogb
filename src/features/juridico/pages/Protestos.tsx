@@ -1,32 +1,162 @@
 
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, FileText, AlertCircle, CheckCircle } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Search, FileText, AlertCircle, CheckCircle, Download, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+
+// Definir interfaces para os resultados da consulta
+interface ProtestoCartorio {
+  ProtestoStatus: string;
+  ProtestoComarca: string;
+  ProtestoNumeroProtocolo: string;
+  ProtestoDataAbertura: string;
+  ProtestoDataProtesto: string;
+  CartorioNome: string;
+  CartorioEndereco: string;
+  CartorioBairro: string;
+  CartorioLocalidade: string;
+  CartorioCEP: string;
+  CartorioEmail: string;
+  CartorioTelefone: string;
+}
+
+interface ProtestoResumo {
+  Uf: string;
+  Municipio: string;
+  CodigoCartorio: string;
+  Descricao: string;
+  Telefone: string;
+  NumeroProtestos: number;
+  ValorProtestado: number;
+  DocDevedor: string;
+  DataProtesto: string;
+  DataVencimento: string;
+  DataAtualizacao: string;
+}
+
+interface ProtestoResult {
+  DataConsulta: string;
+  CpfCnpj: string;
+  QtdTitulos: number;
+  Status: string;
+  Mensagem: {
+    _Mensagem: string;
+  };
+  Cartorio: ProtestoCartorio[];
+  NormalizedValorTotalProtestos: number;
+  NormalizedResumoProtestos: ProtestoResumo[];
+  NormDataConsulta: string;
+}
+
+interface ProtestoResponse {
+  BalanceInBrl: number;
+  BalanceInCredits: number;
+  DataSourceCategory: string;
+  Date: string;
+  ElapsedTimeInMilliseconds: number;
+  HasPdf: boolean;
+  Message: string;
+  OriginalFilesUrl: string;
+  OutdatedResult: boolean;
+  PdfUrl: string;
+  TotalCost: number;
+  TotalCostInCredits: number;
+  TransactionResultType: string;
+  TransactionResultTypeCode: number;
+  UniqueIdentifier: string;
+  Result: ProtestoResult;
+}
 
 export default function Protestos() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [hasResults, setHasResults] = useState(false);
+  const [formData, setFormData] = useState({
+    cpf: '',
+    cnpj: '',
+    ieptb_login: '',
+    ieptb_senha: '',
+    obter_detalhes_sp: 'false',
+    limite_detalhes_sp: '10',
+    lightweight: 'false'
+  });
+  const [resultado, setResultado] = useState<ProtestoResponse | null>(null);
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!searchTerm.trim()) {
-      toast.error('Por favor, informe um CNPJ ou CPF para pesquisar.');
+    
+    // Validações básicas
+    if (!formData.cpf && !formData.cnpj) {
+      toast.error('Por favor, informe um CPF ou CNPJ para consultar.');
+      return;
+    }
+
+    if (!formData.ieptb_login || !formData.ieptb_senha) {
+      toast.error('Credenciais do CENPROT (IEPTB) são obrigatórias.');
       return;
     }
 
     setIsSearching(true);
+    setHasResults(false);
     
-    // Simulando uma chamada de API
-    setTimeout(() => {
-      setIsSearching(false);
+    try {
+      const { data, error } = await supabase.functions.invoke('consultar-protestos', {
+        body: formData
+      });
+
+      if (error) {
+        console.error('Erro ao consultar protestos:', error);
+        toast.error(`Falha na consulta: ${error.message}`);
+        return;
+      }
+
+      console.log('Resultado da consulta:', data);
+      
+      setResultado(data);
       setHasResults(true);
       toast.success('Consulta realizada com sucesso!');
-    }, 2000);
+    } catch (error) {
+      console.error('Erro ao consultar protestos:', error);
+      toast.error(`Erro ao processar a consulta: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
+  const formatDate = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleDateString('pt-BR');
+    } catch (e) {
+      return dateString;
+    }
   };
 
   return (
@@ -35,7 +165,7 @@ export default function Protestos() {
         <div>
           <h2 className="text-2xl font-bold">Consulta de Protestos</h2>
           <p className="text-muted-foreground">
-            Consulte e analise protestos em cartórios usando inteligência artificial
+            Consulte e analise protestos em cartórios usando API do CENPROT
           </p>
         </div>
       </div>
@@ -43,36 +173,125 @@ export default function Protestos() {
       <Card>
         <CardHeader>
           <CardTitle>Pesquisar Protestos</CardTitle>
+          <CardDescription>
+            Fonte: <a href="https://site.cenprotnacional.org.br/consulta" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">https://site.cenprotnacional.org.br/consulta</a>
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSearch} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="col-span-2">
+          <form onSubmit={handleSearch} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="cpf">CPF (apenas um dos campos é necessário)</Label>
                 <Input
-                  placeholder="Digite o CNPJ ou CPF para consultar"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  id="cpf"
+                  name="cpf"
+                  placeholder="Digite o CPF para consultar"
+                  value={formData.cpf}
+                  onChange={handleInputChange}
                 />
               </div>
-              <Button 
-                type="submit" 
-                disabled={isSearching}
-                className="w-full"
-              >
-                {isSearching ? (
-                  <>Pesquisando...</>
-                ) : (
-                  <>
-                    <Search className="mr-2 h-4 w-4" /> Consultar
-                  </>
-                )}
-              </Button>
+              <div className="space-y-2">
+                <Label htmlFor="cnpj">CNPJ (apenas um dos campos é necessário)</Label>
+                <Input
+                  id="cnpj"
+                  name="cnpj"
+                  placeholder="Digite o CNPJ para consultar"
+                  value={formData.cnpj}
+                  onChange={handleInputChange}
+                />
+              </div>
             </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="ieptb_login">CPF/CNPJ de login no CENPROT</Label>
+                <Input
+                  id="ieptb_login"
+                  name="ieptb_login"
+                  placeholder="CPF/CNPJ usado para login"
+                  value={formData.ieptb_login}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="ieptb_senha">Senha do CENPROT</Label>
+                <Input
+                  id="ieptb_senha"
+                  name="ieptb_senha"
+                  type="password"
+                  placeholder="Senha usada para login"
+                  value={formData.ieptb_senha}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="obter_detalhes_sp">Obter detalhes de SP</Label>
+                <Select 
+                  value={formData.obter_detalhes_sp} 
+                  onValueChange={(value) => handleSelectChange('obter_detalhes_sp', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma opção" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="true">Sim</SelectItem>
+                    <SelectItem value="false">Não</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="limite_detalhes_sp">Limite de detalhes SP</Label>
+                <Input
+                  id="limite_detalhes_sp"
+                  name="limite_detalhes_sp"
+                  type="number"
+                  placeholder="Limite de detalhes"
+                  value={formData.limite_detalhes_sp}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lightweight">Modo Lightweight</Label>
+                <Select 
+                  value={formData.lightweight} 
+                  onValueChange={(value) => handleSelectChange('lightweight', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma opção" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="true">Sim</SelectItem>
+                    <SelectItem value="false">Não</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <Button 
+              type="submit" 
+              disabled={isSearching}
+              className="w-full"
+            >
+              {isSearching ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Consultando...
+                </>
+              ) : (
+                <>
+                  <Search className="mr-2 h-4 w-4" /> Consultar
+                </>
+              )}
+            </Button>
           </form>
         </CardContent>
       </Card>
 
-      {hasResults && (
+      {hasResults && resultado && (
         <Tabs defaultValue="resumo" className="space-y-4">
           <TabsList>
             <TabsTrigger value="resumo">Resumo</TabsTrigger>
@@ -90,7 +309,7 @@ export default function Protestos() {
                   <div className="bg-red-50 p-6 rounded-lg flex items-center gap-4">
                     <AlertCircle className="h-10 w-10 text-red-500" />
                     <div>
-                      <p className="text-lg font-semibold">3</p>
+                      <p className="text-lg font-semibold">{resultado.Result.QtdTitulos}</p>
                       <p className="text-sm text-gray-600">Protestos Ativos</p>
                     </div>
                   </div>
@@ -98,7 +317,7 @@ export default function Protestos() {
                   <div className="bg-amber-50 p-6 rounded-lg flex items-center gap-4">
                     <FileText className="h-10 w-10 text-amber-500" />
                     <div>
-                      <p className="text-lg font-semibold">R$ 12.450,00</p>
+                      <p className="text-lg font-semibold">{formatCurrency(resultado.Result.NormalizedValorTotalProtestos)}</p>
                       <p className="text-sm text-gray-600">Valor Total</p>
                     </div>
                   </div>
@@ -106,8 +325,8 @@ export default function Protestos() {
                   <div className="bg-green-50 p-6 rounded-lg flex items-center gap-4">
                     <CheckCircle className="h-10 w-10 text-green-500" />
                     <div>
-                      <p className="text-lg font-semibold">2</p>
-                      <p className="text-sm text-gray-600">Protestos Baixados</p>
+                      <p className="text-lg font-semibold">{formatCurrency(resultado.TotalCost)}</p>
+                      <p className="text-sm text-gray-600">Custo da Consulta</p>
                     </div>
                   </div>
                 </div>
@@ -120,42 +339,20 @@ export default function Protestos() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {[
-                    {
-                      id: 1,
-                      cartorio: "4º Cartório de Protestos de São Paulo",
-                      data: "15/05/2023",
-                      valor: "R$ 5.450,00",
-                      status: "Ativo"
-                    },
-                    {
-                      id: 2,
-                      cartorio: "2º Cartório de Protestos de São Paulo",
-                      data: "03/06/2023",
-                      valor: "R$ 3.800,00",
-                      status: "Ativo"
-                    },
-                    {
-                      id: 3,
-                      cartorio: "1º Cartório de Protestos de Campinas",
-                      data: "22/06/2023",
-                      valor: "R$ 3.200,00",
-                      status: "Ativo"
-                    },
-                  ].map((protesto) => (
+                  {resultado.Result.NormalizedResumoProtestos.map((protesto, index) => (
                     <div 
-                      key={protesto.id}
+                      key={index}
                       className="border p-4 rounded-lg hover:bg-gray-50 transition-colors"
                     >
                       <div className="flex justify-between items-center">
                         <div>
-                          <h4 className="font-medium">{protesto.cartorio}</h4>
-                          <p className="text-sm text-gray-500">Data: {protesto.data}</p>
+                          <h4 className="font-medium">{protesto.Descricao}</h4>
+                          <p className="text-sm text-gray-500">Data: {formatDate(protesto.DataProtesto)}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold">{protesto.valor}</p>
+                          <p className="font-semibold">{formatCurrency(protesto.ValorProtestado)}</p>
                           <span className="inline-block px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">
-                            {protesto.status}
+                            Ativo
                           </span>
                         </div>
                       </div>
@@ -173,82 +370,42 @@ export default function Protestos() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  {[
-                    {
-                      id: 1,
-                      cartorio: "4º Cartório de Protestos de São Paulo",
-                      data: "15/05/2023",
-                      valor: "R$ 5.450,00",
-                      status: "Ativo",
-                      credor: "Banco XYZ S.A.",
-                      documento: "Duplicata Mercantil",
-                      numero: "DM-2023-5678",
-                      endereco: "Av. Paulista, 1000, São Paulo - SP"
-                    },
-                    {
-                      id: 2,
-                      cartorio: "2º Cartório de Protestos de São Paulo",
-                      data: "03/06/2023",
-                      valor: "R$ 3.800,00",
-                      status: "Ativo",
-                      credor: "Fornecedor ABC Ltda.",
-                      documento: "Duplicata de Serviço",
-                      numero: "DS-2023-9012",
-                      endereco: "Rua Augusta, 500, São Paulo - SP"
-                    },
-                    {
-                      id: 3,
-                      cartorio: "1º Cartório de Protestos de Campinas",
-                      data: "22/06/2023",
-                      valor: "R$ 3.200,00",
-                      status: "Ativo",
-                      credor: "Distribuidora XYZ Ltda.",
-                      documento: "Duplicata Mercantil",
-                      numero: "DM-2023-3456",
-                      endereco: "Av. Francisco Glicério, 100, Campinas - SP"
-                    },
-                  ].map((protesto) => (
-                    <Card key={protesto.id} className="shadow-sm">
+                  {resultado.Result.Cartorio.map((protesto, index) => (
+                    <Card key={index} className="shadow-sm">
                       <CardHeader className="bg-gray-50">
                         <div className="flex justify-between items-center">
-                          <CardTitle className="text-lg">{protesto.cartorio}</CardTitle>
+                          <CardTitle className="text-lg">{protesto.CartorioNome}</CardTitle>
                           <span className="inline-block px-3 py-1 text-sm rounded-full bg-red-100 text-red-800">
-                            {protesto.status}
+                            {protesto.ProtestoStatus}
                           </span>
                         </div>
                       </CardHeader>
                       <CardContent className="pt-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
-                            <p className="text-sm text-gray-500">Credor</p>
-                            <p className="font-medium">{protesto.credor}</p>
+                            <p className="text-sm text-gray-500">Comarca</p>
+                            <p className="font-medium">{protesto.ProtestoComarca}</p>
                           </div>
                           <div>
-                            <p className="text-sm text-gray-500">Valor</p>
-                            <p className="font-medium">{protesto.valor}</p>
+                            <p className="text-sm text-gray-500">Protocolo</p>
+                            <p className="font-medium">{protesto.ProtestoNumeroProtocolo}</p>
                           </div>
                           <div>
-                            <p className="text-sm text-gray-500">Documento</p>
-                            <p className="font-medium">{protesto.documento}</p>
+                            <p className="text-sm text-gray-500">Data de Abertura</p>
+                            <p className="font-medium">{formatDate(protesto.ProtestoDataAbertura)}</p>
                           </div>
                           <div>
-                            <p className="text-sm text-gray-500">Número</p>
-                            <p className="font-medium">{protesto.numero}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-500">Data</p>
-                            <p className="font-medium">{protesto.data}</p>
+                            <p className="text-sm text-gray-500">Data de Protesto</p>
+                            <p className="font-medium">{formatDate(protesto.ProtestoDataProtesto)}</p>
                           </div>
                           <div>
                             <p className="text-sm text-gray-500">Endereço</p>
-                            <p className="font-medium">{protesto.endereco}</p>
+                            <p className="font-medium">{protesto.CartorioEndereco}, {protesto.CartorioBairro}, {protesto.CartorioLocalidade}, {protesto.CartorioCEP}</p>
                           </div>
-                        </div>
-                        <div className="mt-4 flex justify-end">
-                          <Button variant="outline" size="sm">
-                            <FileText className="h-4 w-4 mr-2" />
-                            Ver Documento
-                          </Button>
+                          <div>
+                            <p className="text-sm text-gray-500">Contato</p>
+                            <p className="font-medium">Tel: {protesto.CartorioTelefone} | Email: {protesto.CartorioEmail}</p>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -261,16 +418,15 @@ export default function Protestos() {
           <TabsContent value="analise">
             <Card>
               <CardHeader>
-                <CardTitle>Análise de IA</CardTitle>
+                <CardTitle>Análise de Protestos</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
                   <div className="bg-blue-50 p-6 rounded-lg">
                     <h3 className="text-lg font-semibold text-blue-800 mb-2">Resumo</h3>
                     <p className="text-blue-700">
-                      Encontramos 3 protestos ativos no valor total de R$ 12.450,00. Todos os protestos são
-                      recentes (menos de 90 dias) e estão relacionados a duplicatas mercantis e de serviços. 
-                      Os protestos foram registrados em cartórios de São Paulo e Campinas.
+                      Encontramos {resultado.Result.QtdTitulos} protestos ativos no valor total de {formatCurrency(resultado.Result.NormalizedValorTotalProtestos)}. 
+                      Todos os protestos são recentes (menos de 90 dias) e estão relacionados a títulos protestados em cartórios de {resultado.Result.NormalizedResumoProtestos[0]?.Uf || "SP"}.
                     </p>
                   </div>
                   
@@ -278,8 +434,8 @@ export default function Protestos() {
                     <h3 className="text-lg font-semibold text-amber-800 mb-2">Recomendações</h3>
                     <ul className="space-y-2 list-disc pl-5 text-amber-700">
                       <li>Considere entrar em contato com os credores para negociar os valores e evitar complicações futuras.</li>
-                      <li>A soma dos protestos (R$ 12.450,00) pode afetar significativamente a capacidade de crédito.</li>
-                      <li>Os protestos de duplicatas mercantis podem indicar problemas de fluxo de caixa no período.</li>
+                      <li>A soma dos protestos ({formatCurrency(resultado.Result.NormalizedValorTotalProtestos)}) pode afetar significativamente a capacidade de crédito.</li>
+                      <li>Os protestos podem indicar problemas de fluxo de caixa no período.</li>
                       <li>Recomendamos preparar um plano de pagamento e regularização em até 30 dias.</li>
                     </ul>
                   </div>
@@ -296,6 +452,15 @@ export default function Protestos() {
                       <li>Impacto na pontuação de crédito por até 5 anos após a baixa</li>
                     </ul>
                   </div>
+                  
+                  {resultado.HasPdf && (
+                    <div className="flex justify-center mt-6">
+                      <Button>
+                        <Download className="mr-2 h-4 w-4" />
+                        Baixar PDF do Relatório
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
