@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -10,7 +9,6 @@ import { Search, FileText, AlertCircle, CheckCircle, Download, Loader2 } from 'l
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
-// Definir interfaces para os resultados da consulta
 interface ProtestoCartorio {
   ProtestoStatus: string;
   ProtestoComarca: string;
@@ -80,11 +78,11 @@ export default function Protestos() {
   const [formData, setFormData] = useState({
     cpf: '',
     cnpj: '',
-    ieptb_login: '',
-    ieptb_senha: '',
     obter_detalhes_sp: 'false',
     limite_detalhes_sp: '10',
-    lightweight: 'false'
+    lightweight: 'false',
+    ieptb_login: '390.829.698-66',
+    ieptb_senha: 'Bianca*2014'
   });
   const [resultado, setResultado] = useState<ProtestoResponse | null>(null);
 
@@ -109,11 +107,6 @@ export default function Protestos() {
     // Validações básicas
     if (!formData.cpf && !formData.cnpj) {
       toast.error('Por favor, informe um CPF ou CNPJ para consultar.');
-      return;
-    }
-
-    if (!formData.ieptb_login || !formData.ieptb_senha) {
-      toast.error('Credenciais do CENPROT (IEPTB) são obrigatórias.');
       return;
     }
 
@@ -198,32 +191,6 @@ export default function Protestos() {
                   placeholder="Digite o CNPJ para consultar"
                   value={formData.cnpj}
                   onChange={handleInputChange}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="ieptb_login">CPF/CNPJ de login no CENPROT</Label>
-                <Input
-                  id="ieptb_login"
-                  name="ieptb_login"
-                  placeholder="CPF/CNPJ usado para login"
-                  value={formData.ieptb_login}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="ieptb_senha">Senha do CENPROT</Label>
-                <Input
-                  id="ieptb_senha"
-                  name="ieptb_senha"
-                  type="password"
-                  placeholder="Senha usada para login"
-                  value={formData.ieptb_senha}
-                  onChange={handleInputChange}
-                  required
                 />
               </div>
             </div>
