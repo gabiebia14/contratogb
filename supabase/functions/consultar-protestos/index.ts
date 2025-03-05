@@ -38,55 +38,42 @@ serve(async (req) => {
       );
     }
 
-    try {
-      // Preparando o corpo da requisição para a API CENPROT
-      const requestBody = {
-        email: ieptb_login,
-        senha: ieptb_senha,
-        documento: cpf || cnpj,
-        tipoPessoaFisicaJuridica: cpf ? "PF" : "PJ"
-      };
+    // Preparando o corpo da requisição para a API CENPROT
+    const requestBody = {
+      email: ieptb_login,
+      senha: ieptb_senha,
+      documento: cpf || cnpj,
+      tipoPessoaFisicaJuridica: cpf ? "PF" : "PJ"
+    };
 
-      console.log("Enviando requisição para API CENPROT");
-      
-      // Fazendo a requisição para a API
-      const response = await fetch(CENPROT_API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(requestBody)
-      });
+    console.log("Enviando requisição para API CENPROT");
+    
+    // Fazendo a requisição para a API
+    const response = await fetch(CENPROT_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(requestBody)
+    });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`Erro na resposta da API CENPROT: ${response.status} - ${errorText}`);
-        throw new Error(`Falha na comunicação com CENPROT: ${response.status} ${response.statusText}`);
-      }
-
-      const cenprotData = await response.json();
-      console.log("Resposta recebida da API CENPROT:", cenprotData);
-
-      // Adaptando os dados recebidos para o formato esperado pela interface
-      const formattedData = transformCenprotData(cenprotData, cpf || cnpj);
-
-      return new Response(
-        JSON.stringify(formattedData),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    } catch (apiError) {
-      console.error("Erro na comunicação com a API CENPROT:", apiError);
-      console.log("Utilizando dados mock como fallback devido a erro na API");
-      
-      // Fallback para dados mock em caso de falha na comunicação com a API
-      const mockResponse = generateMockResponse(cpf || cnpj);
-      
-      return new Response(
-        JSON.stringify(mockResponse),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Erro na resposta da API CENPROT: ${response.status} - ${errorText}`);
+      throw new Error(`Falha na comunicação com CENPROT: ${response.status} ${response.statusText}`);
     }
+
+    const cenprotData = await response.json();
+    console.log("Resposta recebida da API CENPROT:", cenprotData);
+
+    // Adaptando os dados recebidos para o formato esperado pela interface
+    const formattedData = transformCenprotData(cenprotData, cpf || cnpj);
+
+    return new Response(
+      JSON.stringify(formattedData),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   } catch (error) {
     console.error('Erro na consulta de protestos:', error);
     return new Response(
@@ -167,96 +154,6 @@ function transformCenprotData(apiData, documento) {
       Cartorio: cartorios,
       NormalizedValorTotalProtestos: valorTotal,
       NormalizedResumoProtestos: resumoProtestos,
-      NormDataConsulta: new Date().toISOString()
-    }
-  };
-}
-
-// Função para gerar dados mock em caso de fallback
-function generateMockResponse(documento) {
-  return {
-    BalanceInBrl: 0,
-    BalanceInCredits: 0,
-    DataSourceCategory: "CENPROT",
-    Date: new Date().toISOString(),
-    ElapsedTimeInMilliseconds: 0,
-    HasPdf: true,
-    Message: "Consulta realizada com sucesso (dados de fallback)",
-    OriginalFilesUrl: "",
-    OutdatedResult: false,
-    PdfUrl: "https://exemplo.com/cenprot/pdf/12345",
-    TotalCost: 5.5,
-    TotalCostInCredits: 1,
-    TransactionResultType: "Success",
-    TransactionResultTypeCode: 0,
-    UniqueIdentifier: `${new Date().getTime()}`,
-    Result: {
-      DataConsulta: new Date().toLocaleDateString('pt-BR'),
-      CpfCnpj: documento,
-      QtdTitulos: 2,
-      Status: "Protestos Encontrados",
-      Mensagem: {
-        _Mensagem: "Foram encontrados protestos para o documento informado (dados de fallback)."
-      },
-      Cartorio: [
-        {
-          ProtestoStatus: "Ativo",
-          ProtestoComarca: "São Paulo",
-          ProtestoNumeroProtocolo: "12345/2023",
-          ProtestoDataAbertura: "2023-01-15T00:00:00Z",
-          ProtestoDataProtesto: "2023-01-25T00:00:00Z",
-          CartorioNome: "1º Tabelionato de Protestos de São Paulo",
-          CartorioEndereco: "Rua Exemplo, 123",
-          CartorioBairro: "Centro",
-          CartorioLocalidade: "São Paulo",
-          CartorioCEP: "01234-567",
-          CartorioEmail: "contato@cartorio1sp.com.br",
-          CartorioTelefone: "(11) 2345-6789"
-        },
-        {
-          ProtestoStatus: "Ativo",
-          ProtestoComarca: "São Paulo",
-          ProtestoNumeroProtocolo: "67890/2023",
-          ProtestoDataAbertura: "2023-02-10T00:00:00Z",
-          ProtestoDataProtesto: "2023-02-20T00:00:00Z",
-          CartorioNome: "4º Tabelionato de Protestos de São Paulo",
-          CartorioEndereco: "Av. Exemplo, 456",
-          CartorioBairro: "Jardins",
-          CartorioLocalidade: "São Paulo",
-          CartorioCEP: "04567-890",
-          CartorioEmail: "contato@cartorio4sp.com.br",
-          CartorioTelefone: "(11) 3456-7890"
-        }
-      ],
-      NormalizedValorTotalProtestos: 12450.00,
-      NormalizedResumoProtestos: [
-        {
-          Uf: "SP",
-          Municipio: "São Paulo",
-          CodigoCartorio: "01",
-          Descricao: "1º Tabelionato de Protestos de São Paulo",
-          Telefone: "(11) 2345-6789",
-          NumeroProtestos: 1,
-          ValorProtestado: 5450.00,
-          DocDevedor: documento,
-          DataProtesto: "2023-01-25T00:00:00Z",
-          DataVencimento: "2023-01-15T00:00:00Z",
-          DataAtualizacao: "2023-05-15T00:00:00Z"
-        },
-        {
-          Uf: "SP",
-          Municipio: "São Paulo",
-          CodigoCartorio: "04",
-          Descricao: "4º Tabelionato de Protestos de São Paulo",
-          Telefone: "(11) 3456-7890",
-          NumeroProtestos: 1,
-          ValorProtestado: 7000.00,
-          DocDevedor: documento,
-          DataProtesto: "2023-02-20T00:00:00Z",
-          DataVencimento: "2023-02-10T00:00:00Z",
-          DataAtualizacao: "2023-05-15T00:00:00Z"
-        }
-      ],
       NormDataConsulta: new Date().toISOString()
     }
   };
